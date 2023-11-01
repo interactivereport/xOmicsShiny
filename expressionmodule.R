@@ -1,0 +1,808 @@
+###########################################################################################################
+## Proteomics Visualization R Shiny App
+##
+##This software belongs to Biogen Inc. All right reserved.
+##
+##@file: expressionmodule.R
+##@Developer : Benbo Gao (benbo.gao@Biogen.com)
+##@Date : 05/23/2023
+##@version 3.0
+
+##########################################################################################################
+## Gene/Protein Expression Plot
+##########################################################################################################
+#pkgs: "ggprism", "DT","dplyr", "stringr", "tidyr", "scales", "ggExtra"
+
+library(ggprism)
+
+expression_ui <- function(id) {
+	ns <- shiny::NS(id)
+	fluidRow(
+		column(4,
+			wellPanel(
+				uiOutput(ns('loadedprojects')),
+				uiOutput(ns("selectGroupSample")),
+				radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Select", "Browsing", "Upload Genes", "Geneset"), inline = TRUE, selected="Select"),
+				conditionalPanel(ns = ns, "input.subset=='Upload Genes'",
+					textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)
+				),
+				conditionalPanel(ns = ns, "input.subset=='Select'",
+					radioButtons(ns("label"),label="Search Gene or UniqueID", inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="UniqueID"),
+					selectizeInput(ns("sel_gene"),	label="Gene Name (Select 1 or more)",	choices = NULL,	multiple=TRUE, options = list(placeholder =	'Type to search'))
+				),
+				conditionalPanel(ns = ns, "input.subset=='Geneset'",
+					selectizeInput(ns("sel_geneset"), label="Available GeneSet", choices = NULL, multiple = FALSE),
+					textAreaInput(ns("geneset_genes"), "Genes in Geneset", "", cols = 5, rows=6)
+				),
+				conditionalPanel(ns = ns, "input.subset=='Browsing'",
+					selectInput(ns("sel_test"), label="Select Test", choices=NULL),
+					fluidRow(
+						column(width=6, radioButtons(ns("psel"), label= "P value or P.adj Value?", choices= c("Pval"="Pval","Padj"="Padj"), inline = TRUE)),
+						column(width=6, radioButtons(ns("updown"), label= "All, Up or Down?", choices= c("All"="All","Up"="Up","Down"="Down"), inline = TRUE))
+					),
+					fluidRow(
+						column(width=6, numericInput(ns("fccut"), label= "Fold Change Threshold", value = 1.2, min=1, step=0.1)),
+						column(width=6, numericInput(ns("pvalcut"), label= "P-value Threshold", value=0.01, min=0, step=0.01))
+					),
+					radioButtons(ns("browsing_gene_order"), label="Order Genes by", inline = TRUE, choices = c("abs(Fold Change)","P value"))
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
+					span(textOutput(ns("filteredgene")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+					span(textOutput(ns("filteredUniqueID")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+					radioButtons(ns("SeparateOnePlot"), label="Separate or One Plot", inline = TRUE, choices = c("Separate Plot" = "Separate", "One Plot" = "OnePlot")),
+					radioButtons(ns("sel_geneid"), label="Select Gene Label", inline = TRUE, choices=""),
+					radioButtons(ns("plotformat"), label="Select Plot Format", inline = TRUE, choices = c("Box Plot" = "boxplot","Bar Plot" = "barplot", "Violin" = "violin","Line" = "line")),
+					radioButtons(ns("prismstyle"), label="Graphpad Prism Style", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
+					conditionalPanel(ns = ns, "input.prismstyle=='NO'",
+						selectInput(ns("colpalette"), label= "Select palette", choices=""),
+						conditionalPanel(ns = ns, "input.colpalette=='Single'",	colourpicker::colourInput(ns("barcol"), "Select colour", "#1E90FF", palette = "limited")),
+					),
+					conditionalPanel(ns = ns, "input.prismstyle=='YES'",
+						fluidRow(
+							column(width=6,selectInput(ns("prismcolpalette"), label= "Select palette", choices="")),
+							column(width=6,selectInput(ns("prismfillpalette"), label= "Select palette", choices=""))
+						)
+					),
+					fluidRow(
+						column(width=4,sliderInput(ns("plot_ncol"), label= "Column Number", min = 1, max = 6, step = 1, value = 3)),
+						column(width=4,sliderInput(ns("plot_nrow"), label= "Row Number", min = 1, max = 6, step = 1, value = 3)),
+						column(width=4,selectInput(ns("sel_page"), label="Select Page",	choices = NULL,	selected=1))
+					),
+					radioButtons(ns("IndividualPoint"), label="Individual Point?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES"),
+					radioButtons(ns("ShowErrorBar"), label="Error Bar?(except box plot)", inline = TRUE, choices = c("SD" = "SD","SEM" = "SEM","NO" = "NO"), selected = "SD"),
+					radioButtons(ns("PvalueBar"), label="Show P-Values?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
+					conditionalPanel(ns = ns, "input.PvalueBar=='YES'",
+						fluidRow(
+							column(width=6,radioButtons(inputId = ns("pval_sel"), label = "P-value or P.adj Value?",inline = TRUE, choices = c("Pval" = "P.Value", "Padj" = "Adj.P.Value"), selected = "P.Value")),
+							column(width=6,numericInput(ns("pv_threshold"), label= "P Value Threshold:",  value= 0.01, min=0, step=0.01))
+						),
+						radioButtons(inputId = ns("plabelpos"), label = "P Value Position?", inline = TRUE, choices = c("Top" = "y2", "inside" = "y1","Top 3 SD" = "y3"), selected = "y2")
+					),
+					fluidRow(
+						column(width=6, selectizeInput(ns("plotx"), label="X Axis", choices=NULL, multiple = FALSE)),
+						column(width=6, selectizeInput(ns("colorby"), label="Color By:", choices=NULL, multiple = FALSE))
+					),
+					fluidRow(
+						column(width=6, radioButtons(ns("xlogbase"), label="X Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10, "2"= 2), selected=1)),
+						column(width=6,	radioButtons(ns("ylogbase"), label="Y Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10, "2"= 2), selected=1))
+					),
+					fluidRow(
+						column(width=6,sliderInput(ns("titlefontsize"), "Title Font Size:", min = 12, max = 36, step = 2, value = 20)),
+						column(width=6,sliderInput(ns("axisfontsize"), "Axis Font Size:", min = 12, max = 36, step = 2, value = 20))
+					),
+					fluidRow(
+						column(width=6,textInput(ns("Ylab"), "Y label", width = "100%")),
+						column(width=6,textInput(ns("Xlab"), "X label", width = "100%"))
+					),
+					sliderInput(ns("Xangle"), label= "X Angle", min = 0, max = 90, step = 5, value = 90),
+					radioButtons(ns("plot_Y_scale"), label="Y Axis Scale", inline = TRUE, choices = c("Auto","Manual"), selected = "Auto"),
+					radioButtons(ns("interactive"), label="Static or Interactive Plot", inline = TRUE, choices = c("Static" = "static", "Interactive" = "interactive")),
+					conditionalPanel(ns = ns,"input.plot_Y_scale=='Manual'",
+						fluidRow(
+							column(width=6,numericInput(ns("plot_Ymin"), label= "Y Min",  value = 0, step=0.1)),
+							column(width=6,numericInput(ns("plot_Ymax"), label= "Y Max",  value=5, step=0.1))
+						)
+					),
+					conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
+						h5("After changing parameters, please click Plot/Refresh button in the plot panel to generate expression plot.")
+					)
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Rank Abundance Curve'",
+					fluidRow(
+						column(width=6, sliderInput(ns("scurve_axisfontsize"), "Axis Font Size:", min = 12, max = 28, step = 4, value = 16)),
+						column(width=6, sliderInput(ns("scurve_labelfontsize"), "Label Font Size:", min = 2, max = 12, step = 1, value = 6))
+					),
+					fluidRow(
+						column(width=6, textInput(ns("scurveYlab"), "Y label", value="Abundance", width = "100%")),
+						column(width=6, textInput(ns("scurveXlab"), "X label", value="Rank", width = "100%"))
+					),
+					sliderInput(ns("scurveXangle"), label= "X Angle", min = 0, max = 90, step = 15, value = 45),
+					radioButtons(ns("scurveright"), label="Density or histogram on Right:", inline = TRUE, choices = c("densigram" = "densigram", "density" = "density","histogram" = "histogram","boxplot" = "boxplot", "violin"= "violin"))
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Data Table' || input.tabset=='Result Table'",
+					h5("Enter some genes in Search Expression Data tab, then come here for data table.")
+				)
+			)
+		),
+		column(8,
+			tabsetPanel(id=ns("tabset"),
+				tabPanel(title="Expression Plot", value ="Expression Plot",
+					actionButton(ns("plot_exp"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+					actionButton(ns("saveboxplot"), "Save to output"),
+					uiOutput(ns("plot.exp"))
+				),
+				tabPanel(title="Data Table", value ="Data Table",	DT::dataTableOutput(ns("dat_dotplot"))
+				),
+				tabPanel(title="Result Table", value ="Result Table",	DT::dataTableOutput(ns("res_dotplot"))
+				),
+				tabPanel(title="Rank Abundance Curve", value ="Rank Abundance Curve",
+					actionButton(ns("AbundanceCurve"), "Save to output"),
+					plotOutput(ns("SCurve"), height=800)
+				),
+				tabPanel(title="Help", value ="Help", htmlOutput("help_expression")
+				)
+			)
+		)
+	)
+}
+
+expression_server <- function(id) {
+	shiny::moduleServer(id,
+		function(input, output, session) {
+			ns <- shiny::NS(id)
+			output$loadedprojects <- renderUI({
+				req(length(working_project()) > 0)
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
+			})
+
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
+
+			output$selectGroupSample <-
+			renderUI({
+				req(length(working_project()) > 0)
+				sample_info <- paste("Selected ", length(DataInSets[[working_project()]]$group_order), " out of ", length(DataInSets[[working_project()]]$groups), " Groups, ",
+					length(DataInSets[[working_project()]]$sample_order), " out of ", length(DataInSets[[working_project()]]$samples),
+				" Samples. (Update Selection at: Top Menu -> Groups and Samples.)", sep="")
+				tagList(
+					tags$p(sample_info),
+					tags$hr(style="border-color: black;")
+				)
+			})
+
+			observe({
+				req(length(working_project()) > 0)
+				req(DataInSets[[working_project()]]$ProteinGeneNameHeader)
+				ProteinGeneNameHeader = DataInSets[[working_project()]]$ProteinGeneNameHeader
+				req(DataInSets[[working_project()]]$tests_order)
+				tests = DataInSets[[working_project()]]$tests_order
+				updateRadioButtons(session,'sel_geneid', inline = TRUE, choices=ProteinGeneNameHeader, selected="UniqueID")
+				updateSelectizeInput(session,'sel_test', choices=tests, selected=tests[1])
+			})
+
+			observe({
+				req(input$prismstyle=='YES')
+				updateSelectizeInput(session,'prismcolpalette', choices=names(ggprism_data$colour_palettes), selected="floral")
+				updateSelectizeInput(session,'prismfillpalette', choices=names(ggprism_data$fill_palettes), selected="floral")
+			})
+
+			observe({
+				req(input$prismstyle=='NO')
+				updateSelectizeInput(session,'colpalette', choices=c("Single",rownames(brewer.pal.info)), selected="Dark2")
+			})
+
+			observe({
+				req(length(working_project()) > 0)
+				req(DataInSets[[working_project()]]$MetaData)
+				req(DataInSets[[working_project()]]$ProteinGeneName)
+				MetaData = DataInSets[[working_project()]]$MetaData
+				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+				exp_unit = DataInSets[[working_project()]]$exp_unit
+
+				req(input$label)
+				label = sym(input$label)
+				DataIngenes <- ProteinGeneName %>% dplyr::pull(!!label)
+				updateSelectizeInput(session,'sel_gene', choices= DataIngenes, server=TRUE)
+				attributes=sort(setdiff(colnames(MetaData), c("sampleid", "Order", "ComparePairs") ))
+				updateSelectInput(session, "colorby", choices=attributes, selected="group")
+				updateSelectInput(session, "plotx", choices=attributes, selected="group")
+				updateTextInput(session, "Ylab", value=exp_unit)
+				updateTextInput(session, "Xlab", value="group")
+			})
+
+			observe({
+				req(length(working_project()) > 0)
+				req(DataInSets[[working_project()]]$results_long)
+				results_long = DataInSets[[working_project()]]$results_long
+				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+
+				req(input$subset)
+				if (input$subset == "Select") {
+					req(input$sel_gene)
+					sel_gene = input$sel_gene
+					validate(need(length(input$sel_gene)>0,"Please select a gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
+				}
+
+				if (input$subset == "Browsing") {
+					req(input$sel_test)
+					sel_test = input$sel_test
+					FCcut =log2(as.numeric(input$fccut))
+					pvalcut = as.numeric(input$pvalcut)
+					psel = input$psel
+					direction = input$updown
+
+					tmpids <- results_long %>%
+					dplyr::mutate_if(is.factor, as.character) %>%
+					dplyr::filter(if (!is.na(sel_test)) {test == sel_test} else TRUE) %>%
+					dplyr::filter(if (psel=="Padj") {Adj.P.Value < pvalcut} else {P.Value < pvalcut}) %>%
+					dplyr::filter(if (direction=="Up") {logFC >= FCcut} else if (direction=="Down") {logFC <= -FCcut} else {abs(logFC) >= FCcut}) %>%
+					as.data.frame() %>%
+					dplyr::pull(UniqueID)
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
+				}
+
+				if (input$subset == "Upload Genes" | input$subset == "Geneset") {
+					if (input$subset == "Upload Genes"){
+						req(input$uploadlist)
+						gene_list <- input$uploadlist
+					}
+					if (input$subset == "Geneset") {
+						req(input$geneset_list_exp)
+						gene_list <- input$geneset_list_exp
+					}
+					gene_list <- ProcessUploadGeneList(gene_list)
+
+					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				}
+
+				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
+				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+
+				output$filteredgene <- renderText({paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")})
+				msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
+				if (length(tmpids) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name)  %>% unique()))
+				msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
+				output$filteredUniqueID <- renderText({msg_filter})
+				numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
+				updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+			})
+
+			#################
+			observeEvent(input$subset , {
+				req(length(working_project()) > 0)
+				req(input$subset == "Geneset")
+				genesetnames <- GetGeneSetNames()
+				updateSelectizeInput(session, "sel_geneset", choices =  c('Type to Search' = '', genesetnames), server = TRUE)
+			})
+
+			observeEvent(input$sel_geneset, {
+				req(length(working_project()) > 0)
+				req(input$subset == "Geneset")
+				req(input$sel_geneset!="")
+				sel_geneset <- input$sel_geneset
+				geneset_genenames <- GetGenesFromGeneSet(sel_geneset)
+				updateTextAreaInput(session, "geneset_genes", value=paste(geneset_genenames, collapse=","))
+			})
+			###############
+
+			DataExpReactive <- reactive({
+				req(length(working_project()) > 0)
+				validate(need(length(DataInSets[[working_project()]]$group_order)>0,"Please select group(s)."))
+
+				data_long = DataInSets[[working_project()]]$data_long
+				results_long = DataInSets[[working_project()]]$results_long
+				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+				sel_group = DataInSets[[working_project()]]$group_order
+				sel_samples = DataInSets[[working_project()]]$sample_order
+
+				genelabel=input$sel_geneid
+
+				req(input$subset)
+				if (input$subset == "Select") {
+					req(input$sel_gene)
+					sel_gene = input$sel_gene
+					validate(need(length(input$sel_gene)>0,"Please select a gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
+				}
+
+				if (input$subset == "Browsing") {
+					req(input$sel_test)
+					sel_test = input$sel_test
+					FCcut =log2(as.numeric(input$fccut))
+					pvalcut = as.numeric(input$pvalcut)
+					psel = input$psel
+					direction = input$updown
+
+					tmpids <- results_long %>%
+					dplyr::mutate_if(is.factor, as.character) %>%
+					dplyr::filter(if (!is.na(sel_test)) {test == sel_test} else TRUE) %>%
+					dplyr::filter(if (psel=="Padj") {Adj.P.Value < pvalcut} else {P.Value < pvalcut}) %>%
+					dplyr::filter(if (direction=="Up") {logFC >= FCcut} else if (direction=="Down") {logFC <= -FCcut} else {abs(logFC) >= FCcut}) %>%
+					as.data.frame() %>%
+					dplyr::pull(UniqueID)
+
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
+				}
+
+
+				if (input$subset == "Upload Genes" | input$subset == "Geneset") {
+					if (input$subset == "Upload Genes") {
+						req(input$uploadlist)
+						gene_list <- input$uploadlist
+					}
+
+					if (input$subset == "Geneset") {
+						req(input$geneset_genes)
+						gene_list <- input$geneset_genes
+					}
+
+					gene_list <- ProcessUploadGeneList(gene_list)
+					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				}
+
+				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
+				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+
+				numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
+				updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+
+				req(input$sel_page)
+				sel_page = as.numeric(input$sel_page) - 1
+				startslice = sel_page * numberpage  + 1
+				endslice = startslice + numberpage - 1
+				if (endslice > length(tmpids))
+				endslice <- length(tmpids)
+				tmpids <- tmpids[startslice: endslice]
+
+				data_long_tmp = dplyr::filter(data_long, UniqueID %in% tmpids, group %in% sel_group, sampleid %in% sel_samples) %>%
+				dplyr::filter(!is.na(expr)) %>%
+				dplyr::filter(expr != 0) %>% ## considering change to expr + 1, if the values are not distribute around 1 (ratio)
+				as.data.frame()
+
+				data_long_tmp$UniqueID <- factor(data_long_tmp$UniqueID, levels = tmpids)
+				data_long_tmp <- data_long_tmp %>% arrange(UniqueID)
+
+				ylogbase = as.numeric(input$ylogbase)
+				if (ylogbase == 2){
+					data_long_tmp <- data_long_tmp %>% dplyr::mutate_at(vars(expr), log2)
+				}
+				if (ylogbase == 10){
+					data_long_tmp <- data_long_tmp %>% dplyr::mutate_at(vars(expr), log10)
+				}
+
+				data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
+				data_long_tmp$labelgeneid <- factor(data_long_tmp$labelgeneid, levels = unique(data_long_tmp$labelgeneid))
+				data_long_tmp$group = factor(data_long_tmp$group, levels = sel_group)
+
+				result_long_tmp = dplyr::filter(results_long, UniqueID %in% tmpids) %>% as.data.frame()
+				result_long_tmp$labelgeneid = result_long_tmp[,match(genelabel,colnames(result_long_tmp))]
+				result_long_tmp$labelgeneid <- factor(result_long_tmp$labelgeneid, levels = unique(result_long_tmp$labelgeneid))
+
+				return(list("data_long_tmp" = data_long_tmp,"result_long_tmp"= result_long_tmp, "tmpids"=tmpids))
+			})
+
+			###############
+			boxplot_out <-	eventReactive(input$plot_exp, {
+				withProgress(message = 'Making Plot. It may take a while...', value = 0, {
+					req(length(working_project()) > 0)
+					sel_group = DataInSets[[working_project()]]$group_order
+					tests_order = DataInSets[[working_project()]]$tests_order
+					MetaData = DataInSets[[working_project()]]$MetaData
+
+					results_long_tmp <- DataExpReactive()$result_long_tmp %>%
+					dplyr::filter(test %in% tests_order)
+
+					data_long_tmp <- DataExpReactive()$data_long_tmp %>%
+					dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
+
+					colorby = sym(input$colorby)
+					plotx = sym(input$plotx)
+					Val_colorby = input$colorby
+					Val_plotx = input$plotx
+
+					xlogbase = as.numeric(input$xlogbase)
+					ylogbase = as.numeric(input$ylogbase)
+
+					ncol = as.numeric(input$plot_ncol)
+					nrow = as.numeric(input$plot_nrow)
+					numberpage = ncol * nrow
+
+					genelabel = input$sel_geneid
+					barcol = input$barcol
+
+					if (Val_colorby != Val_plotx) {
+						if (Val_colorby!="group" ) {
+							data_long_tmp <- data_long_tmp %>% dplyr::left_join((MetaData %>% dplyr::select(sampleid, !!colorby)), by = "sampleid")
+						}
+
+						if (Val_plotx!="group" ) {
+							data_long_tmp <- data_long_tmp %>% dplyr::left_join((MetaData %>% dplyr::select(sampleid, !!plotx)), by = "sampleid")
+						}
+					} else {
+						if (Val_colorby!="group" ) {
+							data_long_tmp <- data_long_tmp %>% dplyr::left_join((MetaData %>% dplyr::select(sampleid, !!colorby)), by = "sampleid")
+						}
+					}
+
+					## By Kyra (modified by bgao 06/22/2023)
+					showPvalues = input$PvalueBar
+					value = sym("expr")
+					pval_sel = input$pval_sel
+					psel = sym(pval_sel)
+
+					results_long_tmp[,sapply(results_long_tmp,is.numeric)] <- signif(results_long_tmp[,sapply(results_long_tmp,is.numeric)],3)
+					#results_long_tmp$labelgeneid = results_long_tmp[,match(genelabel,colnames(results_long_tmp))]
+					results_long_tmp <- results_long_tmp %>%
+					dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
+
+					if (Val_plotx == Val_colorby) {
+						df.summary <- data_long_tmp %>%
+						group_by(!!plotx, labelgeneid) %>%
+						dplyr::summarise(sd = sd(!!value), expr = mean(!!value),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+						dplyr::mutate(ypos = sum(expr, sd, na.rm=TRUE)) %>%
+						dplyr::mutate(ypos3sd = sum(expr,3*sd, na.rm=TRUE)) %>%
+						dplyr::select(-n)
+					} else {
+						df.summary <- data_long_tmp %>%
+						group_by(!!plotx, !!colorby, labelgeneid) %>%
+						dplyr::summarise(sd = sd(!!value), expr = mean(!!value),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+						dplyr::mutate(ypos = sum(expr, sd, na.rm=TRUE))  %>%
+						dplyr::mutate(ypos3sd = sum(expr,3*sd, na.rm=TRUE)) %>%
+						dplyr::select(-n)
+					}
+
+					annotation_df <- data.frame()
+					if((showPvalues == "YES") & (Val_plotx == "group") & (Val_colorby == "group")){
+						pv_thresh = as.numeric(input$pv_threshold)
+
+						y_position <- df.summary %>%
+						rowwise() %>%
+						#	dplyr::mutate(ypos = expr + sd) %>% #sd is NA for n =1
+						dplyr::mutate(ypos = sum(expr, sd, na.rm=TRUE))  %>%
+						dplyr::select(-c(sd,se,expr)) %>%
+						dplyr::group_by(labelgeneid) %>%
+						dplyr::mutate(max_ypos = max(ypos, na.rm=TRUE)) %>%
+						dplyr::mutate(max_ypos_3sd = max(ypos3sd, na.rm=TRUE)) %>%
+						dplyr::ungroup() %>%
+						as.data.frame()
+
+						annotation_df = results_long_tmp %>%
+						dplyr::filter(!!psel < pv_thresh) %>%
+						as.data.frame()
+						#filename <- paste("H:/Rcode/QuickomicsModule/expressmoduletest.RData",sep="")
+						#save(data_long_tmp, results_long_tmp, MetaData, df.summary, psel,	y_position, sel_group,  annotation_df, Val_colorby, Val_plotx, file=filename )
+						#load("H:/Rcode/QuickomicsModule/expressmoduletest.RData")
+
+						if (nrow(annotation_df) > 0)  {
+							annotation_df <- annotation_df %>%
+							tidyr::separate(test, c('start', 'end'),  sep = "vs") %>%
+							dplyr::mutate_at(c("start","end"), trimws, which = "both") %>%
+							dplyr::mutate(Label = case_when(!!psel <= 0.001 ~ "***",
+								!!psel > 0.001 & !!psel <= 0.01 ~ "**",
+								!!psel > 0.01 & !!psel <= 0.05 ~ "*",
+								!!psel > 0.05 & !!psel <= 0.10 ~ ".",
+							TRUE ~"")) %>%
+							dplyr::mutate(group = start) %>%
+							dplyr::inner_join(y_position, by=c("start"="group", "labelgeneid"="labelgeneid")) %>%
+							dplyr::inner_join(y_position %>% dplyr::select(-c(max_ypos,max_ypos_3sd)), by=c("end"="group", "labelgeneid"="labelgeneid")) %>%
+							dplyr::group_by(labelgeneid) %>%
+							dplyr::mutate(count = n()) %>%
+							dplyr::mutate(y= 1.02 * pmax(ypos.x, ypos.y)) %>%
+							dplyr::arrange(y, .by_group = TRUE) %>%
+							#dplyr::mutate_if(is.numeric, ~replace(., is.na(.), 0))  %>%
+							dplyr::mutate(y1 = seq(min(y), max(y), length.out = count[1])) %>%
+							dplyr::mutate(y2 = seq(max_ypos[1], 1.15 * max_ypos[1], length.out = count[1])) %>%
+							dplyr::mutate(y3 = seq(max_ypos_3sd[1], 1.15 * max_ypos_3sd[1], length.out = count[1])) %>%
+							dplyr::select(-c(ypos.x, ypos.y,ypos3sd.x, ypos3sd.y, count, logFC)) %>%
+							dplyr::ungroup() %>%
+							dplyr::filter(start %in% sel_group & end %in% sel_group)
+						}
+					}
+
+					## End
+					data_long_tmp <- data_long_tmp %>%
+					dplyr::mutate_at(vars(!!plotx), as.factor)
+
+					pd <- position_dodge(0.8)
+
+					if (input$SeparateOnePlot == "Separate") {
+						p <- ggplot(data_long_tmp, aes(x=!!plotx, y=!!value, alpha = !!colorby,  color=!!colorby))
+						p <- p + facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
+					} else {
+						p <- ggplot(data_long_tmp, aes(x=!!plotx, y=!!value,  alpha = labelgeneid, color = labelgeneid))
+					}
+
+					if (input$plotformat == "boxplot") {
+						p <- p + geom_boxplot(outlier.colour=NA)
+					}
+
+					if (input$plotformat == "barplot") {
+						if (input$SeparateOnePlot == "Separate") {
+							p <- p + geom_col(data = df.summary, aes(x = !!plotx, y=!!value, fill = !!colorby), position = pd, width = 0.7)
+						} else {
+							p <- p + geom_col(data = df.summary, aes(x = !!plotx, y=!!value, fill = labelgeneid), position = pd, width = 0.7)
+						}
+					}
+
+					if (input$plotformat == "violin") {
+						p <- p + geom_violin()
+					}
+
+					if (input$plotformat == "line") {
+						#data_long_tmp <- data_long_tmp  %>% as_tibble() %>% dplyr::mutate_at(vars(!!plotx), as.numeric)
+						if (input$SeparateOnePlot == "Separate") {
+
+							if (input$plotx == input$colorby) {
+								p <- ggplot(data_long_tmp, aes(x=!!plotx, y=!!value))
+							} else {
+								p <- ggplot(data_long_tmp, aes(x=!!plotx, y=!!value, fill=!!colorby, color=!!colorby))
+							}
+							p <- p + geom_line(data = df.summary, aes(x = !!plotx, y=!!value), group=1) +
+							facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
+
+							if (input$ShowErrorBar == "SD") {
+								p <- p + geom_errorbar(aes(ymin = !!value-sd, ymax = !!value+sd), data = df.summary, width = 0.2, position = pd)
+							}
+							if (input$ShowErrorBar == "SEM") {
+								p <- p + geom_errorbar(aes(ymin = !!value-se, ymax = !!value+se), data = df.summary, width = 0.2, position = pd)
+							}
+						} else {
+							p <-	 ggplot(data_long_tmp, aes(x = !!plotx, y= !!value)) +
+							geom_line(data = df.summary, aes(x = !!plotx, y = !!value, color = labelgeneid, group = labelgeneid))
+
+							if (input$ShowErrorBar == "SD") {
+								p <- p + geom_errorbar(aes(ymin = !!value-sd, ymax = !!value+sd,  color = labelgeneid,), data = df.summary, width = 0.2, position = pd )
+							}
+							if (input$ShowErrorBar == "SEM") {
+								p <- p + geom_errorbar(aes(ymin = !!value-se, ymax = !!value+se,  color = labelgeneid), data = df.summary, width = 0.2, position = pd)
+							}
+						}
+					}
+
+					#######################
+					if (input$plotformat != "boxplot" & input$plotformat != "line") {
+						if (input$ShowErrorBar == "SD") {
+							p <- p + geom_errorbar(aes(ymin = !!value-sd, ymax = !!value+sd), data = df.summary, width = 0.2, position = pd)
+						}
+						if (input$ShowErrorBar == "SEM") {
+							p <- p + geom_errorbar(aes(ymin = !!value-se, ymax = !!value+se), data = df.summary, width = 0.2, position = pd)
+						}
+					}
+
+					if((nrow(annotation_df) > 0) & (showPvalues == "YES") & (Val_plotx == "group") &  (Val_colorby == "group")){
+						plabelpos = sym(input$plabelpos)
+						if (input$SeparateOnePlot == "Separate") {
+							p <- p + geom_signif(
+								data = annotation_df,
+								aes(xmin = start, xmax = end, annotations = Label, color = !!colorby,  y_position = !!plabelpos),
+								textsize = 6,
+								tip_length = 0,
+								vjust = 0.8,
+								margin_top = 0.05,
+								step_increase = 0.5,
+								manual = TRUE,
+								inherit.aes = TRUE,
+								show.legend = FALSE
+							)
+						} else {
+							p <- p + geom_signif(
+								data = annotation_df,
+								aes(xmin = start, xmax = end, annotations = Label, color =labelgeneid,  y_position = !!plabelpos),
+								textsize = 6,
+								tip_length = 0,
+								vjust = 0.8,
+								margin_top = 0.05,
+								step_increase = 0.5,
+								manual = TRUE,
+								inherit.aes = TRUE,
+								show.legend = FALSE
+							)
+						}
+					}
+
+					if (input$IndividualPoint == "YES") {
+						if (input$SeparateOnePlot == "Separate") {
+							p <- p + geom_jitter(aes(color=!!colorby), position = position_jitterdodge())
+						} else {
+							p <- p + geom_jitter(aes(color=labelgeneid), position = position_jitterdodge())
+						}
+					}
+
+					if (xlogbase != 1){
+						p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = xlogbase))
+					}
+
+					if (input$SeparateOnePlot == "Separate") {
+						if (input$colpalette == "Single") {
+							colorpal = rep(barcol, length(sel_group))
+						} else {
+							#rownames(brewer.pal.info)
+							
+							#n <- brewer.pal.info[input$colpalette,'maxcolors']
+							#if (length(sel_group) <=  n) {
+							#	user_color <- RColorBrewer::brewer.pal(length(sel_group), input$colpalette)
+							#} else {
+							#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(sel_group))
+							#}
+							
+							colorpal <- UserColorPlalette(colpalette = input$colpalette, items = sel_group)
+							
+						}
+						user_alpha = rep(1, length(sel_group))
+					} else {
+						if (input$colpalette == "Single") {
+							colorpal = rep(barcol, length(unique(data_long_tmp$labelgeneid)))
+						} else {
+							
+							#n <- brewer.pal.info[input$colpalette,'maxcolors']
+							#if (length(unique(data_long_tmp$labelgeneid)) <=  n) {
+							#	user_color <- RColorBrewer::brewer.pal(length(unique(data_long_tmp$labelgeneid)), input$colpalette)
+							#} else {
+							#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(unique(data_long_tmp$labelgeneid)))
+							#}
+							#
+							colorpal <- UserColorPlalette(colpalette = input$colpalette, items = unique(data_long_tmp$labelgeneid))
+							
+						}
+						user_alpha = rep(1, length(unique(data_long_tmp$labelgeneid)))
+					}
+
+					p <- p +
+					scale_alpha_manual(values = user_alpha) +
+					scale_fill_manual(values = colorpal) +
+					scale_colour_manual(values = colorpal) +
+					theme_bw(base_size = 16) +
+					ylab(input$Ylab) +
+					xlab(input$Xlab)
+
+					if (input$colpalette == "Single") {
+						p <- p +  theme (legend.position="none")
+					}
+
+					if (input$plot_Y_scale=="Manual") {
+						p <- p + ylim(input$plot_Ymin, input$plot_Ymax)
+					}
+
+					if (input$prismstyle=="YES") {
+						p <- p + scale_color_prism(input$prismcolpalette) +
+						scale_fill_prism(input$prismfillpalette) +
+						guides(y = "prism_offset_minor") +
+						theme_prism(base_size = 16) #+
+						#theme(legend.position = "none")
+					}
+
+					p <- p +
+					theme (plot.margin = unit(c(1,1,1,1), "cm"),
+						text = element_text(size=input$axisfontsize),
+						axis.text.x = element_text(angle = input$Xangle, hjust=0.5, vjust=0.5),
+						strip.text.x = element_text(size=input$titlefontsize)
+					)
+
+					return(p)
+				})
+			})
+			
+			output$plot.exp <- renderUI({
+				if (input$SeparateOnePlot == "Separate")  {
+					nrow = isolate(as.numeric(input$plot_nrow))
+					height = 300 * nrow
+				} else {
+					height=800
+				}
+
+				if (input$interactive == "static"){
+					plotOutput(ns("boxplot"), height = height)
+				}	else {
+					plotly::plotlyOutput(ns("boxplot_Interactive"),	height=height)
+				}
+			})
+
+			output$boxplot_Interactive <- renderPlotly({
+				p <- boxplot_out()
+				pl <- ggplotly(p) %>% layout(dragmode = "pan")
+				#ggplotly((pl + theme_bw(base_size = 16)),  tooltip = c("text")) %>% layout(legend = list(orientation = "h", y = -0.2))
+			})
+
+			output$boxplot <- renderPlot({
+				boxplot_out() %>% print
+			})
+
+			observeEvent(input$saveboxplot, {
+				saved.num <- length(saved_plots$boxplot) + 1
+				saved_plots$boxplot[[saved.num]] <- boxplot_out()
+			})
+
+			output$dat_dotplot <- DT::renderDT(server=FALSE, {
+				req(length(working_project()) > 0)
+				data_long_tmp <- DataExpReactive()$data_long_tmp
+				data_long_tmp <- data_long_tmp %>%dplyr::select(-labelgeneid)
+				data_long_tmp[,sapply(data_long_tmp,is.numeric)] <- signif(data_long_tmp[,sapply(data_long_tmp,is.numeric)],3)
+				DT::datatable(data_long_tmp,  extensions = 'Buttons',  options = list(
+					dom = 'lBfrtip', pageLength = 15,
+					buttons = list(
+						list(extend = "csv", text = "Download Page", filename = "Page_results",
+							exportOptions = list(modifier = list(page = "current"))
+						), list(extend = "csv", text = "Download All", filename = "All_Results",
+						exportOptions = list(modifier = list(page = "all"))))
+						)
+					)
+				}
+			)
+
+			output$res_dotplot <- DT::renderDT(server=FALSE,{
+				req(length(working_project()) > 0)
+				result_long_tmp <- DataExpReactive()$result_long_tmp
+				result_long_tmp[,sapply(result_long_tmp,is.numeric)] <- signif(result_long_tmp[,sapply(result_long_tmp,is.numeric)],3)
+				DT::datatable(result_long_tmp,  extensions = 'Buttons',  options = list(
+					dom = 'lBfrtip', pageLength = 15,
+					buttons = list(
+						list(extend = "csv", text = "Download Page", filename = "Page_results",
+							exportOptions = list(modifier = list(page = "current"))
+						),
+						list(extend = "csv", text = "Download All", filename = "All_Results",
+							exportOptions = list(modifier = list(page = "all"))
+						)
+					)
+				))
+			})
+
+			#######
+			Scurve_out <- reactive({
+				req(length(working_project()) > 0)
+				data_results <- DataInSets[[working_project()]]$data_results
+				#if (!"Protein.ID" %in% names(data_results)) {data_results$Protein.ID=NA} #Add Protein.ID column if missing
+				gene_list <- DataExpReactive()$tmpids
+				validate(need(length(gene_list)>0,"Please select a gene or input gene."))
+				validate(need(("Intensity" %in% colnames(data_results)),"Need Intensity in data_result table."))
+
+				scurve.data <- data_results %>%
+				#dplyr::select(one_of(c("UniqueID","Gene.Name","Intensity","Protein.ID"))) %>%
+				dplyr::select(any_of(c("UniqueID","Gene.Name","Protein.ID","Intensity"))) %>%
+
+				dplyr::filter((!is.na(Intensity)) & Intensity > 0) %>%
+				dplyr::arrange(desc(Intensity)) %>%
+				dplyr::mutate(RANK = row_number())
+
+				scurve.label <- scurve.data %>%
+				dplyr::filter((UniqueID %in% gene_list) | (Gene.Name %in% gene_list) | (Protein.ID %in% gene_list))
+
+				if (nrow(scurve.label) > 0) {
+					p <- ggplot(scurve.data, aes(x = RANK, y = Intensity)) +
+					geom_point(colour = "blue")  +
+					geom_point(data=scurve.label, aes(x = RANK, y = Intensity, colour='red')) +
+					scale_y_continuous(trans='log10')  +
+					geom_label_repel(
+						data = scurve.label,aes(x = RANK, y = Intensity,  label = Gene.Name),
+						fontface = 'bold', color = 'red', size = input$scurve_labelfontsize,
+						box.padding = unit(0.35, "lines"),
+						point.padding = unit(0.5, "lines"),
+						segment.color = 'red'
+					) +
+					theme_bw(base_size = 14) +
+					ylab(input$scurveYlab) +
+					xlab(input$scurveXlab) +
+					theme (plot.margin = unit(c(1,1,1,1), "cm"),
+						text = element_text(size=input$scurve_axisfontsize),
+						axis.text.x = element_text(angle = input$scurveXangle),
+					legend.position="none")
+
+					p <- ggExtra::ggMarginal(p, type = input$scurveright, margins = "y", colour="blue", fill = "gray")
+				}
+				return(p)
+			})
+
+			output$SCurve <- renderPlot({
+				Scurve_out()
+			})
+
+			observeEvent(input$AbundanceCurve, {
+				saved_plots$AbundanceCurve <- Scurve_out()
+			})
+		}
+	)
+}
+
