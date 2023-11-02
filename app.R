@@ -18,7 +18,7 @@ ui <- fluidPage(
 			column(8,  h2(strong("Multiomics Visualization"), align = 'left'))
 		),
 	windowTitle = "Multiomics Visualization"),
-	includeCSS("menuhexagonal1.css"),
+	includeCSS("menuhexagonal.css"),
 	navbarPage(title = "", id="menu", selected = "Dataset",
 		#tabPanel(textOutput('project')),
 		##########################################################################################################
@@ -113,11 +113,8 @@ server <- function(input, output, session) {
 	source("inputdata.R",local = TRUE)
 	source("help.R",local = TRUE)
 
-	modulelist <- c("QC Plots", "DEGs", "Heatmap", "Expression Plot", "Geneset Enrichment", "Pattern",
-	"Correlation Network", "Venn diagram", "PCSF", "WGCNA", "Dose Response", "Dromics", "Monotonic Trend", "Merge Data", "Groups and Samples")
-	moduleFilelist <- c("qcplotmodule.R", "degmodule.R", "heatmapmodule.R", "expressionmodule.R",
-		"genesetmodule.R", "patternmodule.R", "networkmodule.R", "vennmodule.R", "pcsfmodule.R", "wgcnamodule.R", "drcmodule.R",
-	"dromicsmodule.R", "monotonicmodule.R", "mergedatamodule.R","groupsamplemodule.R")
+	modulelist <- c("QC Plots", "DEGs", "Heatmap", "Expression Plot", "Geneset Enrichment", "Pattern", 	"Correlation Network", "Venn diagram", "PCSF", "WGCNA", "Dose Response", "Dromics", "Monotonic Trend", "Merge Data", "Groups and Samples")
+	moduleFilelist <- c("qcplotmodule.R", "degmodule.R", "heatmapmodule.R", "expressionmodule.R", "genesetmodule.R", "patternmodule.R", "networkmodule.R", "vennmodule.R", "pcsfmodule.R", "wgcnamodule.R", "drcmodule.R", 	"dromicsmodule.R", "monotonicmodule.R", "mergedatamodule.R","groupsamplemodule.R")
 
 	observe({
 		req(input$select_dataset=='Upload Data Files (csv)')
@@ -176,7 +173,6 @@ server <- function(input, output, session) {
 		})
 	})
 
-
 	### Custom Data
 	output$ui.action <- renderUI({
 		req(input$file1)
@@ -190,7 +186,6 @@ server <- function(input, output, session) {
 			#uiOutput("loaddata")
 		)
 	})
-
 
 	observe({
 		req(length(reactiveValuesToList(saved_plots)) !=0 | length(reactiveValuesToList(saved_table)) !=0 )

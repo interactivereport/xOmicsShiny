@@ -856,7 +856,6 @@ observe({
 	}
 })
 
-
 #load project in csv or database
 observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 

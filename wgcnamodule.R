@@ -16,18 +16,6 @@ library(WGCNA)
 
 wgcna_ui <- function(id) {
 	ns <- shiny::NS(id)
-	#fluidRow(
-	#	column(3,
-	#		wellPanel(
-	#			actionButton(ns("plotwgcna"),"Generate")
-	#		)
-	#	),
-	#	column(9,
-	#		tabsetPanel(id="wgcna_tabset",
-	#			tabPanel("wgcnanetwork", plotOutput(ns("wgcnanetwork"),height = "800px"), style = "background-color: #eeeeee;")
-	#		)
-	#	)
-	#)
 
 	fluidRow(
 		column(3,
@@ -53,14 +41,10 @@ wgcna_ui <- function(id) {
 	)
 }
 
-
 wgcna_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- session$ns
-
-
-
 
 			WGCNAReactive <- reactive({
 				req(length(working_project()) > 0)
@@ -216,8 +200,6 @@ wgcna_server <- function(id) {
 					guideHang = 0.05 )
 				})
 			})
-
-
 		}
 	)
 }

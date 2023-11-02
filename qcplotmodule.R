@@ -3,13 +3,13 @@
 ##
 ##This software belongs to Biogen Inc. All right reserved.
 ##
-##@file: qcplot.R
+##@file: qcplotmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
 ##@Date : 1/6/2022
 ##@version 3.0
 ###########################################################################################################
 # pkgs: "rgl","car","factoextra","ComplexHeatmap", "DT", "dplyr", "tibble", "ggpubr"
-
+# req data:MetaData, ProteinGeneNameHeader, exp_unit, data_long, data_wide, group_order, sample_order
 library(rgl)
 library(car)
 library(factoextra)

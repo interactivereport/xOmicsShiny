@@ -1,0 +1,222 @@
+
+#hexcontainer {
+	text-align:center;
+	background-color:#EEEEEE;
+	position:relative;
+	margin:50px 0 35px 0;
+	padding:20px 0;
+}
+
+.hex1, .hex2 {
+	position:relative;
+	display:inline-block;
+	height:220px;
+	width:190px;
+	overflow:hidden;
+}
+
+.hex1 {
+	-webkit-transform:rotate(60deg);
+	-moz-transform:rotate(60deg);
+	-ms-transform:rotate(60deg);
+	-o-transform:rotate(60deg);
+	transform:rotate(60deg);
+	margin:-20px 10px;
+}
+
+.hex2 {
+	-webkit-transform:rotate(60deg);
+	-moz-transform:rotate(60deg);
+	-ms-transform:rotate(60deg);
+	-o-transform:rotate(60deg);
+	transform:rotate(60deg);
+}
+
+.hexlink {
+	-webkit-transform:rotate(-120deg);
+	-moz-transform:rotate(-120deg);
+	-ms-transform:rotate(-120deg);
+	-o-transform:rotate(-120deg);
+	transform:rotate(-120deg);
+	position:relative;
+	display:inline-block;
+	text-decoration:none;
+	height:220px;
+	width:190px;
+	background-position:center center;
+	background-size:cover;
+}
+
+#hl1 {background-image:url("pca3d.png");}
+#hl2 {background-image:url("deg.png");}
+#hl3 {background-image:url("heatmap.png");}
+#hl4 {background-image:url("expression.png");}
+#hl5 {background-image:url("geneset.png");}
+#hl6 {background-image:url("pattern.png");}
+#hl7 {background-image:url("correlation.png");}
+#hl8 {background-image:url("venn.png");}
+#hl9 {background-image:url("pcsf.png");}
+#hl10 {background-image:url("wgcna.png");}
+#hl11 {background-image:url("ic50.png");}
+#hl12 {background-image:url("dromics.png");}
+#hl13 {background-image:url("monotonic.png");}
+#hl14 {background-image:url("mergedata.png");}
+#hl15 {background-image:url("under-construction.png");}
+
+.hexcover {
+	position:absolute;
+	top:0;
+	left:0;
+	height:100%;
+	width:100%;
+	background-color:transparent;
+	opacity:0.9;
+}
+
+.hexlink h3 {
+	position:absolute;
+	top:50%;
+	-webkit-transform:translateY(-50%);
+	-moz-transform:translateY(-50%);
+	-ms-transform:translateY(-50%);
+	-o-transform:translateY(-50%);
+	transform:translateY(-50%);
+	width:100%;
+	margin:0;
+	text-align:center;
+	#text-transform:uppercase;
+	font-family:"Slabo 13px", sans-serif;
+	font-size:1.5em;
+	font-weight:normal;
+	word-spacing:5px;
+	color:transparent;
+	cursor:pointer;
+	opacity:1;
+}
+
+.plus {
+	position:absolute;
+	bottom:16%;
+	left:50%;
+	-webkit-transform:translateX(-50%);
+	-moz-transform:translateX(-50%);
+	-ms-transform:translateX(-50%);
+	-o-transform:translateX(-50%);
+	transform:translateX(-50%);
+	height:40px;
+	width:40px;
+	cursor:pointer;
+}
+
+
+.plus:before, .plus:after {
+	content:"";
+	position:absolute;
+	top:10px;
+	left:18px;
+	width:4px;
+	height:20px;
+	border-radius:2px;
+	background-color:transparent;
+	opacity:1;
+}
+
+.plus:after {
+	-webkit-transform:rotate(90deg);
+	-moz-transform:rotate(90deg);
+	-ms-transform:rotate(90deg);
+	-o-transform:rotate(90deg);
+	transform:rotate(90deg);
+}
+
+.minus {
+position:absolute;
+	bottom:16%;
+	left:50%;
+	-webkit-transform:translateX(-50%);
+	-moz-transform:translateX(-50%);
+	-ms-transform:translateX(-50%);
+	-o-transform:translateX(-50%);
+	transform:translateX(-50%);
+	height:40px;
+	width:40px;
+	cursor:pointer;
+}
+
+.minus:before, .minus:after {
+	content:"";
+	position:absolute;
+	top:10px;
+	left:18px;
+	width:4px;
+	height:20px;
+	border-radius:2px;
+	background-color:transparent;
+	opacity:1;
+	-webkit-transform:rotate(90deg);
+	-moz-transform:rotate(90deg);
+	-ms-transform:rotate(90deg);
+	-o-transform:rotate(90deg);
+	transform:rotate(90deg);
+}
+
+@-webkit-keyframes plusBump {
+	0%		{width:4px; height:20px; left:18px; top:10px;}
+	100%	{width:5px; height:25px; left:17.5px; top:7.5px;}
+}
+@-moz-keyframes plusBump {
+	0%		{width:4px; height:20px; left:18px; top:10px;}
+	100%	{width:5px; height:25px; left:17.5px; top:7.5px;}
+}
+@-o-keyframes plusBump {
+	0%		{width:4px; height:20px; left:18px; top:10px;}
+	100%	{width:5px; height:25px; left:17.5px; top:7.5px;}
+}
+@keyframes plusBump {
+	0%		{width:4px; height:20px; left:18px; top:10px;}
+	100%	{width:5px; height:25px; left:17.5px; top:7.5px;}
+}
+
+.hexlink:hover .hexcover {background-color:#C9CFD9;}
+
+.hexlink:hover h3 {color:#566676;}
+
+.hexlink:hover .plus:before, .hexlink:hover .plus:after {
+	background-color:#FFFFFF;
+	-webkit-animation:plusBump 150ms ease 0.4s 4 alternate;
+	-moz-animation:plusBump 150ms ease 0.4s 4 alternate;
+	-o-animation:plusBump 150ms ease 0.4s 4 alternate;
+	animation:plusBump 150ms ease 0.4s 4 alternate;
+}
+
+.hexlink:hover .minus:before, .hexlink:hover .minus:after {
+	background-color:#FFFFFF;
+	-webkit-animation:plusBump 150ms ease 0.4s 4 alternate;
+	-moz-animation:plusBump 150ms ease 0.4s 4 alternate;
+	-o-animation:plusBump 150ms ease 0.4s 4 alternate;
+	animation:plusBump 150ms ease 0.4s 4 alternate;
+}
+
+.notes {
+	font-family:"Slabo 13px", sans-serif;
+	font-weight:normal;
+	color:#566676;
+}
+
+.notes a {
+	text-decoration:none;
+	font-family:"Slabo 13px", sans-serif;
+	font-weight:normal;
+	color:#D8334A;
+}
+
+.notes a:hover {color:#F8536A;}
+
+.hexcover, .hexlink h3, .plus, .plus:before, .plus:after,  .minus, .minus:before, .minus:after, .notes a {
+	-webkit-transition-duration:0.3s;
+	-moz-transition-duration:0.3s;
+	-o-transition-duration:0.3s;
+	transition-duration:0.3s;
+}
+
+
