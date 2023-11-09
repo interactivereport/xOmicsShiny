@@ -207,7 +207,7 @@ drc_server <- function(id) {
 				data_long <- DataInSets[[working_project()]]$data_long
 				req("UniqueID" %in% colnames(data_long) & "group" %in% colnames(data_long))
 				DataIngenes <-  data_long  %>% dplyr::pull(UniqueID) %>% unique() %>% as.character()
-				updateSelectizeInput(session,'sel_gene1', choices= DataIngenes, server=TRUE)
+					updateSelectizeInput(session,'sel_gene1', choices= DataIngenes, server=TRUE)
 				group <-  data_long %>% dplyr::pull(group) %>% unique() %>% as.character()
 				updateSelectizeInput(session,'sel_treatment1', choices= group,  selected=group)
 				updateSelectizeInput(session,'sel_treatment1b', choices= group,  selected=group[1])

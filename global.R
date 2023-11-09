@@ -277,5 +277,5 @@ if (file.exists("config.csv")) { #load optional configuration file
 
 footer_text = '
 <hr>
-<div align="center" style="font-size:11px">Multiomics Visualization Version 1.0</div>
+<div align="center" style="font-size:11px">xOmicsShiny Version 1.0</div>
 '

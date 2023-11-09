@@ -966,8 +966,7 @@ deg_server <- function(id) {
 			})
 
 			output$download_data_button <- shiny::downloadHandler(
-
-				filename = function() {
+				filename <- function() {
 					paste("Data-", Sys.Date(), ".csv", sep="")
 				},
 				content = function(file) {
@@ -977,7 +976,6 @@ deg_server <- function(id) {
 					DEGCompareRes <- rescompare$res %>%
 					dplyr::select(-any_of(c("id.x", "color.x","labelgeneid.x","id.y", "color.y",	"labelgeneid.y"))) 	%>%
 					dplyr::mutate_if(is.numeric, round, digits = 4)
-
 					write.csv(DEGCompareRes, file)
 				}
 			)

@@ -347,7 +347,7 @@ DataReactiveDB <- reactive({
 		#ProjectID = info$value
 
 		#ProjectID = "GSE51799"
-		#ProjectID = "GSE51684"
+		#ProjectID = "GSE51684" #als
 		#ProjectID = "GSE11227"
 		#ProjectID = "GSE1145"
 		#ProjectID = "GSE18956"

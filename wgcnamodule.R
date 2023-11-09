@@ -25,7 +25,6 @@ wgcna_ui <- function(id) {
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
 				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes:",  value=250, min=250, step=25),
 				actionButton(ns("plotwgcna"),"Generate")
-
 			)
 		),
 		column(9,
@@ -156,26 +155,21 @@ wgcna_server <- function(id) {
 					temp_cor <- cor
 					cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
 					netwk <- blockwiseModules(dataExpr,                # <= input here
-
 						# == Adjacency Function ==
 						power = picked_power,                # <= power here
 						networkType = "signed",
-
 						# == Tree and Block Options ==
 						deepSplit = 2,
 						pamRespectsDendro = F,
 						# detectCutHeight = 0.75,
 						minModuleSize = 30,
 						maxBlockSize = 4000,
-
 						# == Module Adjustments ==
 						reassignThreshold = 0,
 						mergeCutHeight = 0.25,
-
 						# == TOM == Archive the run results in TOM file (saves time)
 						saveTOMs = F,
 						saveTOMFileBase = "ER",
-
 						# == Output Options
 						numericLabels = T,
 					verbose = 3)

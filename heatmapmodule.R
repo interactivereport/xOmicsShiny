@@ -94,7 +94,6 @@ heatmap_ui <- function(id) {
 					),
 					radioButtons(ns("label"),label="Gene Label",inline = TRUE, choices=""),
 					sliderInput(ns("N_genes"), "Max Number of Genes to Label:", min = 0, max = 500, step = 10, value = 100),
-
 					radioButtons(ns("highlight"), label="Highlight Subset of Genes:", inline = TRUE, choices = c("Yes","No"), selected = "No"),
 					conditionalPanel(ns = ns, "input.highlight=='Yes'",
 						uiOutput(ns("gene_highlight_file")),

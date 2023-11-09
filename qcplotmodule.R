@@ -24,7 +24,6 @@ qcplot_ui <- function(id) {
 				uiOutput(ns('loadedprojects')),
 				tags$style(mycss),
 				uiOutput(ns("selectGroupSample")),
-
 				conditionalPanel(ns = ns, "input.tabset=='PCA Plot'",
 					numericInput(ns("MaxPCANum"), label= "maximal number of principal components", value=10, min=2, max = 20, step=1),
 					conditionalPanel(ns = ns, "input.PCA_tabset=='PCA Plot' || input.PCA_tabset=='PCA 3D Interactive' || input.PCA_tabset=='PCA 3D Plot'",
