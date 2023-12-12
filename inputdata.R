@@ -819,7 +819,10 @@ DataReactiveTxt <- reactive({
 		returnlist[["ShortName"]] <- Project_name
 		returnlist[["Path"]] <- ProjectPath
 		returnlist[["file1"]] <- file1
-		returnlist[["file2"]] <- file2
+		# Unlike in DataReactiveRdata(), 'file2' is not defined in DataReactiveTxt()
+		# Hence, set returnlist[["file2]] = NULL; otherwise error message shows up
+		# when uploading csv files: "object file2 not found"
+		returnlist[["file2"]] <- NULL
 		returnlist[["exp_unit"]] <- exp_unit
 		returnlist[["MetaData"]] = MetaData
 		returnlist[["MetaData_long"]] = MetaData_long
