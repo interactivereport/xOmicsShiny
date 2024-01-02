@@ -78,6 +78,12 @@ wgcna_server <- function(id) {
 					dataExpr[is.na(dataExpr) | dataExpr=="Inf"] = NA
 
 					SubGeneNames=gene.names[1:topNum]
+					
+					# Ensure all columns are numeric before transposing; otherwise cell values may
+					# become character, causing problems in WGCNA::blockwiseModules, as happened to
+					# the Mouse_microglia_RNA-Seq data
+					dataExpr <-  dataExpr %>%
+					  dplyr::select(tidyselect::where(is.numeric))
 
 					dataExpr = as.data.frame(t(dataExpr))
 					dataExpr= dataExpr[,1:topNum]
