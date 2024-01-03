@@ -24,6 +24,8 @@ wgcna_ui <- function(id) {
 				sliderInput(ns("wgcna_rcut"), label= "Choose r Cutoff",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
 				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes:",  value=250, min=250, step=25),
+				numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30, min= 1, max = 1000),
+				numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Generate")
 
 			)
@@ -171,8 +173,8 @@ wgcna_server <- function(id) {
 						deepSplit = 2,
 						pamRespectsDendro = F,
 						# detectCutHeight = 0.75,
-						minModuleSize = 30,
-						maxBlockSize = 4000,
+						minModuleSize = input$minModuleSize, #30,
+						maxBlockSize = input$maxBlockSize,#4000,
 
 						# == Module Adjustments ==
 						reassignThreshold = 0,
