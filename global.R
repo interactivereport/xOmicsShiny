@@ -30,6 +30,7 @@ suppressPackageStartupMessages({
 	library(stringr)
 	library(ggrastr)
 	library(ggpmisc)
+  library(rclipboard)
 })
 
 resultfilter <- function(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label) {
