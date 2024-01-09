@@ -16,7 +16,6 @@ library(WGCNA)
 
 wgcna_ui <- function(id) {
 	ns <- shiny::NS(id)
-	#rclipboard::rclipboardSetup() 
 	fluidRow(
 	  rclipboard::rclipboardSetup(),
 		column(3,
@@ -39,8 +38,6 @@ wgcna_ui <- function(id) {
 				),
 				#tabPanel(title="Heatmap", value="Heatmap", uiOutput(ns("Heatmap"), style = "background-color: #eeeeee;")), #height="800px"
 				#tabPanel(title="Adjacency Matrix", value="Adjacency Matrix", 	DT::dataTableOutput(ns("adj_WGCNA"))),
-				#rclipboardSetup(),
-				#tabPanel(title="Gene groups", DT::dataTableOutput(ns("gene_group"))),
 				tabPanel(title="Gene Clusters", DT::dataTableOutput(ns("gene_cluster"))),
 				tabPanel(title="Help", htmlOutput('help_WGCNA'))
 			)
@@ -205,8 +202,9 @@ wgcna_server <- function(id) {
 			  
 			})
 			
-			
-			observeEvent(input$plotwgcna,{
+			# use input$WGCNAReactive() as event handler to ensure observeEvent() depends on it only
+			# and does not directly depends on input$, which ensure WGCNAReactive() will be calculated first.
+			observeEvent(WGCNAReactive(),{
 
 				output$Dendrogram <- renderPlot({
 					netwk <-	WGCNAReactive()
