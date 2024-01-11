@@ -23,9 +23,9 @@ wgcna_ui <- function(id) {
 				radioButtons(ns("WGCNAgenelable"),label="Select Gene Label",inline = TRUE, choices=c("Gene.Name","UniqueID"), selected="Gene.Name"),
 				sliderInput(ns("wgcna_rcut"), label= "Choose r Cutoff",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
-				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes:",  value=250, min=250, step=25),
-				numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30, min= 1, max = 1000),
-				numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
+				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes (also set to be max block size):",  value=250L, min=250L, step=25L, max = 5000L),
+				numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
+				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Run")
 
 			)
@@ -89,7 +89,7 @@ wgcna_server <- function(id) {
 			    dataExpr <- column_to_rownames(dataExpr, var = "UniqueID")
 			    dataExpr[is.na(dataExpr) | dataExpr=="Inf"] = NA
 			    
-			    SubGeneNames=gene.names[1:topNum]
+			    SubGeneNames=gene.names[1L:topNum]
 			    
 			    # Ensure all columns are numeric before transposing; otherwise cell values may
 			    # become character, causing problems in WGCNA::blockwiseModules, as happened to
@@ -98,14 +98,14 @@ wgcna_server <- function(id) {
 			      dplyr::select(tidyselect::where(is.numeric))
 			    
 			    dataExpr = as.data.frame(t(dataExpr))
-			    dataExpr= dataExpr[,1:topNum]
+			    dataExpr= dataExpr[,1L:topNum]
 			    
 			    WGCNA::allowWGCNAThreads()
-			    ALLOW_WGCNA_THREADS=8
+			    ALLOW_WGCNA_THREADS=8L
 			    enableWGCNAThreads()
 			    
 			    # Choose a set of soft-thresholding powers
-			    powers <- c(c(1:10), seq(from = 12, to = 20, by = 2))
+			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
 			    r2_cutoff <- input$wgcna_rcut
 			    
 			    cor <- WGCNA::cor
@@ -180,11 +180,13 @@ wgcna_server <- function(id) {
 			                              networkType = "signed",
 			                              
 			                              # == Tree and Block Options ==
-			                              deepSplit = 2,
+			                              deepSplit = 2L,
 			                              pamRespectsDendro = F,
 			                              # detectCutHeight = 0.75,
 			                              minModuleSize = input$minModuleSize, #30,
-			                              maxBlockSize = input$maxBlockSize,#4000,
+			                              # set block size to be number of genes, so that all
+			                              # genes will be analyzed in a single block
+			                              maxBlockSize = input$WGCNAtopNum,#4000,
 			                              
 			                              # == Module Adjustments ==
 			                              reassignThreshold = 0,
@@ -196,7 +198,7 @@ wgcna_server <- function(id) {
 			                              
 			                              # == Output Options
 			                              numericLabels = T,
-			                              verbose = 3)
+			                              verbose = 3L)
 			    cor <- temp_cor
 			  }
 			  netwk
