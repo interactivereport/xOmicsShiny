@@ -27,7 +27,9 @@ wgcna_ui <- function(id) {
 				numericInput(ns("mergeCutHeight"), label= "Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
 				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
-				actionButton(ns("plotwgcna"),"Run")
+				actionButton(ns("plotwgcna"),"Run"),
+				br(),
+				span("Running time may be long, so refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
 
 			)
 		),
