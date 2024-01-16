@@ -20,6 +20,7 @@ library(gplots)
 venn_ui <- function(id) {
 	ns <- shiny::NS(id)
 	fluidRow(
+	  rclipboard::rclipboardSetup(),
 		column(3,
 			wellPanel(
 				uiOutput(ns('loaddatasets')),
@@ -432,7 +433,32 @@ venn_server <- function(id) {
 			output$UpSetsList <- DT::renderDT(server=FALSE,{
 				result_long_tmp <- upsets_out()$UpSetlist
 				result_long_tmp[,sapply(result_long_tmp,is.numeric)] <- signif(result_long_tmp[,sapply(result_long_tmp,is.numeric)],3)
-				DT::datatable(result_long_tmp,  extensions = 'Buttons',  options = list(
+				
+				# Convert a list of strings to a vector, and then collapse the vector into a single string
+				# Otherwise, "copy" will copy a list of strings with quotation marks
+				result_long_tmp$Label_IDs <- paste0(unlist(result_long_tmp$labelids), collapse = ",")
+				
+				result_long_tmp$Action <- vapply(1L:nrow(result_long_tmp), function(i){
+				  as.character(
+				    rclipButton(
+				      paste0("clipbtn_", i), 
+				      label = "Copy", 
+				      clipText = result_long_tmp[i, "Label_IDs"], 
+				      #icon = icon("clipboard"),
+				      icon = icon("copy", lib = "glyphicon"),
+				      class = "btn-primary btn-sm"
+				    )
+				  )
+				}, character(1L))
+				
+
+				
+				# re-arrange columns
+				result_long_tmp <- result_long_tmp %>% 
+				  dplyr::select(-labelids) %>% 
+				  dplyr::relocate(Action, .before = Label_IDs)
+				
+				DT::datatable(result_long_tmp,  extensions = 'Buttons', escape = FALSE, selection = "none", options = list(
 					dom = 'lBfrtip', pageLength = 15,
 					buttons = list(
 						list(extend = "csv", text = "Download Page", filename = "Page_results",
