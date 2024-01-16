@@ -24,7 +24,8 @@ wgcna_ui <- function(id) {
 				sliderInput(ns("wgcna_rcut"), label= "Choose r Cutoff",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
 				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes (also set to be max block size):",  value=250L, min=250L, step=25L, max = 5000L),
-				numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
+				numericInput(ns("mergeCutHeight"), label= "Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
+				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Run")
 
@@ -183,14 +184,14 @@ wgcna_server <- function(id) {
 			                              deepSplit = 2L,
 			                              pamRespectsDendro = F,
 			                              # detectCutHeight = 0.75,
-			                              minModuleSize = input$minModuleSize, #30,
+			                              minModuleSize = 30, #input$minModuleSize, #30,
 			                              # set block size to be number of genes, so that all
 			                              # genes will be analyzed in a single block
 			                              maxBlockSize = input$WGCNAtopNum,#4000,
 			                              
 			                              # == Module Adjustments ==
 			                              reassignThreshold = 0,
-			                              mergeCutHeight = 0.25,
+			                              mergeCutHeight = input$mergeCutHeight,#,0.25,
 			                              
 			                              # == TOM == Archive the run results in TOM file (saves time)
 			                              saveTOMs = F,
