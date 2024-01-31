@@ -1,7 +1,27 @@
 {
   "R": {
-    "Version": "4.2.0",
+    "Version": "4.2.2",
     "Repositories": [
+      {
+        "Name": "BioCsoft",
+        "URL": "https://bioconductor.org/packages/3.16/bioc"
+      },
+      {
+        "Name": "BioCann",
+        "URL": "https://bioconductor.org/packages/3.16/data/annotation"
+      },
+      {
+        "Name": "BioCexp",
+        "URL": "https://bioconductor.org/packages/3.16/data/experiment"
+      },
+      {
+        "Name": "BioCworkflows",
+        "URL": "https://bioconductor.org/packages/3.16/workflows"
+      },
+      {
+        "Name": "BioCbooks",
+        "URL": "https://bioconductor.org/packages/3.16/books"
+      },
       {
         "Name": "CRAN",
         "URL": "https://cloud.r-project.org"
@@ -93,6 +113,24 @@
         "utils"
       ],
       "Hash": "d57e43105a1aa9cb54fdb4629725acb1"
+    },
+    "BiocParallel": {
+      "Package": "BiocParallel",
+      "Version": "1.32.6",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "BH",
+        "R",
+        "codetools",
+        "cpp11",
+        "futile.logger",
+        "methods",
+        "parallel",
+        "snow",
+        "stats",
+        "utils"
+      ],
+      "Hash": "bcdac842fb312bb25f9f82bc141889e5"
     },
     "BiocVersion": {
       "Package": "BiocVersion",
@@ -1638,6 +1676,36 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "f7736a18de97dea803bde0a2daaafb27"
+    },
+    "fastmatch": {
+      "Package": "fastmatch",
+      "Version": "1.1-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "8c406b7284bbaef08e01c6687367f195"
+    },
+    "fgsea": {
+      "Package": "fgsea",
+      "Version": "1.24.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "BH",
+        "BiocParallel",
+        "Matrix",
+        "R",
+        "Rcpp",
+        "cowplot",
+        "data.table",
+        "fastmatch",
+        "ggplot2",
+        "grid",
+        "stats",
+        "utils"
+      ],
+      "Hash": "c682d67fea435759f50ff8dc6dcd6b8d"
     },
     "filelock": {
       "Package": "filelock",
@@ -3330,6 +3398,18 @@
       ],
       "Hash": "5e3c5dc0b071b21fa128676560dbe94d"
     },
+    "rclipboard": {
+      "Package": "rclipboard",
+      "Version": "0.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "bslib",
+        "shiny"
+      ],
+      "Hash": "828ce14c3a1d8548cdb6c60f3f09f808"
+    },
     "rcmdcheck": {
       "Package": "rcmdcheck",
       "Version": "1.4.0",
@@ -3862,6 +3942,17 @@
         "shiny"
       ],
       "Hash": "30f0ebc41feba25691073626ff5e2cf4"
+    },
+    "snow": {
+      "Package": "snow",
+      "Version": "0.4-4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "utils"
+      ],
+      "Hash": "40b74690debd20c57d93d8c246b305d4"
     },
     "sourcetools": {
       "Package": "sourcetools",
