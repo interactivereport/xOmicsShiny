@@ -436,7 +436,11 @@ venn_server <- function(id) {
 				
 				# Convert a list of strings to a vector, and then collapse the vector into a single string
 				# Otherwise, "copy" will copy a list of strings with quotation marks
-				result_long_tmp$Label_IDs <- paste0(unlist(result_long_tmp$labelids), collapse = ",")
+				result_long_tmp$Label_IDs <- NA
+				
+				for (i in 1:nrow(result_long_tmp)) {
+				  result_long_tmp$Label_IDs[i] = paste0(unlist(result_long_tmp$labelids[i]), collapse = ",")
+				}
 				
 				result_long_tmp$Action <- vapply(1L:nrow(result_long_tmp), function(i){
 				  as.character(
