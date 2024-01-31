@@ -2969,6 +2969,28 @@
       ],
       "Hash": "e22193c47c891d1a011dade7f262cc65"
     },
+    "org.Mm.eg.db": {
+      "Package": "org.Mm.eg.db",
+      "Version": "3.16.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "AnnotationDbi",
+        "R",
+        "methods"
+      ],
+      "Hash": "f03f94839b1db9ef14042e62135f0bb5"
+    },
+    "org.Rn.eg.db": {
+      "Package": "org.Rn.eg.db",
+      "Version": "3.16.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "AnnotationDbi",
+        "R",
+        "methods"
+      ],
+      "Hash": "ca4a6cdde7df2828d9a43304f83c5b26"
+    },
     "pathview": {
       "Package": "pathview",
       "Version": "1.38.0",

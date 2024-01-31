@@ -21,7 +21,7 @@ library(biomaRt)
 #library(enrichR)
 library(ComplexHeatmap)
 library(fgsea)
-
+library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 
 geneset_ui <- function(id) {
   ns <- shiny::NS(id)
@@ -245,6 +245,7 @@ geneset_server <- function(id) {
                               mapped_symbols<-homolog_mapping(GSEA.terminals.df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
                             GSEA.terminals.df<-GSEA.terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>% 
                               dplyr::distinct(., Gene.Name,.keep_all = TRUE)
+                            browser()
                           }
                           
                           
@@ -378,10 +379,11 @@ geneset_server <- function(id) {
                                 mapped_symbols<-str_to_title(terminals.df$Gene.Name); all_genes=str_to_title(all_genes)
                               } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
                                 mapped_symbols<-homolog_mapping(terminals.df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs)
+                                terminals.df<-terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>%
+                                  dplyr::distinct(., Gene.Name,.keep_all = TRUE)
                                 all_genes <-homolog_mapping(all_genes , ProjectInfo$Species, input$MSigDB_species, homologs)
                               } 
-                              terminals.df<-terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>%
-                                dplyr::distinct(., Gene.Name,.keep_all = TRUE)
+                              browser()
                               }
                             
                             filteredgene <-  terminals.df %>%  mutate(P.stat=ifelse(input$geneset_psel == "Padj",  Adj.P.Value,  P.Value)) %>%
