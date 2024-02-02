@@ -10,6 +10,7 @@
 ###########################################################################################################
 # pkgs: "rgl","car","factoextra","ComplexHeatmap", "DT", "dplyr", "tibble", "ggpubr"
 # req data:MetaData, ProteinGeneNameHeader, exp_unit, data_long, data_wide, group_order, sample_order
+options(rgl.useNULL = TRUE)
 library(rgl)
 library(car)
 library(factoextra)
@@ -24,7 +25,6 @@ qcplot_ui <- function(id) {
 				uiOutput(ns('loadedprojects')),
 				tags$style(mycss),
 				uiOutput(ns("selectGroupSample")),
-
 				conditionalPanel(ns = ns, "input.tabset=='PCA Plot'",
 					numericInput(ns("MaxPCANum"), label= "maximal number of principal components", value=10, min=2, max = 20, step=1),
 					conditionalPanel(ns = ns, "input.PCA_tabset=='PCA Plot' || input.PCA_tabset=='PCA 3D Interactive' || input.PCA_tabset=='PCA 3D Plot'",
@@ -232,7 +232,7 @@ qcplot_server <- function(id) {
 
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)
-				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 			})
 
 			observeEvent(input$current_dataset, {
@@ -510,7 +510,7 @@ qcplot_server <- function(id) {
 				scores$tmp_group <- scores[, colnames(scores)==PCAcolorby]
 
 				#rgl.open(useNULL=T)
-				options(rgl.useNULL=TRUE)
+				#options(rgl.useNULL=TRUE)
 				if (input$ellipsoid3d == "Yes") {
 					ellipsoid3d = TRUE
 				} else {

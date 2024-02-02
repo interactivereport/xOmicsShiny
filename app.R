@@ -167,7 +167,6 @@ server <- function(input, output, session) {
 				radioButtons("savetoserver", label="Save to Server", choices=c("YES","NO"), inline = T, selected="NO"),
 				radioButtons("folder_name", label="Folder Name", choices=c("unlisted", "data"), inline = T, selected="unlisted"),
 				tags$hr(),
-
 				actionButton("uploadData", "Submit Data")
 			)
 		})

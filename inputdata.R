@@ -12,7 +12,7 @@
 
 working_project <- reactiveVal()
 DataInSets <- reactiveValues()
-
+DS_names<- reactiveVal() #track loaded projects (not NULL) in DataInSets
 saved_plots <- reactiveValues()
 saved_table <- reactiveValues()
 ##################
@@ -878,6 +878,9 @@ observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 	ProjectID <- DataIn$ProjectID
 	working_project(ProjectID)
 	DataInSets[[ProjectID]]  <-  DataIn
+	DataInSets_List<-reactiveValuesToList(DataInSets)
+	DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
+	DS_names(names(DataInSets_List))
 
 	if (length(names(DataInSets)) == 1) {
 		if (!(modulelist[15] %in% saved_setting$value)) {
@@ -951,13 +954,18 @@ observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 })
 
 observeEvent(input$removedata, {
-	DataInSets[[working_project()]] <- NULL
-	currentproject = working_project()
+  DataInSets[[working_project()]] <- NULL
+	#currentproject = working_project()
+  DataInSets_List<-reactiveValuesToList(DataInSets)
+  DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
+	if (length(names(DataInSets_List))>0) {
+	  working_project(names(DataInSets_List)[1])
+	} else { working_project(NULL) }
+  DS_names(names(DataInSets_List))
 	#make(lock_envir = FALSE)
 	#rm(currentproject, envir = .subset2(DataInSets, "impl")$.values)
 	#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
 	#.subset2(DataInSets, "impl")$.values$remove(currentproject)
-
 })
 ## save tables
 observeEvent(input$results, {
@@ -1018,7 +1026,7 @@ observeEvent(input$ShortName, {
 ###
 output$loadedprojects <- renderUI({
 	req(length(working_project()) > 0)
-	radioButtons("current_dataset", label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
+	radioButtons("current_dataset", label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 })
 
 observeEvent(input$current_dataset, {
