@@ -37,6 +37,15 @@ geneset_ui <- function(id) {
              ),
              conditionalPanel(ns = ns, "input.ORA_input_type!='Gene List' || input.geneset_tabset!='Over-Representation Analysis (ORA)' ",
                               selectInput(ns("geneset_test"), label="Select Comparison for Gene Set Analysis", choices=NULL),
+                              tags$hr(style="border-color: RoyalBlue;"),
+                              checkboxInput(ns("comparison_2"), "Add 2nd Comparison for Gene + Compound Analysis",  FALSE, width="95%"),
+                              conditionalPanel(ns = ns, "input.comparison_2==1",
+                                               p("Select this option only when you have genes in one comparison, and compounds from the same expriment in another comparison. Compounds should have Gene.Name in KEGG compound ID format(e.g. C12345, C05519).", 
+                                                 style = "color:red; font-size:11px; font-family:arial; font-style:italic"),
+                                               selectInput(ns("dataset_2"), label="Dataset", choices=NULL),
+                                               selectInput(ns("geneset_test_2nd"), label="Select 2nd Comparison", choices=NULL)
+                              ),
+                              tags$hr(style="border-color: RoyalBlue;"),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Over-Representation Analysis (ORA)' || input.geneset_tabset=='Gene Expression'",
                                                column(width=6,numericInput(ns("geneset_FCcut"), label= "Fold Change Cutoff", value = 1.2, min=1, step=0.1)),
                                                column(width=6,numericInput(ns("geneset_pvalcut"), label= "P Value Cutoff", value=0.01, min=0, step=0.001)),
@@ -81,7 +90,7 @@ geneset_ui <- function(id) {
              ),				
              conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Heatmap'",
                               column(width=6,sliderInput(ns("hxfontsize_gsh"), "Column Font Size:", min = 2, max = 24, step = 1, value = 12)),
-                              column(width=6,sliderInput(ns("hyfontsize_gsh"), "Row Font Size:", min = 2, max = 24, step = 1, value = 12)),
+                              column(width=6,sliderInput(ns("hyfontsize_gsh"), "Row Font Size:", min = 2, max = 24, step = 1, value = 10)),
                               column(width=6,sliderInput(ns("htfontsize_gsh"), "Title Font Size:", min = 10, max = 32, step = 1, value = 14)),
                               column(width=6,sliderInput(ns("hlfontsize_gsh"), "Legend Font Size:", min = 2, max = 20, step = 1, value = 10)),
                               radioButtons(ns("gs_heatmap_label"),label="Gene Label",inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="Gene.Name"),
@@ -90,8 +99,9 @@ geneset_ui <- function(id) {
              ),
              
              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
-                              selectInput(ns("kegg_logFC"), label= "KEGG view log2FC Range:", choices= c(1, 2, 3), selected=1),
-                              radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("YEs"=TRUE, "No"=FALSE),inline = TRUE))
+                              selectInput(ns("kegg_logFC"), label= "KEGG gene log2FC Range:", choices= c(1, 2, 3), selected=1),
+                              selectInput(ns("kegg_logFC_cpd"), label= "KEGG compound log2FC Range:", choices= c(1, 2, 3), selected=1),
+                              radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE))
            )
     ),
     column(9,
@@ -130,9 +140,22 @@ geneset_server <- function(id) {
                       function(input, output, session) {
                         ns <- shiny::NS(id)
                         
+                        #define UI for xOmicsShiny
                         output$loadedprojects <- renderUI({
                           req(length(working_project()) > 0)
                           radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+                        })
+                        
+                        observe({
+                          req(length(DS_names()) > 0)
+                          updateSelectizeInput(session,'dataset_2',choices=DS_names(), selected=NULL)
+                        })
+                        
+                        observeEvent(input$dataset_2, {
+                          req(input$dataset_2)
+                          DataIn_2 = DataInSets[[input$dataset_2]]
+                          tests_2 = DataIn_2$tests
+                          updateSelectizeInput(session,'geneset_test_2nd',choices=tests_2, selected=tests_2[1])
                         })
                         
                         observeEvent(input$current_dataset, {
@@ -155,16 +178,45 @@ geneset_server <- function(id) {
                           
                           DataReactive <-reactive({
                             req(length(working_project()) > 0)
-                            DataInSets[[working_project()]]
+                            Data1<-DataInSets[[working_project()]]
+                            # append 2nd comparison if selected
+                            if (!is.null(input$comparison_2)){
+                              if (input$comparison_2==1) {
+                                if (!is.null(input$dataset_2)) {
+                                  Data2<-DataInSets[[input$dataset_2]]
+                                  ProteinGeneName1<-Data1$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                  ProteinGeneName2<-Data2$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                  ProteinGeneName_combined<-rbind(ProteinGeneName1, ProteinGeneName2)%>%dplyr::filter(!duplicated(UniqueID))
+                                  Data1$ProteinGeneName=ProteinGeneName_combined
+                                  #for 2nd comparison, only use new uniqueIDs
+                                  results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
+                                  results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
+                                      mutate(test=input$geneset_test)
+                                  results_long2_otherTests<-Data2$results_long%>%dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
+                                                    test %in% unique(Data1$results_long$test) ) #add other tests if test name match
+                                  cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
+                                  if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
+                                  if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
+                                  results_long_combined<-rbind(Data1$results_long, results_long2_selTest, results_long2_otherTests)
+                                  Data1$results_long=results_long_combined
+                                  #combined data_long
+                                  data_long1<-Data1$data_long
+                                  data_long2<-Data2$data_long%>%dplyr::filter(group %in%data_long1$group,  !(UniqueID %in% results_long1_selTest$UniqueID) )
+                                  data_long_combined<-rbind(data_long1, data_long2)
+                                  Data1$data_long=data_long_combined
+                                }
+                              }
+                            } 
+                            return(Data1)
                           })
                         }
                         ###
                         
-                        
+                        active_tests<-reactiveVal(NULL)
                         observe({
                           DataIn = DataReactive()
-                          tests = DataIn$tests
-                          updateSelectizeInput(session,'geneset_test',choices=tests, selected=tests[1])
+                          tests=DataIn$tests
+                          active_tests(tests)
                           tests_more=c("None", tests)
                           updateSelectizeInput(session,'geneset_test2',choices=tests_more, selected="None")
                           updateSelectizeInput(session,'geneset_test3',choices=tests_more, selected="None")
@@ -172,6 +224,11 @@ geneset_server <- function(id) {
                           updateSelectizeInput(session,'geneset_test5',choices=tests_more, selected="None")
                         })
                         
+                        observeEvent(active_tests(),{
+                          req(active_tests())
+                          tests=active_tests()
+                          updateSelectizeInput(session,'geneset_test',choices=tests, selected=tests[1])
+                        })
                         
                         
                         observe({
@@ -189,10 +246,11 @@ geneset_server <- function(id) {
                           }
                         })
                         #browser() 
-                        observeEvent(ProjectInfo,{
+                        observeEvent(working_project(),{
                           if (!is.null(ProjectInfo$Species)) {
                             if (ProjectInfo$Species %in% c("human","mouse", "rat") ) {
                               updateRadioButtons(session, "MSigDB_species", selected = ProjectInfo$Species)
+                             # cat("Speceis choice updatef, species is", ProjectInfo$Species, "\n")
                             }
                           }
                         })
@@ -599,6 +657,10 @@ geneset_server <- function(id) {
                           pid <- strsplit(ID,"_")[[1]][1]
                           img.file <- paste(pid,"pathview","png",sep=".")
                           dataIn=DataReactive()
+                          results_long=dataIn$results_long
+                          ProteinGeneName = dataIn$ProteinGeneName
+                          comp_sel = input$geneset_test
+                          
                           data_results=dataIn$data_results
                           if (file.exists(img.file)) {
                             file.remove(img.file)
@@ -611,36 +673,53 @@ geneset_server <- function(id) {
                             if (input$geneset_test4!="None") {tests=c(tests, input$geneset_test4)}
                             if (input$geneset_test5!="None") {tests=c(tests, input$geneset_test5)}
                           }
-                          selCol=rep(NA, length(tests))
-                          all_names=names(data_results)
-                          for (i in 1:length(tests)) {
-                            sel_i=which(str_detect(all_names, regex(str_c("^", tests[i]), ignore_case=T)) & str_detect(all_names, regex("logFC$", ignore_case=T)) )
-                            if (length(sel_i)==1) {selCol[i]=sel_i}
-                          }
-                          #selCol=match(str_c(tests, ".logFC"), names(data_results) )
-                          if (sum(is.na(selCol))==0) {
-                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
-                              if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-toupper(data_results$Gene.Name)
-                              if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(data_results$Gene.Name)
-                              if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
-                                mapped_symbols<-homolog_mapping(data_results$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
-                              data_results<-data_results%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)
+                          ##Make FCdata  from results_long
+                          res1<-results_long%>%dplyr::filter(test==comp_sel)%>%dplyr::select(UniqueID, logFC); names(res1)[2]=comp_sel
+                          FC_df<-data.frame(UniqueID=unique(results_long$UniqueID))%>%left_join(ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name))%>%
+                            left_join(res1)
+                          if (length(tests)>1) {
+                            for (i in 2:length(tests)){
+                              comp_add=tests[i]
+                              res1<-results_long%>%dplyr::filter(test==comp_add)%>%dplyr::select(UniqueID, logFC); names(res1)[2]=comp_add
+                              FC_df<-FC_df%>%left_join(res1)
                             }
-
-                            sel_gene=which(!is.na(data_results$Gene.Name))
-                            FCdata=data.matrix(data_results[sel_gene, selCol])
-                            rownames(FCdata)=data_results$Gene.Name[sel_gene]
-                            #browser() 
-                            tmp <- pathview(gene.data=FCdata, pathway.id=pid, kegg.dir="./kegg", kegg.native = T, gene.idtype="SYMBOL", species=species,low = "green", mid = "yellow", high = "red",
-                                            same.layer = F, map.symbol=as.logical(input$kegg_mapsample), limit=list(gene=as.numeric(input$kegg_logFC), cpd=1) )
-                            if (ncol(FCdata)>1) {	img.file <- paste(pid,"pathview.multi.png",sep=".")}
-                          } else {
-                            cat("looking for additional comparisons failed", tests, selCol, "\ngo back to the first comparison\n")
-                            #browser()#debug
-                            tmp <- pathview(gene.data=sig_genes, pathway.id=pid, kegg.dir="./kegg", kegg.native = T, gene.idtype="SYMBOL", species=species,low = "green", mid = "yellow", high = "red",
-                                            same.layer = F, map.symbol=as.logical(input$kegg_mapsample), limit=list(gene=as.numeric(input$kegg_logFC), cpd=1) )
-                            img.file <- paste(pid,"pathview","png",sep=".")
                           }
+                          
+                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                            if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-toupper(FC_df$Gene.Name)
+                            if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(FC_df$Gene.Name)
+                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                              mapped_symbols<-homolog_mapping(FC_df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
+                              FC_df<-FC_df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)
+                          }
+                          
+                          selCol=which(names(FC_df) %in% tests)
+                          sel_gene=which(!is.na(FC_df$Gene.Name))
+                          FCdata=data.matrix(FC_df[sel_gene, selCol])
+                          all.names=FC_df$Gene.Name[sel_gene]
+                          rownames(FCdata)=all.names
+                          if (ncol(FCdata)>1) {	img.file <- paste(pid,"pathview.multi.png",sep=".")}
+                          #Separte genes and compounds
+                          is.compound=str_detect(all.names, "C\\d{5}$")
+                          FCdata_gene=FCdata[!is.compound, , drop=F]
+                          FCdata_compound=FCdata[is.compound, , drop=F]
+                          #browser()
+                          if (sum(!is.compound)>0) {
+                            tmp <- try (pathview(gene.data=FCdata_gene, cpd.data=FCdata_compound, pathway.id=pid, kegg.dir="./kegg", kegg.native = T, gene.idtype="SYMBOL", species=species,
+                                                 low = list(gene = "green", cpd = "blue"), mid = list(gene = "gray90", cpd = "gray90"), high = list(gene = "red", cpd ="yellow"),
+                                                 same.layer = F, map.symbol=as.logical(input$kegg_mapsample), limit=list(gene=as.numeric(input$kegg_logFC), cpd=as.numeric(input$kegg_logFC_cpd)) ) )
+                            if (class(tmp) == "try-error") { #if no gene mapped, the above command will fail, try the one below with compound only
+                              tmp <- pathview(cpd.data=FCdata_compound, pathway.id=pid, kegg.dir="./kegg", kegg.native = T,  species=species,
+                                              low = list(gene = "green", cpd = "blue"), mid = list(gene = "gray90", cpd = "gray90"), high = list(gene = "red", cpd ="yellow"),
+                                              same.layer = F, limit=list(gene=as.numeric(input$kegg_logFC), cpd=as.numeric(input$kegg_logFC_cpd)) )
+                            
+                            }
+                          } else {
+                            tmp <- pathview(cpd.data=FCdata_compound, pathway.id=pid, kegg.dir="./kegg", kegg.native = T,  species=species,
+                                            low = list(gene = "green", cpd = "blue"), mid = list(gene = "gray90", cpd = "gray90"), high = list(gene = "red", cpd ="yellow"),
+                                            same.layer = F, limit=list(gene=as.numeric(input$kegg_logFC), cpd=as.numeric(input$kegg_logFC_cpd)) )
+                          }
+                            
                           #browser() #debug
                           return(img.file)
                         })
