@@ -178,33 +178,37 @@ geneset_server <- function(id) {
                           
                           DataReactive <-reactive({
                             req(length(working_project()) > 0)
+                            req(DataInSets[[working_project()]])
                             Data1<-DataInSets[[working_project()]]
                             # append 2nd comparison if selected
                             if (!is.null(input$comparison_2)){
                               if (input$comparison_2==1) {
                                 if (!is.null(input$dataset_2)) {
                                   Data2<-DataInSets[[input$dataset_2]]
-                                  ProteinGeneName1<-Data1$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
-                                  ProteinGeneName2<-Data2$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
-                                  ProteinGeneName_combined<-rbind(ProteinGeneName1, ProteinGeneName2)%>%dplyr::filter(!duplicated(UniqueID))
-                                  Data1$ProteinGeneName=ProteinGeneName_combined
-                                  #for 2nd comparison, only use new uniqueIDs
-                                  results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
-                                  results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
+                                  if (!is.null(Data2)){
+                                    #browser()
+                                    ProteinGeneName1<-Data1$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                    ProteinGeneName2<-Data2$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                    ProteinGeneName_combined<-rbind(ProteinGeneName1, ProteinGeneName2)%>%dplyr::filter(!duplicated(UniqueID))
+                                    Data1$ProteinGeneName=ProteinGeneName_combined
+                                    #for 2nd comparison, only use new uniqueIDs
+                                    results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
+                                    results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
                                       mutate(test=input$geneset_test)%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)
-                                  results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
+                                    results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
                                       dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
                                                     test %in% unique(Data1$results_long$test) ) #add other tests if test name match
-                                  cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
-                                  if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
-                                  if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
-                                  results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
-                                  Data1$results_long=results_long_combined
-                                  #combined data_long
-                                  data_long1<-Data1$data_long
-                                  data_long2<-Data2$data_long%>%dplyr::filter(group %in%data_long1$group,  !(UniqueID %in% results_long1_selTest$UniqueID) )
-                                  data_long_combined<-rbind(data_long1, data_long2)
-                                  Data1$data_long=data_long_combined
+                                    cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
+                                    if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
+                                    if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
+                                    results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
+                                    Data1$results_long=results_long_combined
+                                    #combined data_long
+                                    data_long1<-Data1$data_long
+                                    data_long2<-Data2$data_long%>%dplyr::filter(group %in%data_long1$group,  !(UniqueID %in% results_long1_selTest$UniqueID) )
+                                    data_long_combined<-rbind(data_long1, data_long2)
+                                    Data1$data_long=data_long_combined
+                                  }
                                 }
                               }
                             } 
