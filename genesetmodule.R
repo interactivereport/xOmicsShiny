@@ -99,8 +99,8 @@ geneset_ui <- function(id) {
              ),
              
              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
-                              selectInput(ns("kegg_logFC"), label= "KEGG gene log2FC Range:", choices= c(1, 2, 3), selected=1),
-                              selectInput(ns("kegg_logFC_cpd"), label= "KEGG compound log2FC Range:", choices= c(1, 2, 3), selected=1),
+                              column(width=6, selectInput(ns("kegg_logFC"), label= "KEGG gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
+                              column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "KEGG compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
                               radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE))
            )
     ),
@@ -191,13 +191,14 @@ geneset_server <- function(id) {
                                   #for 2nd comparison, only use new uniqueIDs
                                   results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
                                   results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
-                                      mutate(test=input$geneset_test)
-                                  results_long2_otherTests<-Data2$results_long%>%dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
+                                      mutate(test=input$geneset_test)%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)
+                                  results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
+                                      dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
                                                     test %in% unique(Data1$results_long$test) ) #add other tests if test name match
                                   cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
                                   if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
                                   if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
-                                  results_long_combined<-rbind(Data1$results_long, results_long2_selTest, results_long2_otherTests)
+                                  results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
                                   Data1$results_long=results_long_combined
                                   #combined data_long
                                   data_long1<-Data1$data_long

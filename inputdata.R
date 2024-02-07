@@ -251,7 +251,8 @@ DataReactiveRData <- reactive({
 			### meta data to long form
 			MetaData_long <- MetaData %>%
 			dplyr::select(-any_of(c("Order", "ComparePairs"))) %>%
-			dplyr::mutate_if(is.numeric, as.character) %>%
+			#dplyr::mutate_if(is.numeric, as.character) %>% #this will fail when there are columns in Time format
+			  dplyr::mutate_all(as.character) %>%
 			tidyr::pivot_longer(cols = -sampleid,  names_to = "type",values_to = "group")
 
 			returnlist[["MetaData"]] = MetaData
