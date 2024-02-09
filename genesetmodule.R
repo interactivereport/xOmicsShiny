@@ -37,15 +37,7 @@ geneset_ui <- function(id) {
              ),
              conditionalPanel(ns = ns, "input.ORA_input_type!='Gene List' || input.geneset_tabset!='Over-Representation Analysis (ORA)' ",
                               selectInput(ns("geneset_test"), label="Select Comparison for Gene Set Analysis", choices=NULL),
-                              tags$hr(style="border-color: RoyalBlue;"),
-                              checkboxInput(ns("comparison_2"), "Add 2nd Comparison for Gene + Compound Analysis",  FALSE, width="95%"),
-                              conditionalPanel(ns = ns, "input.comparison_2==1",
-                                               p("Select this option only when you have genes in one comparison, and compounds from the same expriment in another comparison. Compounds should have Gene.Name in KEGG compound ID format(e.g. C12345, C05519).", 
-                                                 style = "color:red; font-size:11px; font-family:arial; font-style:italic"),
-                                               selectInput(ns("dataset_2"), label="Dataset", choices=NULL),
-                                               selectInput(ns("geneset_test_2nd"), label="Select 2nd Comparison", choices=NULL)
-                              ),
-                              tags$hr(style="border-color: RoyalBlue;"),
+                              uiOutput(ns('Second_Comparison')),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Over-Representation Analysis (ORA)' || input.geneset_tabset=='Gene Expression'",
                                                column(width=6,numericInput(ns("geneset_FCcut"), label= "Fold Change Cutoff", value = 1.2, min=1, step=0.1)),
                                                column(width=6,numericInput(ns("geneset_pvalcut"), label= "P Value Cutoff", value=0.01, min=0, step=0.001)),
@@ -99,8 +91,8 @@ geneset_ui <- function(id) {
              ),
              
              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
-                              column(width=6, selectInput(ns("kegg_logFC"), label= "KEGG gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
-                              column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "KEGG compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
+                              column(width=6, selectInput(ns("kegg_logFC"), label= "Gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
+                              column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "Compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
                               radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE))
            )
     ),
@@ -135,36 +127,64 @@ geneset_ui <- function(id) {
   )
 }
 
-geneset_server <- function(id) {
+geneset_server <- function(id, activeData=NULL) {
   shiny::moduleServer(id,
                       function(input, output, session) {
                         ns <- shiny::NS(id)
                         
-                        #define UI for xOmicsShiny
-                        output$loadedprojects <- renderUI({
-                          req(length(working_project()) > 0)
-                          radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
-                        })
-                        
-                        observe({
-                          req(length(DS_names()) > 0)
-                          updateSelectizeInput(session,'dataset_2',choices=DS_names(), selected=NULL)
-                        })
-                        
-                        observeEvent(input$dataset_2, {
-                          req(input$dataset_2)
-                          DataIn_2 = DataInSets[[input$dataset_2]]
-                          tests_2 = DataIn_2$tests
-                          updateSelectizeInput(session,'geneset_test_2nd',choices=tests_2, selected=tests_2[1])
-                        })
-                        
-                        observeEvent(input$current_dataset, {
-                          working_project(input$current_dataset)
-                        })
-                        
-                        ###Convert data from xOmicsShiny, not necessary for QuickOmics
                         system="xOmicsShiny"
-                        if (system=="xOmicsShiny") {
+                        if (exists("system_info")){
+                          if (!is.null(system_info)) {
+                            if (system_info=="quickomics" ) { system="QuickOmics"}
+                          }
+                        }
+
+                        
+                        ###Modify UI and input data based on QuickOmics or xOmicsShiny system
+                        if (system=="QuickOmics") {
+                          #shinyjs::hide(id = "comparison_2")
+                          working_project=reactiveVal()
+                          observe({
+                            req(ProjectInfo)
+                            working_project(ProjectInfo$ProjectID)
+                          })
+                          DataReactive <-reactive({
+                            activeData
+                          })
+                        } else if (system=="xOmicsShiny") {
+                          output$loadedprojects <- renderUI({
+                            req(length(working_project()) > 0)
+                            radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+                          })
+                          
+                          output$Second_Comparison<-renderUI({
+                            tagList(
+                              tags$hr(style="border-color: RoyalBlue;"),
+                              checkboxInput(ns("comparison_2"), "Add 2nd Comparison for Gene + Compound Analysis",  FALSE, width="95%"),
+                              conditionalPanel(ns = ns, "input.comparison_2==1",
+                                               p("Select this option only when you have genes in one comparison, and compounds from the same expriment in another comparison. Compounds should have Gene.Name in KEGG compound ID format(e.g. C12345, C05519).", 
+                                                 style = "color:red; font-size:11px; font-family:arial; font-style:italic"),
+                                               selectInput(ns("dataset_2"), label="Dataset", choices=c("None", DS_names()), selected="None"),
+                                               selectInput(ns("geneset_test_2nd"), label="Select 2nd Comparison", choices=NULL)
+                              ),
+                              tags$hr(style="border-color: RoyalBlue;"),
+                            )
+                          })
+                          
+
+                          observeEvent(input$dataset_2, {
+                            req(input$dataset_2)
+                            if (input$dataset_2!="None"){
+                              DataIn_2 = DataInSets[[input$dataset_2]]
+                              tests_2 = DataIn_2$tests
+                              updateSelectizeInput(session,'geneset_test_2nd',choices=tests_2, selected=tests_2[1])
+                            }
+                          })
+                          
+                          observeEvent(input$current_dataset, {
+                            working_project(input$current_dataset)
+                          })
+                          
                           gsea_control<-reactiveVal(0)
                           ora_control<-reactiveVal(0)
                           group_order <- reactiveVal()
@@ -184,31 +204,35 @@ geneset_server <- function(id) {
                             if (!is.null(input$comparison_2)){
                               if (input$comparison_2==1) {
                                 if (!is.null(input$dataset_2)) {
-                                  Data2<-DataInSets[[input$dataset_2]]
-                                  if (!is.null(Data2)){
-                                    #browser()
-                                    ProteinGeneName1<-Data1$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
-                                    ProteinGeneName2<-Data2$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
-                                    ProteinGeneName_combined<-rbind(ProteinGeneName1, ProteinGeneName2)%>%dplyr::filter(!duplicated(UniqueID))
-                                    Data1$ProteinGeneName=ProteinGeneName_combined
-                                    #for 2nd comparison, only use new uniqueIDs
-                                    results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
-                                    results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
-                                      mutate(test=input$geneset_test)%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)
-                                    results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
-                                      dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
-                                                    test %in% unique(Data1$results_long$test) ) #add other tests if test name match
-                                    cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
-                                    if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
-                                    if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
-                                    results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
-                                    Data1$results_long=results_long_combined
-                                    #combined data_long
-                                    data_long1<-Data1$data_long
-                                    data_long2<-Data2$data_long%>%dplyr::filter(group %in%data_long1$group,  !(UniqueID %in% results_long1_selTest$UniqueID) )
-                                    data_long_combined<-rbind(data_long1, data_long2)
-                                    Data1$data_long=data_long_combined
+                                  if (input$dataset_2!="None" && input$geneset_test_2nd!=""){
+                                    Data2<-DataInSets[[input$dataset_2]]
+                                    if (!is.null(Data2)){
+                                      #browser()
+                                      ProteinGeneName1<-Data1$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                      ProteinGeneName2<-Data2$ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name, Protein.ID)
+                                      ProteinGeneName_combined<-rbind(ProteinGeneName1, ProteinGeneName2)%>%dplyr::filter(!duplicated(UniqueID))
+                                      Data1$ProteinGeneName=ProteinGeneName_combined
+                                      #for 2nd comparison, only use new uniqueIDs
+                                      results_long1_selTest<-Data1$results_long%>%dplyr::filter(test==input$geneset_test)
+                                      results_long2_selTest<-Data2$results_long%>%dplyr::filter(test==input$geneset_test_2nd, !(UniqueID %in% results_long1_selTest$UniqueID) )%>%
+                                        mutate(test=input$geneset_test)%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)
+                                      results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
+                                        dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
+                                                      test %in% unique(Data1$results_long$test) ) #add other tests if test name match
+                                      cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
+                                      if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
+                                      if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
+                                      results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
+                                      Data1$results_long=results_long_combined
+                                      #combined data_long
+                                      data_long1<-Data1$data_long
+                                      data_long2<-Data2$data_long%>%dplyr::filter(group %in%data_long1$group,  !(UniqueID %in% results_long1_selTest$UniqueID) )
+                                      data_long_combined<-rbind(data_long1, data_long2)
+                                      Data1$data_long=data_long_combined
+                                    }
+                                    
                                   }
+
                                 }
                               }
                             } 
@@ -219,6 +243,8 @@ geneset_server <- function(id) {
                         
                         active_tests<-reactiveVal(NULL)
                         observe({
+                          req(working_project())
+                          req(DataReactive())
                           DataIn = DataReactive()
                           tests=DataIn$tests
                           active_tests(tests)
@@ -229,9 +255,11 @@ geneset_server <- function(id) {
                           updateSelectizeInput(session,'geneset_test5',choices=tests_more, selected="None")
                         })
                         
-                        observeEvent(active_tests(),{
-                          req(active_tests())
-                          tests=active_tests()
+                        observeEvent(working_project(),{
+                          req(working_project())
+                          req(DataReactive())
+                          DataIn = DataReactive()
+                          tests=DataIn$tests
                           updateSelectizeInput(session,'geneset_test',choices=tests, selected=tests[1])
                         })
                         
@@ -493,6 +521,9 @@ geneset_server <- function(id) {
                           } 
                         })
                         observe({
+                          req(working_project())
+                          req(input$geneset_test)
+                          seq(DataReactive())
                           req(DataGenesetReactive_ORA())
                           req(DataGenesetReactive_ORA()$sig_genes)
                           tmpdat=DataGenesetReactive_ORA()$sig_genes
@@ -839,7 +870,7 @@ geneset_server <- function(id) {
                             genes=sel_GSEA_set()$genes
                             NES=sel_GSEA_set()$table$NES
                             if (NES>0) {  #sort so leading edge genes are shown first
-                              terminals.df <-terminals.df %>%arrange(desc(logFC))
+                              terminals.df <-terminals.df %>%arrange(dplyr::desc(logFC))
                             } else { terminals.df <-terminals.df %>%arrange(logFC)}
                             
                           } else if (analysis_type == "ORA") {
