@@ -67,9 +67,17 @@ geneset_ui <- function(id) {
                               conditionalPanel(ns = ns, "input.MSigDB_species=='rat'",
                                                checkboxGroupInput(ns("MSigDB_species_rat_GSEA"), label= "Rat Collections",
                                                                   choices= NULL, selected = NULL) ),
-                              checkboxInput(ns("use_customset"), "Add Custom Gene Set",  FALSE, width="90%"),
+                              checkboxInput(ns("use_customset"), "Add Custom GeneSet",  FALSE, width="90%"),
                               conditionalPanel(ns = ns, "input.use_customset==1",
-                                               textAreaInput(ns("CustomGeneset"), "Enter gene symbols", "", cols = 5, rows=6)
+                                               radioButtons(ns("custom_set_option"), label= "Custom GeneSet From",choices=c("Text Box","File"), inline = TRUE, selected = "Text Box"),
+                                               conditionalPanel(ns = ns, "input.custom_set_option=='Text Box'",
+                                                 textAreaInput(ns("CustomGeneset"), "Enter gene symbols", "", cols = 5, rows=6) ),
+                                               conditionalPanel(ns = ns, "input.custom_set_option=='File'",
+                                                                p("Prepare your own geneset in GMT format. One geneset per row;  each row has name, description, and the gene symbols in the gene set separated by tabs. Description is ignored, you can just put NA for it.", 
+                                                                  style = "color:red; font-size:11px; font-family:arial; font-style:italic"),
+                                                                tags$a(href="CustomGeneSets.gmt", "Download example custom GMT file with three human gene sets"),
+                                                                fileInput(ns("custom_gmt_file"), "Choose geneset GMT file") )
+
                               )
              ),
              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
@@ -361,17 +369,27 @@ geneset_server <- function(id, activeData=NULL) {
                             gsets_GSEA=c(gsets_GSEA, path1)
                           }
                           if (input$use_customset) {
-                            CustomGeneset <- input$CustomGeneset
-                            if(grepl("\n", CustomGeneset)) {
-                              CustomGeneset <-  stringr::str_split(CustomGeneset, "\n")[[1]]
-                            } else if (grepl(",", CustomGeneset)) {
-                              CustomGeneset <-  stringr::str_split(CustomGeneset, ",")[[1]]
+                            if (input$custom_set_option=="Text Box"){
+                              CustomGeneset <- input$CustomGeneset
+                              if(grepl("\n", CustomGeneset)) {
+                                CustomGeneset <-  stringr::str_split(CustomGeneset, "\n")[[1]]
+                              } else if (grepl(",", CustomGeneset)) {
+                                CustomGeneset <-  stringr::str_split(CustomGeneset, ",")[[1]]
+                              }
+                              CustomGeneset <- gsub(" ", "", CustomGeneset, fixed = TRUE)
+                              CustomGeneset <- unique(CustomGeneset[!is.na(CustomGeneset)])
+                              if (input$MSigDB_species == "human")  {CustomGeneset <- toupper(CustomGeneset)}
+                              validate(need(length(CustomGeneset)>2, message = "Please enter at least three custom genes"))
+                              gsets_GSEA=c(gsets_GSEA, list(CustomGeneset=CustomGeneset))
                             }
-                            CustomGeneset <- gsub(" ", "", CustomGeneset, fixed = TRUE)
-                            CustomGeneset <- unique(CustomGeneset[!is.na(CustomGeneset)])
-                            if (input$MSigDB_species == "human")  {CustomGeneset <- toupper(CustomGeneset)}
-                            validate(need(length(CustomGeneset)>2, message = "Please enter at least three custom genes"))
-                            gsets_GSEA=c(gsets_GSEA, list(CustomGeneset=CustomGeneset))
+                            if (input$custom_set_option=="File"){
+                              req(input$custom_gmt_file)
+                              CustomGeneset=gmtPathways(input$custom_gmt_file$datapath)
+                              cat("loaded", length(CustomGeneset), "custom gene sets.\n")
+                              #browser() 
+                              gsets_GSEA=c(gsets_GSEA, CustomGeneset)
+                            }
+
                             # browser() #debug
                           }
                           return(gsets_GSEA)
