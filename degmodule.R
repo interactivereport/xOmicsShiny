@@ -9,7 +9,7 @@
 ##@version 3.0
 ###########################################################################################################
 #pkgs:"DT", "shinyjqui","dplyr","stringr", "plotly", "rlang","tidyr","coop","ggrastr"
-
+#data req:
 library("coop")
 
 deg_ui <- function(id) {
@@ -65,6 +65,9 @@ deg_ui <- function(id) {
 					fluidRow(
 						column(width=6, radioButtons(ns("vlegendpos"), label="Legend position", inline = TRUE, choices = c("bottom","right"), selected = "bottom")),
 						column(width=6, radioButtons(ns("rasterize"), label="Rasterize plot", inline = TRUE, choices = c("Yes","No"), selected = "No"))
+					),
+					fluidRow(
+						column(width=6, radioButtons(ns("showpep"), label="Show Unique Peptide (if unique.peptides column is in result table) ", inline = TRUE, choices = c("Yes","No"), selected = "No"))
 					),
 					conditionalPanel(ns = ns, "input.tabset=='DEGs in Two Comparisons'",
 						fluidRow(
@@ -227,39 +230,50 @@ deg_server <- function(id) {
 			DatavolcanoReactive <- reactive({
 				req(length(working_project()) > 0)
 				results_long = DataInSets[[working_project()]]$results_long
+				data_results = DataInSets[[working_project()]]$data_results
 				sel_test = input$test
 				FCcut = log2(as.numeric(input$FCcut))
 				FCcut_rd = round(FCcut*1000)/1000
 				pvalcut = as.numeric(input$pvalcut)
 				genelabel = input$genelabel
+				Max_Pvalue <- input$Max_Pvalue
+				Max_logFC <- input$Max_logFC
+
+				psel <- input$psel
+				if (psel == "Pval")
+				psel = "P.Value"
+				if (psel == "Padj")
+				psel = "Adj.P.Value"
 
 				res = results_long %>%
 				dplyr::filter(test==sel_test) %>%
+				dplyr::mutate_if(is.factor, as.character) %>%
+				dplyr::mutate(labelid = !!sym(genelabel)) %>%
 				dplyr::filter(!is.na(P.Value)) %>%
-				dplyr::mutate (color="Not Significant") %>%
-				as.data.frame()
+				dplyr::mutate(
+					Significance = case_when(
+						abs(logFC) >= FCcut & !!sym(psel) <= pvalcut ~ paste0(psel,"<", pvalcut," & abs(log2FC)>=", FCcut_rd),
+						abs(logFC) <  FCcut & !!sym(psel) <= pvalcut ~ paste0(psel,"<", pvalcut," & abs(log2FC)<", FCcut_rd),
+					TRUE ~ "Not Significant")
+				) %>%
+				dplyr::mutate(Significance = factor(Significance,	levels = c("Not Significant",	paste0(psel,"<", pvalcut," & abs(log2FC)>=", FCcut_rd),	paste0(psel,"<", pvalcut," & abs(log2FC)<", FCcut_rd)))
+				) %>%
+				dplyr::mutate(logFC_ori = logFC)
 
-				res$labelgeneid = res[,match(genelabel,colnames(res))]
-
-				if (input$psel == "Padj") {
-					res$color[which((abs(res$logFC)>FCcut)*(res$Adj.P.Value<pvalcut)==1)] = paste0("Padj","<",pvalcut," & abs(log2FC)>",FCcut_rd)
-					res$color[which((abs(res$logFC)<FCcut)*(res$Adj.P.Value<pvalcut)==1)] =  paste0("Padj","<",pvalcut, " & abs(log2FC)<",FCcut_rd)
-					res$color = factor(res$color,levels = unique(c("Not Significant",	paste0("Padj","<",pvalcut, " & abs(log2FC)<",FCcut_rd),	paste0("Padj","<",pvalcut, " & abs(log2FC)>",FCcut_rd))))
-					if (input$Max_Pvalue>0) {
-						res<-res%>%mutate(Adj.P.Value=pmax(Adj.P.Value, 10^(0-input$Max_Pvalue) ))
-					}
-				} else {
-					res$color[which((abs(res$logFC)>FCcut)*(res$P.Value<pvalcut)==1)] = paste0("pval","<",pvalcut," & abs(log2FC)>",FCcut_rd)
-					res$color[which((abs(res$logFC)<FCcut)*(res$P.Value<pvalcut)==1)] =  paste0("pval","<",pvalcut, " & abs(log2FC)<",FCcut_rd)
-					res$color = factor(res$color,levels = unique(c("Not Significant",	paste0("pval","<",pvalcut, " & abs(log2FC)<",FCcut_rd),	paste0("pval","<",pvalcut, " & abs(log2FC)>",FCcut_rd))))
-					if (input$Max_Pvalue>0) {
-						res<-res%>%mutate(P.Value=pmax(P.Value, 10^(0-input$Max_Pvalue) ))
-					}
+				if (Max_Pvalue > 0) {
+					if (psel == "Padj")
+					res <- res %>% dplyr::mutate(Adj.P.Value=pmax(Adj.P.Value, 10^(0-Max_Pvalue) ))
+					if (psel == "P.Value")
+					res <- res %>% dplyr::mutate(P.Value=pmax(P.Value, 10^(0-Max_Pvalue) ))
 				}
 
-				res$logFC_ori=res$logFC
-				if (input$Max_logFC>0) {
-					res<-res%>%mutate(logFC=ifelse(logFC>=0, pmin(input$Max_logFC, logFC), pmax(0-input$Max_logFC, logFC) ) )
+				if (Max_logFC > 0) {
+					res <- res %>% dplyr::mutate(logFC=ifelse(logFC>=0, pmin(Max_logFC, logFC), pmax(0-Max_logFC, logFC)))
+				}
+
+				if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(data_results))) {
+					res <- res %>%
+					dplyr::left_join(data_results %>% dplyr::select(id, unique.peptides), by="id")
 				}
 				return(res)
 			})
@@ -268,35 +282,52 @@ deg_server <- function(id) {
 				req(length(working_project()) > 0)
 				res = DatavolcanoReactive()
 				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
-
 				sel_test = input$test
 				FCcut = log2(as.numeric(input$FCcut))
 				FCcut_rd=round(FCcut*1000)/1000
 				pvalcut = as.numeric(input$pvalcut)
 
+				psel <- input$psel
+				if (psel == "Pval")
+				psel = "P.Value"
+				if (psel == "Padj")
+				psel = "Adj.P.Value"
 
-				if (input$psel == "Padj") {
-					res <- res %>%
-					dplyr::select(UniqueID, labelgeneid, logFC, Adj.P.Value, labelgeneid, color, logFC_ori)
+				if (psel == "Adj.P.Value") {
+					if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(res))) {  #02122024 by bgao
+						res <- res %>%
+						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance ,unique.peptides,logFC_ori)
+					} else {
+						res <- res %>%
+						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance , logFC_ori)
+					}
 
-					p <- ggplot(res, aes(x = logFC, y = -log10(Adj.P.Value), text = labelgeneid))
+					p <- ggplot(res, aes(x = logFC, y = -log10(Adj.P.Value), text = labelid))
 					ylab <- "-log10(Padj.Value)"
 
-					filterSig <- paste0("Padj", "<", pvalcut, " & abs(log2FC)>", FCcut_rd)
-					data.label <- filter(res, color == filterSig)
-					if (nrow(data.label) > input$Ngenes) {
-						data.label <- top_n(data.label, input$Ngenes, abs(logFC_ori))
-					}
-				} else {
-					res <- res %>%
-					dplyr::select(UniqueID, labelgeneid, logFC, P.Value, color, logFC_ori)
+					filterSig <- paste0(psel,"<", pvalcut," & abs(log2FC)>=", FCcut_rd)
+					data.label <- filter(res, Significance == filterSig)
 
-					filterSig <- paste0("pval", "<", pvalcut, " & abs(log2FC)>",FCcut_rd)
-					data.label <- filter(res, color == filterSig)
 					if (nrow(data.label) > input$Ngenes) {
 						data.label <- top_n(data.label, input$Ngenes, abs(logFC_ori))
 					}
-					p <- ggplot(res, aes(x = logFC, y = -log10(P.Value), text = labelgeneid))
+
+				} else {
+					if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(res))) { #02122024 by bgao
+						res <- res %>%
+						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance , unique.peptides, logFC_ori)
+					} else {
+						res <- res %>%
+						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance , logFC_ori)
+					}
+
+					filterSig <- paste0(psel,"<", pvalcut," & abs(log2FC)>=", FCcut_rd)
+					data.label <- filter(res, Significance == filterSig)
+
+					if (nrow(data.label) > input$Ngenes) {
+						data.label <- top_n(data.label, input$Ngenes, abs(logFC_ori))
+					}
+					p <- ggplot(res, aes(x = logFC, y = -log10(P.Value), text = labelid))
 					ylab <- "-log10(P.Value)"
 				}
 
@@ -319,29 +350,56 @@ deg_server <- function(id) {
 					validate(need(nrow(data.label)>0, message = "no gene found in result"))
 				}
 
-
 				p <- p	+
 				scale_color_manual(values = c("grey", "green2","red2"))
 
 				if (input$rasterize=="Yes") {
-					p <- p + geom_point_rast(aes(color = color), size=0.7, alpha=0.6, na.rm=TRUE, dev="ragg")
+					p <- p + geom_point_rast(aes(color = Significance ), size=0.7, alpha=0.6, na.rm=TRUE, dev="ragg")
 				} else {
-					p <- p + geom_point(aes(color = color), size=0.7)
-				}
-				p <- p +
-				theme_bw(base_size = 20) +
-				geom_hline(yintercept = -log10(pvalcut), colour="grey") +
-				geom_vline(xintercept = c(-FCcut,0,FCcut), colour="grey") +
-				ylab(ylab) + xlab("log2 Fold Change") +
-				ggtitle(sel_test) +
-				theme(legend.position = input$vlegendpos, legend.text=element_text(size=input$yfontsize))
-				p <- p + guides(color = guide_legend(override.aes = list(alpha = 1, size = 4)))
-				pl <- p
-
-				if (input$label!="None") {
-					p = p + geom_text_repel(data = data.label,  aes(label=labelgeneid),	size = input$lfontsize,	box.padding = unit(0.35, "lines"), point.padding = unit(0.3, "lines") )
+					p <- p + geom_point(aes(color = Significance ), size=0.7)
 				}
 
+				if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(res))) {  #02122024 by bgao  rasterize doesn't work here
+					res$labelid <- paste(
+						"Name:", res$labelid,
+						"<br>",
+						"Unique Peptides:", res$unique.peptides
+					)
+					res <- res %>%
+					dplyr::mutate(unique.peptides = ifelse(unique.peptides >= 3, 3, unique.peptides))
+
+					p <- ggplot(res, aes(x = logFC, y = -log10(P.Value), text = labelid)) +
+					scale_color_manual(values = c("grey", "green2","red2")) +
+					geom_point(aes(color = Significance , size = unique.peptides)) +
+					scale_size(range = c(1,3), breaks = c(1, 2, 3), labels=c("1","2",">3"), guide = "legend") +
+					theme_bw(base_size = 20) +
+					geom_hline(yintercept = -log10(pvalcut), colour="grey") +
+					geom_vline(xintercept = c(-FCcut,0,FCcut), colour="grey") +
+					ylab(ylab) + xlab("log2 Fold Change") +
+					ggtitle(sel_test) +
+					theme(legend.position = input$vlegendpos, legend.text=element_text(size=input$yfontsize)) +
+					guides(color = guide_legend(override.aes = list(alpha = 1, size = 4)), size = "legend")
+					pl <- p
+
+					if (input$label!="None") {
+						p = p + geom_text_repel(data = data.label, aes(label=labelid),	size = input$lfontsize,	box.padding = unit(0.35, "lines"), point.padding = unit(0.3, "lines") )
+					}
+				} else {
+					p <- p +
+					theme_bw(base_size = 20) +
+					geom_hline(yintercept = -log10(pvalcut), colour="grey") +
+					geom_vline(xintercept = c(-FCcut,0,FCcut), colour="grey") +
+					ylab(ylab) + xlab("log2 Fold Change") +
+					ggtitle(sel_test) +
+					theme(legend.position = input$vlegendpos, legend.text=element_text(size=input$yfontsize))
+					p <- p + guides(color = guide_legend(override.aes = list(alpha = 1, size = 4)))
+					pl <- p
+
+					if (input$label!="None") {
+						p = p + geom_text_repel(data = data.label, aes(label=labelid),	size = input$lfontsize,	box.padding = unit(0.35, "lines"), point.padding = unit(0.3, "lines") )
+					}
+
+				}
 				return(list(pl = pl, p = p))
 			})
 
@@ -352,20 +410,6 @@ deg_server <- function(id) {
 			output$volcanoplotinteractive <- renderPlotly({
 				pl <-	volcanoplot_out()$pl
 				ggplotly((pl + theme_bw(base_size = 16)),  tooltip = c("text")) %>% layout(legend = list(orientation = "h", y = -0.2))
-
-				#click_data <- event_data("plotly_click", source = ns("select"))
-				#print(click_data)
-				#if(!is.null(click_data)) {
-				#	label_data <- data.frame(x = click_data[["x"]],
-				#		y = click_data[["y"]],
-				#		label = click_data[["text"]],
-				#	stringsAsFactors = FALSE)
-				#	pl <- pl +
-				#	geom_text(data = label_data,
-				#		aes(x = x, y = y, label = label),
-				#	inherit.aes = FALSE, nudge_x = 0.25)
-				#}
-				#ggplotly(pl, source = ns("select"), tooltip = c("text")) %>% layout(legend = list(orientation = "h", y = -0.2))
 			})
 
 			output$plot.volcano <- renderUI({
@@ -440,7 +484,6 @@ deg_server <- function(id) {
 				dplyr::group_by(test) %>%
 				dplyr::summarize(DEG=n(), Up=sum(logFC>0), Down=sum(logFC<0)) %>%
 				dplyr::ungroup()
-
 
 				if (FALSE) {
 					names(deg_stat)[1]="Comparison"
@@ -660,7 +703,6 @@ deg_server <- function(id) {
 			output$Multivolcano_Interactive <- renderPlotly({
 				pl = Multivolcanoplot_out()$pl
 				ggplotly((pl + theme_bw(base_size = 16)),  tooltip = c("text")) %>% layout(legend = list(orientation = "h", y = -0.2))
-
 			})
 
 			output$plot.Multivolcano <- renderUI({
@@ -713,12 +755,12 @@ deg_server <- function(id) {
 					dplyr::mutate (Sig = notsigstr) %>%
 					as.data.frame()
 
-					res$labelgeneid = res[,match(genelabel, colnames(res))]
+					res$labelid = res[,match(genelabel, colnames(res))]
 
 					if (input$psel == "Padj") {
-	
+
 						res$Sig[which((abs(res$logFC)>FCcut)*(res$Adj.P.Value<pvalcut)==1)] = sigstr
-		
+
 						if (input$Max_Pvalue>0) {
 							res <- res %>% mutate(Adj.P.Value=pmax(Adj.P.Value, 10^(0-input$Max_Pvalue) ))
 						}
@@ -806,10 +848,10 @@ deg_server <- function(id) {
 					if (input$psel == "Padj") {
 						res <- res %>%
 						dplyr::mutate(size=-pmin(log10(Adj.P.Value.x),log10(Adj.P.Value.y))) #%>%
-						#dplyr::select(labelgeneid.x, logFC.x, logFC.y, color, size)
+						#dplyr::select(labelid.x, logFC.x, logFC.y, color, size)
 
-						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color, size=size, text=labelgeneid.x))
-						
+						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color, size=size, text=labelid.x))
+
 						fitresult <- data.frame()
 						if (input$LM == "Yes") {
 							#get intercept and slope value
@@ -837,9 +879,9 @@ deg_server <- function(id) {
 					} else {
 						res <- res %>%
 						dplyr::mutate(size=-pmin(log10(P.Value.x),log10(P.Value.y))) #%>%
-						#dplyr::select(labelgeneid.x, logFC.x, logFC.y, color, size)
+						#dplyr::select(labelid.x, logFC.x, logFC.y, color, size)
 
-						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color,	size=size, text=labelgeneid.x))
+						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color,	size=size, text=labelid.x))
 						fitresult <- data.frame()
 						if (input$LM == "Yes") {
 							#get intercept and slope value
@@ -908,10 +950,10 @@ deg_server <- function(id) {
 
 					if (input$label=="Upload" || input$label=="Geneset" || input$DEG_comp_color=="No") {
 						p <- p +
-						geom_text_repel(data = data.label,  aes(label=labelgeneid.x),	size = input$lfontsize,	box.padding = unit(0.35, "lines"), color="coral3",  point.padding = unit(0.3, "lines"))
+						geom_text_repel(data = data.label,  aes(label=labelid.x),	size = input$lfontsize,	box.padding = unit(0.35, "lines"), color="coral3",  point.padding = unit(0.3, "lines"))
 					} else {
 						p <- p +
-						geom_text_repel(data = data.label, aes(label=labelgeneid.x),	size = input$lfontsize,	box.padding = unit(0.35, "lines"),	point.padding = unit(0.3, "lines"))
+						geom_text_repel(data = data.label, aes(label=labelid.x),	size = input$lfontsize,	box.padding = unit(0.35, "lines"),	point.padding = unit(0.3, "lines"))
 					}
 
 					return(list(pl = pl, p = p, fitresult = fitresult))
@@ -947,7 +989,7 @@ deg_server <- function(id) {
 				rescompare = DataDEGCompareReactive()
 
 				DEGCompareRes <- rescompare$res %>%
-				dplyr::select(-any_of(c("id.x", "color.x","labelgeneid.x","id.y", "color.y",	"labelgeneid.y"))) 	%>%
+				dplyr::select(-any_of(c("id.x", "color.x","labelid.x","id.y", "color.y",	"labelid.y"))) 	%>%
 				dplyr::mutate_if(is.numeric, round, digits = 4)
 
 				DT::datatable(DEGCompareRes, extensions = 'Buttons',  selection = 'none', class = 'cell-border strip hover',
@@ -974,7 +1016,7 @@ deg_server <- function(id) {
 					validate(need(length(input$add_dataset) == 2, message = "Please Select 2 sets"))
 					rescompare = DataDEGCompareReactive()
 					DEGCompareRes <- rescompare$res %>%
-					dplyr::select(-any_of(c("id.x", "color.x","labelgeneid.x","id.y", "color.y",	"labelgeneid.y"))) 	%>%
+					dplyr::select(-any_of(c("id.x", "color.x","labelid.x","id.y", "color.y",	"labelid.y"))) 	%>%
 					dplyr::mutate_if(is.numeric, round, digits = 4)
 					write.csv(DEGCompareRes, file)
 				}
@@ -985,7 +1027,7 @@ deg_server <- function(id) {
 				validate(need(length(input$add_dataset) == 2, message = "Please Select 2 sets"))
 				rescompare = DataDEGCompareReactive()
 				DEGCompareRes <- rescompare$res %>%
-				dplyr::select(-any_of(c("id.x", "color.x","labelgeneid.x","id.y", "color.y",	"labelgeneid.y"))) 	%>%
+				dplyr::select(-any_of(c("id.x", "color.x","labelid.x","id.y", "color.y",	"labelid.y"))) 	%>%
 				dplyr::mutate_if(is.numeric, round, digits = 4)
 
 				saved_table$DEGCompareData <- DEGCompareRes
