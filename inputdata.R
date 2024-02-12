@@ -12,7 +12,7 @@
 
 working_project <- reactiveVal()
 DataInSets <- reactiveValues()
-
+DS_names<- reactiveVal() #track loaded projects (not NULL) in DataInSets
 saved_plots <- reactiveValues()
 saved_table <- reactiveValues()
 ##################
@@ -34,7 +34,7 @@ observe({
 	}
 
 	if (input$select_dataset=='Saved Projects in CSV file') {
-		saved_projects = read.csv("data/saved_projects.csv")
+		saved_projects = read.csv("data/saved_projectsNEW.csv")
 		projects = saved_projects$ProjectID
 		updateSelectInput(session, "sel_project", choices=c("", projects), selected="")
 	}
@@ -71,7 +71,7 @@ SavedProjectReactive <- reactive({
 		poolReturn(con)
 		poolClose(pool)
 	} else if (input$select_dataset=='Saved Projects in CSV file') {
-		saved_projects = read.csv("data/saved_projects.csv")
+		saved_projects = read.csv("data/saved_projectsNEW.csv")
 	}
 
 	clientData <- session$clientData
@@ -88,7 +88,7 @@ SavedProjectReactive <- reactive({
 		dplyr::rename(Names = Project.Description) %>%
 		dplyr::rename(ProjectID = Project.Title)
 
-		saved_projects_file = read.csv("data/saved_projects.csv") %>%
+		saved_projects_file = read.csv("data/saved_projectsNEW.csv") %>%
 		dplyr::select(ProjectID, Names, Species, ShortNames)
 
 		saved_projects <- dplyr::bind_rows(saved_projects_db, saved_projects_file) %>%
@@ -108,26 +108,36 @@ names(returnlist) <- c("ProjectID", "Name", "Species", "ShortName", "Path", "fil
 "statresult", "results_drc","results_omics","results_lin")
 
 #####
+
 DataReactiveRData <- reactive({
 	withProgress(message = 'Fetching data.',  detail = 'This may take a while...', value = 0, {
-		query <- parseQueryString(session$clientData$url_search)
-		req(length(query) > 0 || input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1)))
+		#browser()
+		query <- parseQueryString(isolate(session$clientData$url_search))
+		req((!is.null(query[['project']]) & !(query[["project"]] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1))) #by bgao 0212204
 
 		ProjectID=NULL; ProjectName=NULL;  ShortName=NULL; file1=NULL; file2=NULL; ProjectPath=NULL
 		Species = "human"
 		exp_unit = "Expression Level"
 
-		if (!is.null(query[['project']]) & length(reactiveValuesToList(DataInSets)) ==0) {
-			saved_projects <- SavedProjectReactive()
-			ProjectID = query[['project']]
-			validate(need(ProjectID %in% saved_projects$ProjectID , message = "Please pass a valid ProjectID from URL."))
-			ProjectName=saved_projects$Name[saved_projects$ProjectID==ProjectID]
-			Species=saved_projects$Species[saved_projects$ProjectID==ProjectID]
-			ShortName=saved_projects$ShortNames[saved_projects$ProjectID==ProjectID]
-			file1= paste("data/",  ProjectID, ".RData", sep = "")  #data file
-			file2= paste("networkdata/", ProjectID, ".RData", sep = "") #Correlation results
-			ProjectPath="data/"
-		} else
+		if (!is.null(query[['project']])) {
+			if (!(query[["project"]] %in% names(DataInSets))) {
+				saved_projects <- SavedProjectReactive()
+				ProjectID = query[['project']]
+				validate(need(ProjectID %in% saved_projects$ProjectID , message = "Please pass a valid ProjectID from URL."))
+				ProjectName=saved_projects$Name[saved_projects$ProjectID==ProjectID]
+				Species=saved_projects$Species[saved_projects$ProjectID==ProjectID]
+				ShortName=saved_projects$ShortNames[saved_projects$ProjectID==ProjectID]
+				file1= paste("data/",  ProjectID, ".RData", sep = "")  #data file
+				file2= paste("networkdata/", ProjectID, ".RData", sep = "") #Correlation results
+				ProjectPath="data/"
+				if (is.null(file1) || !file.exists(file1)){
+					shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error") #by bgao 0212204
+				}
+				validate(need(file.exists(file1), message = "File does NOT exit.")) #by bgao 0212204
+				load(file1)
+			}
+		}
+
 		if (input$select_dataset %in% c('Saved Projects in Database', 'Saved Projects in CSV file') & input$sel_project!="") {
 			saved_projects <- SavedProjectReactive()
 			ProjectID=input$sel_project
@@ -137,7 +147,13 @@ DataReactiveRData <- reactive({
 			file1= paste("data/",  ProjectID, ".RData", sep = "")  #data file
 			file2= paste("networkdata/", ProjectID, ".RData", sep = "") #Correlation results
 			ProjectPath="data/"
-		} else
+			if (is.null(file1) || !file.exists(file1)){
+				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+			}
+			validate(need(file.exists(file1), message = "File does NOT exit."))
+			load(file1)
+		}
+
 		if (!is.null(query[['serverfile']])) {
 			ProjectID = query[['serverfile']]
 			if (!is.null(server_dir)) {
@@ -154,7 +170,14 @@ DataReactiveRData <- reactive({
 					exp_unit= unlisted_project$ExpressionUnit[1]
 				}
 			}
-		} else
+			if (is.null(file1) || !file.exists(file1)){
+				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+			}
+			validate(need(file.exists(file1), message = "File does NOT exit."))
+			load(file1)
+
+		}
+
 		if (!is.null(query[['unlisted']])) {
 			ProjectID = query[['unlisted']]
 			validate(need(file.exists(str_c("unlisted/",  ProjectID, ".csv")),
@@ -170,7 +193,13 @@ DataReactiveRData <- reactive({
 			if ("ExpressionUnit" %in% names(unlisted_project)) {
 				exp_unit= unlisted_project$ExpressionUnit[1]
 			}
-		} else
+			if (is.null(file1) || !file.exists(file1)){
+				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+			}
+			validate(need(file.exists(file1), message = "File does NOT exit."))
+			load(file1)
+		}
+
 		if (input$select_dataset=='Upload RData File' & !is.null(input$file1)) {
 			ProjectID = str_replace(input$file1$name, regex(".RData", ignore_case = TRUE), "")
 			ProjectName = ShortName =  input$project_name
@@ -178,7 +207,15 @@ DataReactiveRData <- reactive({
 			file1 = input$file1$datapath
 			file2 = input$file2$datapath
 			ProjectPath = NULL
+			if (is.null(file1) || !file.exists(file1)){
+				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+			}
+			validate(need(file.exists(file1), message = "File does NOT exit."))
+			load(file1)
 		}
+
+
+
 		returnlist[["ProjectID"]] = ProjectID
 		returnlist[["Name"]] = ProjectName
 		returnlist[["Species"]] = Species
@@ -188,16 +225,8 @@ DataReactiveRData <- reactive({
 		returnlist[["file2"]] = file2
 		returnlist[["exp_unit"]] <- exp_unit
 
-		###########
-		if (is.null(file1) || !file.exists(file1)){
-			shinyalert("Oops!", "File does NOT exit.", type = "error")
-		}
-
-		validate(need(isTRUE(file.exists(file1)), message = "File does NOT exit."))
-		load(file1)
-#rename list
-    lookup <- c("UniqueID" = "uniqueID", "group" = "Group")
-
+		#rename list
+		lookup <- c("UniqueID" = "uniqueID", "group" = "Group")
 
 		if (exists("data_wide")) {
 			if (!is.data.frame(data_wide)) {
@@ -215,7 +244,7 @@ DataReactiveRData <- reactive({
 
 			# modify by bgao 08/02/2023, keep ProteinGeneName ids only in result table
 			ProteinGeneName <- ProteinGeneName %>%
-			dplyr::rename(any_of(lookup)) %>% 
+			dplyr::rename(any_of(lookup)) %>%
 			dplyr::mutate_if(is.factor, as.character)  %>%
 			dplyr::filter(UniqueID %in% (results_long %>% dplyr::pull(UniqueID) %>% unique()))
 
@@ -228,8 +257,8 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("results_long")) {
-			results_long <- results_long %>% 
-			dplyr::rename(any_of(lookup)) %>% 
+			results_long <- results_long %>%
+			dplyr::rename(any_of(lookup)) %>%
 			dplyr::mutate_if(is.factor, as.character)  %>% dplyr::inner_join(ProteinGeneName, ., by = "UniqueID")
 			tests <- tests_order <- unique(as.character(results_long$test))
 			returnlist[["tests"]] = tests
@@ -238,9 +267,9 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("MetaData")) {
-		MetaData <- MetaData %>% 
+			MetaData <- MetaData %>%
 			dplyr::rename(any_of(lookup))
-			
+
 			if ("Order" %in% names(MetaData))
 			groups <- group_order <- as.character(MetaData$Order[MetaData$Order != ""])
 			else
@@ -251,7 +280,8 @@ DataReactiveRData <- reactive({
 			### meta data to long form
 			MetaData_long <- MetaData %>%
 			dplyr::select(-any_of(c("Order", "ComparePairs"))) %>%
-			dplyr::mutate_if(is.numeric, as.character) %>%
+			#dplyr::mutate_if(is.numeric, as.character) %>% #this will fail when there are columns in Time format
+			dplyr::mutate_all(as.character) %>%
 			tidyr::pivot_longer(cols = -sampleid,  names_to = "type",values_to = "group")
 
 			returnlist[["MetaData"]] = MetaData
@@ -265,8 +295,8 @@ DataReactiveRData <- reactive({
 		if (exists("data_long")) {
 			data_long <- data_long %>%
 			dplyr::rename(any_of(lookup))
-			
-						if (exists("ProteinGeneName")) {
+
+			if (exists("ProteinGeneName")) {
 				data_long <- data_long %>% dplyr::mutate_if(is.factor, as.character)  %>% dplyr::inner_join(ProteinGeneName, ., by = "UniqueID")
 				if (length(groups) == 0) {
 					groups <- group_order <- as.character(unique(data_long$group))
@@ -319,7 +349,7 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("results_drc")) {
-		
+
 			returnlist[["results_drc"]] = results_drc %>% dplyr::rename(any_of(lookup))
 		}
 
@@ -347,7 +377,7 @@ DataReactiveDB <- reactive({
 		#ProjectID = info$value
 
 		#ProjectID = "GSE51799"
-		#ProjectID = "GSE51684" #als
+		#ProjectID = "GSE51684"
 		#ProjectID = "GSE11227"
 		#ProjectID = "GSE1145"
 		#ProjectID = "GSE18956"
@@ -819,7 +849,10 @@ DataReactiveTxt <- reactive({
 		returnlist[["ShortName"]] <- Project_name
 		returnlist[["Path"]] <- ProjectPath
 		returnlist[["file1"]] <- file1
-		returnlist[["file2"]] <- file2
+		# Unlike in DataReactiveRdata(), 'file2' is not defined in DataReactiveTxt()
+		# Hence, set returnlist[["file2]] = NULL; otherwise error message shows up
+		# when uploading csv files: "object file2 not found"
+		returnlist[["file2"]] <- NULL
 		returnlist[["exp_unit"]] <- exp_unit
 		returnlist[["MetaData"]] = MetaData
 		returnlist[["MetaData_long"]] = MetaData_long
@@ -858,23 +891,32 @@ observe({
 
 #load project in csv or database
 observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
+	query <- parseQueryString(isolate(session$clientData$url_search))
+	req((!is.null(query[['project']]) & !(query[['project']] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1)))
 
 	if (input$select_dataset == 'Public Data(DiseaseLand)') {
 		DataIn <- DataReactiveDB()
-	} else if  (input$select_dataset == 'Saved Projects in Database' | input$select_dataset == 'Saved Projects in CSV file') {
-		DataIn <- DataReactiveRData()
-	} else if (input$select_dataset == 'Upload RData File') {
-		DataIn <- DataReactiveRData()
-	} else if (input$select_dataset == 'Upload Data Files (csv)') {
+	}  else
+	if (input$select_dataset == 'Upload Data Files (csv)') {
 		DataIn <- DataReactiveTxt()
+	}else
+	if (!is.null(input$load)) {
+		DataIn <- DataReactiveRData()
+	}else
+	if (!is.null(input$adddata)) {
+		DataIn <- DataReactiveRData()
+	} else if (!is.null(query[['project']]) & !(query[['project']] %in% names(DataInSets))){
+		DataIn <- DataReactiveRData()
 	} else {
-		print("error.")
 		return()
 	}
-	
+
 	ProjectID <- DataIn$ProjectID
 	working_project(ProjectID)
 	DataInSets[[ProjectID]]  <-  DataIn
+	DataInSets_List<-reactiveValuesToList(DataInSets)
+	DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
+	DS_names(names(DataInSets_List))
 
 	if (length(names(DataInSets)) == 1) {
 		if (!(modulelist[15] %in% saved_setting$value)) {
@@ -949,151 +991,156 @@ observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 
 observeEvent(input$removedata, {
 	DataInSets[[working_project()]] <- NULL
-	currentproject = working_project()
-	#make(lock_envir = FALSE)
-	#rm(currentproject, envir = .subset2(DataInSets, "impl")$.values)
-	#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
-	#.subset2(DataInSets, "impl")$.values$remove(currentproject)
+	#currentproject = working_project()
+	DataInSets_List<-reactiveValuesToList(DataInSets)
+	DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
+	if (length(names(DataInSets_List))>0) {
+		working_project(names(DataInSets_List)[1])
+	} else { working_project(NULL) }
+		DS_names(names(DataInSets_List))
+		#make(lock_envir = FALSE)
+		#rm(currentproject, envir = .subset2(DataInSets, "impl")$.values)
+		#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
+		#.subset2(DataInSets, "impl")$.values$remove(currentproject)
+	})
+	## save tables
+	observeEvent(input$results, {
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$data_results)
+		results = DataInSets[[working_project()]]$data_results
+		results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+		saved_table$results <- results
+	})
 
-})
-## save tables
-observeEvent(input$results, {
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$data_results)
-	results = DataInSets[[working_project()]]$data_results
-	results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
-	saved_table$results <- results
-})
+	observeEvent(input$sample, {
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$MetaData)
+		saved_table$sample <- DataInSets[[working_project()]]$MetaData
+	})
 
-observeEvent(input$sample, {
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$MetaData)
-	saved_table$sample <- DataInSets[[working_project()]]$MetaData
-})
+	observeEvent(input$data_wide, {
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$data_wide)
+		data_wide <- DataInSets[[working_project()]]$data_wide %>%
+		tibble::rownames_to_column(var = "ID")
+		saved_table$data <- data_wide
+	})
 
-observeEvent(input$data_wide, {
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$data_wide)
-	data_wide <- DataInSets[[working_project()]]$data_wide %>%
-	tibble::rownames_to_column(var = "ID")
-	saved_table$data <- data_wide
-})
+	observeEvent(input$ProteinGeneName, {
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$ProteinGeneName)
+		saved_table$ProteinGeneName <- DataInSets[[working_project()]]$ProteinGeneName
+	})
 
-observeEvent(input$ProteinGeneName, {
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$ProteinGeneName)
-	saved_table$ProteinGeneName <- DataInSets[[working_project()]]$ProteinGeneName
-})
+	### unit and short name
+	output$exp_unit <- renderUI({
+		req(length(working_project()) > 0)
+		textInput("exp_unit", "Expression Data Units", value="Expression Level", width="300px")
+	})
 
-### unit and short name
-output$exp_unit <- renderUI({
-	req(length(working_project()) > 0)
-	textInput("exp_unit", "Expression Data Units", value="Expression Level", width="300px")
-})
+	output$ShortName <- renderUI({
+		req(length(working_project()) > 0)
+		textInput("ShortName", "Rename Project Name", value="", width="300px")
+	})
 
-output$ShortName <- renderUI({
-	req(length(working_project()) > 0)
-	textInput("ShortName", "Rename Project Name", value="", width="300px")
-})
+	observe({
+		req(length(working_project()) > 0)
+		updateTextInput(session, "exp_unit", value=DataInSets[[working_project()]]$exp_unit)
+		updateTextInput(session, "ShortName", value=DataInSets[[working_project()]]$ShortName)
+	})
 
-observe({
-	req(length(working_project()) > 0)
-	updateTextInput(session, "exp_unit", value=DataInSets[[working_project()]]$exp_unit)
-	updateTextInput(session, "ShortName", value=DataInSets[[working_project()]]$ShortName)
-})
+	observeEvent(input$exp_unit, {
+		req(length(working_project()) > 0)
+		DataInSets[[working_project()]]$exp_unit <- input$exp_unit
+	})
 
-observeEvent(input$exp_unit, {
-	req(length(working_project()) > 0)
-	DataInSets[[working_project()]]$exp_unit <- input$exp_unit
-})
+	observeEvent(input$ShortName, {
+		req(length(working_project()) > 0)
+		DataInSets[[working_project()]]$ShortName <- input$ShortName
+	})
 
-observeEvent(input$ShortName, {
-	req(length(working_project()) > 0)
-	DataInSets[[working_project()]]$ShortName <- input$ShortName
-})
+	###
+	output$loadedprojects <- renderUI({
+		req(length(working_project()) > 0)
+		radioButtons("current_dataset", label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+	})
 
-###
-output$loadedprojects <- renderUI({
-	req(length(working_project()) > 0)
-	radioButtons("current_dataset", label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
-})
+	observeEvent(input$current_dataset, {
+		working_project(input$current_dataset)
+	})
 
-observeEvent(input$current_dataset, {
-	working_project(input$current_dataset)
-})
+	output$project <- renderText({
+		if (length(working_project()) == 0){
+			""
+		} else {
+			paste("Project: ", working_project(), sep=" ")
+		}
+	})
 
-output$project <- renderText({
-	if (length(working_project()) == 0){
-		""
-	} else {
-		paste("Project: ", working_project(), sep=" ")
-	}
-})
+	output$summary <- renderText({
+		req(length(working_project()) > 0)
 
-output$summary <- renderText({
-	req(length(working_project()) > 0)
+		summary=stringr::str_c('<style type="text/css">
+			.disc {	list-style-type: disc;}
+			.square { list-style-type: square; margin-left: -2em;	font-size: small}
+			</style>',
+			"<h2>Project ID: ", DataInSets[[working_project()]]$ProjectID, "</h2><br>",
+			"<ul class='disc'>",
+			"<li>Project Short Name: ", DataInSets[[working_project()]]$ShortName, "</li>",
+			"<li>Description: ", DataInSets[[working_project()]]$Name, "</li>",
+			"<li>Species: ", DataInSets[[working_project()]]$Species, "</li>",
+			"<li>Data Path: ", DataInSets[[working_project()]]$Path, "</li>",
+			"<li>Number of Samples: ", nrow(DataInSets[[working_project()]]$MetaData), "</li>",
+			"<li>Number of Groups: ", length(DataInSets[[working_project()]]$groups), " (please see group table below)</li>",
+			"<li>Number of Genes/Proteins: ", nrow(DataInSets[[working_project()]]$data_wide), "</li>",
+			"<li>Number of Comparison Tests: ", length(DataInSets[[working_project()]]$tests), "</li>",
+			'<ul class="square">', paste(stringr::str_c("<li>", DataInSets[[working_project()]]$tests, "</li>"), collapse=""), "</ul></li></ul><br><hr>",
+			"<h4>Number of Samples in Each Group</h4>"
+		)
+	})
 
-	summary=stringr::str_c('<style type="text/css">
-		.disc {	list-style-type: disc;}
-		.square { list-style-type: square; margin-left: -2em;	font-size: small}
-		</style>',
-		"<h2>Project ID: ", DataInSets[[working_project()]]$ProjectID, "</h2><br>",
-		"<ul class='disc'>",
-		"<li>Project Short Name: ", DataInSets[[working_project()]]$ShortName, "</li>",
-		"<li>Description: ", DataInSets[[working_project()]]$Name, "</li>",
-		"<li>Species: ", DataInSets[[working_project()]]$Species, "</li>",
-		"<li>Data Path: ", DataInSets[[working_project()]]$Path, "</li>",
-		"<li>Number of Samples: ", nrow(DataInSets[[working_project()]]$MetaData), "</li>",
-		"<li>Number of Groups: ", length(DataInSets[[working_project()]]$groups), " (please see group table below)</li>",
-		"<li>Number of Genes/Proteins: ", nrow(DataInSets[[working_project()]]$data_wide), "</li>",
-		"<li>Number of Comparison Tests: ", length(DataInSets[[working_project()]]$tests), "</li>",
-		'<ul class="square">', paste(stringr::str_c("<li>", DataInSets[[working_project()]]$tests, "</li>"), collapse=""), "</ul></li></ul><br><hr>",
-		"<h4>Number of Samples in Each Group</h4>"
-	)
-})
+	group_info <- reactive({
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$MetaData)
+		group_info <- DataInSets[[working_project()]]$MetaData %>% dplyr::group_by(group) %>% dplyr::count()
+		return(t(group_info))
+	})
+	output$group_table <- renderTable(group_info(), colnames=F)
 
-group_info <- reactive({
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$MetaData)
-	group_info <- DataInSets[[working_project()]]$MetaData %>% dplyr::group_by(group) %>% dplyr::count()
-	return(t(group_info))
-})
-output$group_table <- renderTable(group_info(), colnames=F)
+	output$results <- DT::renderDataTable(server=TRUE,{
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$data_results)
 
-output$results <- DT::renderDataTable(server=TRUE,{
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$data_results)
+		results <- DataInSets[[working_project()]]$data_results %>%
+		#dplyr::select(-one_of(c("UniqueID","id")))
+		dplyr::select(-any_of(c("id")))
 
-	results <- DataInSets[[working_project()]]$data_results %>%
-	#dplyr::select(-one_of(c("UniqueID","id")))
-	dplyr::select(-any_of(c("id")))
+		results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
 
-	results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+		DT::datatable(results,  extensions = 'Buttons',
+			options = list(	dom = 'lBfrtip', pageLength = 15,
+				buttons = list(
+					list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
+				)
+			),
+		rownames= T)
+	})
 
-	DT::datatable(results,  extensions = 'Buttons',
-		options = list(	dom = 'lBfrtip', pageLength = 15,
-			buttons = list(
-				list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
-			)
-		),
-	rownames= T)
-})
+	output$sample <-  DT::renderDT(server=FALSE, {
+		req(length(working_project()) > 0)
+		req(DataInSets[[working_project()]]$MetaData)
 
-output$sample <-  DT::renderDT(server=FALSE, {
-	req(length(working_project()) > 0)
-	req(DataInSets[[working_project()]]$MetaData)
-
-	meta <- DataInSets[[working_project()]]$MetaData
-	DT::datatable(meta,  extensions = 'Buttons',
-		options = list(dom = 'lBfrtip', pageLength = 15,
-			buttons = list(
-				list(extend = "csv", text = "Download Current Page", filename = "Page_Samples",	exportOptions = list(modifier = list(page = "current"))),
-				list(extend = "csv", text = "Download All", filename = "All_Samples",	exportOptions = list(modifier = list(page = "all")
+		meta <- DataInSets[[working_project()]]$MetaData
+		DT::datatable(meta,  extensions = 'Buttons',
+			options = list(dom = 'lBfrtip', pageLength = 15,
+				buttons = list(
+					list(extend = "csv", text = "Download Current Page", filename = "Page_Samples",	exportOptions = list(modifier = list(page = "current"))),
+					list(extend = "csv", text = "Download All", filename = "All_Samples",	exportOptions = list(modifier = list(page = "all")
+					)
 				)
 			)
-		)
-	),
-rownames= F)
+		),
+	rownames= F)
 })
 
 output$comp_info <- renderUI ({
