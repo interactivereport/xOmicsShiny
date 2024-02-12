@@ -9,7 +9,7 @@
 ##@version 1.0
 ###########################################################################################################
 #pkgs:"DT", "shinyjqui", "dplyr","stringr", "rlang"
-
+#data req: tests_order, ProteinGeneNameHeader, results_long
 
 fisher_pvalue = function(marker_p_values){
 	marker_p_values = data.frame(marker_p_values[!is.na(marker_p_values)])
@@ -41,7 +41,6 @@ stouffer_pvalue = function(marker_p_values){
 	p.val = pnorm(zp, lower.tail = F, log.p = F)
 	return(p.val)
 }
-
 
 mergedata_ui <- function(id) {
 	ns <- shiny::NS(id)
@@ -79,8 +78,12 @@ mergedata_ui <- function(id) {
 				),
 				tabPanel(title="Merge Data", value = "Merge Data",
 					actionButton(ns("merge_data"), "Merge Selected Data Sets"),
-					actionButton(ns("save_mergeddata"), "Save data for output as one Excel file"),
+					shiny::downloadButton(outputId = ns("download_mergeddata_button"),  label = "Download All as CSV file"),
 					DT::dataTableOutput(ns("mergedatatable"))
+				),
+				tabPanel(title="Data Source", value = "Data Source",
+					shiny::downloadButton(outputId = ns("download_datasource_button"),  label = "Download All as CSV file"),
+					DT::dataTableOutput(ns("datasourcetable"))
 				),
 				tabPanel(title="Help", value = "Help", htmlOutput("help_MergedData")
 				)
@@ -93,7 +96,7 @@ mergedata_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- shiny::NS(id)
-			#browser()
+
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)
 				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
@@ -123,7 +126,6 @@ mergedata_server <- function(id) {
 				req(length(working_project()) > 0)
 				req(input$tabset)
 				req(input$add_dataset)
-
 				updateNumericInput(session, "overlapnum", max = length(input$add_dataset))
 
 				projectlist <- list()
@@ -225,12 +227,15 @@ mergedata_server <- function(id) {
 						dplyr::select(one_of(c("UniqueID",   "Gene.Name",  "Protein.ID")))
 					}
 
-					#filename <- paste("H:/Rcode/QuickomicsModule/res.RData",sep="")
-					#save(results_long_sel,selectdatasets, selectdatasetsdf, file=filename )
-
 					selectdataset2 <- stringr::str_split(selectdatasets[2], "->", simplify = TRUE) %>%
 					as.data.frame() %>%
 					rlang::set_names(c("project", "tests"))
+
+					res_wide <- dplyr::bind_rows(results_long_sel) %>%
+					tidyr::pivot_wider(id_cols= !!sym(genelabel),
+						names_from = c(ProjectID,'test'),
+						values_from = c(logFC, P.Value, Adj.P.Value),
+					names_glue = '{.value}_({ProjectID}.{test})')
 
 					if(fcmergemethod == "Average") {
 						res <- dplyr::bind_rows(results_long_sel) %>%
@@ -256,77 +261,108 @@ mergedata_server <- function(id) {
 
 						res <- dplyr::bind_rows(results_long_sel) %>%
 						dplyr::mutate(logFC = ifelse((ProjectID == (selectdataset2 %>% dplyr::pull(project)) & test == (selectdataset2 %>% dplyr::pull(tests))), (intercept  + slope * logFC), logFC )) %>%
-							dplyr::select(-c(ProjectID, test)) %>%
-							dplyr::filter(!is.na(P.Value)) %>%
-							dplyr::group_by(!!sym(genelabel)) %>%
-							dplyr::mutate(mean_logFC = log2(mean(2^logFC, na.rm=TRUE)), n = n())
-						}
+						dplyr::select(-c(ProjectID, test)) %>%
+						dplyr::filter(!is.na(P.Value)) %>%
+						dplyr::group_by(!!sym(genelabel)) %>%
+						dplyr::mutate(mean_logFC = log2(mean(2^logFC, na.rm=TRUE)), n = n())
+					}
 
-						if(pmergemethod == "fisher_Pvalue")
-						res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, fisher_pvalue(P.Value), P.Value))
-						if(pmergemethod == "minP_pvalue")
-						res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, minP_pvalue(P.Value), P.Value))
-						if(pmergemethod == "simes_pvalue")
-						res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, simes_pvalue(P.Value), P.Value))
-						if(pmergemethod == "stouffer_pvalue")
-						res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, stouffer_pvalue(P.Value), P.Value))
+					if(pmergemethod == "fisher_Pvalue")
+					res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, fisher_pvalue(P.Value), P.Value))
+					if(pmergemethod == "minP_pvalue")
+					res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, minP_pvalue(P.Value), P.Value))
+					if(pmergemethod == "simes_pvalue")
+					res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, simes_pvalue(P.Value), P.Value))
+					if(pmergemethod == "stouffer_pvalue")
+					res <- res %>%	dplyr::mutate(merged_Pvalue = if_else(n >= 2, stouffer_pvalue(P.Value), P.Value))
 
-						res <- res %>% dplyr::select(-c(logFC, P.Value, Adj.P.Value)) %>%
-						dplyr::filter(n >= overlapnum) %>%
-						dplyr::distinct() %>%
-						dplyr::ungroup() %>%
-						dplyr::rename(P.Value = merged_Pvalue, logFC = mean_logFC) %>%
-						dplyr::mutate(Adj.P.Value = p.adjust(P.Value, method = "BH", n = length(P.Value))) %>%
-						dplyr::mutate(test = merged_name) %>%
-						dplyr::mutate(UniqueID = !!sym(genelabel)) %>%
-						dplyr::mutate(Protein.ID = !!sym(genelabel)) %>%
-						dplyr::relocate(UniqueID, .before = !!sym(genelabel))
+					res <- res %>% dplyr::select(-c(logFC, P.Value, Adj.P.Value)) %>%
+					dplyr::filter(n >= overlapnum) %>%
+					dplyr::distinct() %>%
+					dplyr::ungroup() %>%
+					dplyr::rename(P.Value = merged_Pvalue, logFC = mean_logFC) %>%
+					dplyr::mutate(Adj.P.Value = p.adjust(P.Value, method = "BH", n = length(P.Value))) %>%
+					dplyr::mutate(test = merged_name) %>%
+					dplyr::mutate(UniqueID = !!sym(genelabel)) %>%
+					dplyr::mutate(Protein.ID = !!sym(genelabel)) %>%
+					dplyr::relocate(UniqueID, .before = !!sym(genelabel))
 
-						###
-						#filename <- paste("H:/Rcode/QuickomicsModule/merged_res.RData",sep="")
-						#save(res, file=filename )
-						###
+					datasource_res <- dplyr::full_join(res, res_wide, by = genelabel) #12122023 by bgao show data source
 
-						ProteinGeneName <- dplyr::bind_rows(ProteinGeneName_merge)  %>% dplyr::distinct()
+					ProteinGeneName <- dplyr::bind_rows(ProteinGeneName_merge)  %>% dplyr::distinct()
 
-						if ("Merged Dataset" %in% names(DataInSets)){
-							if 	(!(merged_name %in% DataInSets[["Merged Dataset"]]$tests_order)){
-								results_long  <- DataInSets[["Merged Dataset"]]$results_long %>%
-								#dplyr::filter(test != merged_name) %>%
-								dplyr::bind_rows(., res)
-								DataInSets[["Merged Dataset"]]$results_long = results_long
-								DataInSets[["Merged Dataset"]]$tests_order = c(DataInSets[["Merged Dataset"]]$tests_order, merged_name)
-							} else {
-								results_long  <- DataInSets[["Merged Dataset"]]$results_long %>%
-								dplyr::filter(test != merged_name) %>%
-								dplyr::bind_rows(., res)
-								DataInSets[["Merged Dataset"]]$results_long = results_long
-							}
+					if ("Merged Dataset" %in% names(DataInSets)){
+						if 	(!(merged_name %in% DataInSets[["Merged Dataset"]]$tests_order)){
+							results_long  <- DataInSets[["Merged Dataset"]]$results_long %>%
+							#dplyr::filter(test != merged_name) %>%
+							dplyr::bind_rows(., res)
+							DataInSets[["Merged Dataset"]]$results_long = results_long
+							DataInSets[["Merged Dataset"]]$tests_order = c(DataInSets[["Merged Dataset"]]$tests_order, merged_name)
 						} else {
-							print("1st merged dataset")
-							DataInSets[["Merged Dataset"]]$Name = "Merged Dataset"
-							DataInSets[["Merged Dataset"]]$ShortName = "Merged Dataset"
-							DataInSets[["Merged Dataset"]]$ProteinGeneName = ProteinGeneName
-							DataInSets[["Merged Dataset"]]$ProteinGeneNameHeader = names(ProteinGeneName)
-							DataInSets[["Merged Dataset"]]$results_long = res
-							DataInSets[["Merged Dataset"]]$tests_order = merged_name
-							DataInSets[["Merged Dataset"]]$Species = DataInSets[[working_project()]]$Species
+							results_long  <- DataInSets[["Merged Dataset"]]$results_long %>%
+							dplyr::filter(test != merged_name) %>%
+							dplyr::bind_rows(., res)
+							DataInSets[["Merged Dataset"]]$results_long = results_long
 						}
-						return(res)
-					})
+					} else {
+						DataInSets[["Merged Dataset"]]$Name = "Merged Dataset"
+						DataInSets[["Merged Dataset"]]$ShortName = "Merged Dataset"
+						DataInSets[["Merged Dataset"]]$ProteinGeneName = ProteinGeneName
+						DataInSets[["Merged Dataset"]]$ProteinGeneNameHeader = names(ProteinGeneName)
+						DataInSets[["Merged Dataset"]]$results_long = res
+						DataInSets[["Merged Dataset"]]$tests_order = merged_name
+						DataInSets[["Merged Dataset"]]$Species = DataInSets[[working_project()]]$Species
+					}
+					return(list("res" = res, "datasource_res" = datasource_res))
 				})
-				output$mergedatatable <- DT::renderDataTable(server=TRUE,{
-					mergeddata <- DataMergeReactive()
+			})
+
+			output$mergedatatable <- DT::renderDataTable(server=TRUE,{
+				mergeddata <- DataMergeReactive()$res
+				mergeddata[,sapply(mergeddata,is.numeric)] <- signif(mergeddata[,sapply(mergeddata,is.numeric)],3)
+				DT::datatable(mergeddata,  extensions = 'Buttons',
+					options = list(	dom = 'lBfrtip', pageLength = 15,
+						buttons = list(
+							list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
+						)
+					),
+				rownames= T)
+			})
+
+			output$datasourcetable <- DT::renderDataTable(server=TRUE,{
+				datasource <- DataMergeReactive()$datasource_res
+				datasource[,sapply(datasource,is.numeric)] <- signif(datasource[,sapply(datasource,is.numeric)],3)
+				DT::datatable(datasource,  extensions = 'Buttons',
+					options = list(	dom = 'lBfrtip', pageLength = 15,
+						buttons = list(
+							list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
+						)
+					),
+				rownames= T)
+			})
+
+			## download big table
+			output$download_mergeddata_button <- shiny::downloadHandler(
+				filename = function() {
+					paste("Results-", Sys.Date(), ".csv", sep="")
+				},
+				content = function(file) {
+					mergeddata <- DataMergeReactive()$res
 					mergeddata[,sapply(mergeddata,is.numeric)] <- signif(mergeddata[,sapply(mergeddata,is.numeric)],3)
-					DT::datatable(mergeddata,  extensions = 'Buttons',
-						options = list(	dom = 'lBfrtip', pageLength = 15,
-							buttons = list(
-								list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
-							)
-						),
-					rownames= T)
-				})
-			}
-		)
-	}
+					write.csv(mergeddata, file)
+				}
+			)
+
+			output$download_datasource_button <- shiny::downloadHandler(
+				filename = function() {
+					paste("Data-", Sys.Date(), ".csv", sep="")
+				},
+				content = function(file) {
+					write.csv(DataMergeReactive()$datasource_res, file)
+				}
+			)
+			
+		}
+	)
+}
 
