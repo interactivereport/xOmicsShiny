@@ -66,8 +66,10 @@ deg_ui <- function(id) {
 						column(width=6, radioButtons(ns("vlegendpos"), label="Legend position", inline = TRUE, choices = c("bottom","right"), selected = "bottom")),
 						column(width=6, radioButtons(ns("rasterize"), label="Rasterize plot", inline = TRUE, choices = c("Yes","No"), selected = "No"))
 					),
-					fluidRow(
-						column(width=6, radioButtons(ns("showpep"), label="Show Unique Peptide (if unique.peptides column is in result table) ", inline = TRUE, choices = c("Yes","No"), selected = "No"))
+					conditionalPanel(ns = ns, "input.tabset =='Volcano Plot'",
+						fluidRow(
+							column(width=6, radioButtons(ns("showpep"), label="Show Unique Peptide (if unique.peptides column is in result table) ", inline = TRUE, choices = c("Yes","No"), selected = "No"))
+						)
 					),
 					conditionalPanel(ns = ns, "input.tabset=='DEGs in Two Comparisons'",
 						fluidRow(
