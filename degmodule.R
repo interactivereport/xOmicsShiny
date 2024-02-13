@@ -351,7 +351,7 @@ deg_server <- function(id) {
 				}
 
 				p <- p	+
-				scale_color_manual(values = c("grey", "green2","red2"))
+				scale_color_manual(values = c("grey", "red2","green2"))
 
 				if (input$rasterize=="Yes") {
 					p <- p + geom_point_rast(aes(color = Significance ), size=0.7, alpha=0.6, na.rm=TRUE, dev="ragg")
@@ -369,7 +369,7 @@ deg_server <- function(id) {
 					dplyr::mutate(unique.peptides = ifelse(unique.peptides >= 3, 3, unique.peptides))
 
 					p <- ggplot(res, aes(x = logFC, y = -log10(P.Value), text = labelid)) +
-					scale_color_manual(values = c("grey", "green2","red2")) +
+					scale_color_manual(values = c("grey", "red2","green2")) +
 					geom_point(aes(color = Significance , size = unique.peptides)) +
 					scale_size(range = c(1,3), breaks = c(1, 2, 3), labels=c("1","2",">3"), guide = "legend") +
 					theme_bw(base_size = 20) +
