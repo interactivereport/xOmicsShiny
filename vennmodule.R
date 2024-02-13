@@ -142,6 +142,10 @@ venn_server <- function(id) {
 		function(input, output, session) {
 			ns <- session$ns
 
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
+
 			output$loaddatasets <- renderUI({
 				req(length(working_project()) > 0)
 				projectlist <- list()
