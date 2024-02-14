@@ -4,7 +4,7 @@
 ##This software belongs to Biogen Inc. All right reserved.
 ##
 ##@file: network.R
-##@Developer : Benbo Gao (benbo.gao@Biogen.com); Kyra Griffin-Mitchell (kyra.griffinmitchell@Biogen.com)
+##@Developer : Lin Tinchi(tinchi.lin@biogen.com); Benbo Gao (benbo.gao@Biogen.com); Kyra Griffin-Mitchell (kyra.griffinmitchell@Biogen.com)
 ##@Date : 02/23/2022
 ##@version 1.0
 ###########################################################################################################
