@@ -996,13 +996,16 @@ observeEvent(input$removedata, {
 	DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
 	if (length(names(DataInSets_List))>0) {
 		working_project(names(DataInSets_List)[1])
-	} else { working_project(NULL) }
-		DS_names(names(DataInSets_List))
-		#make(lock_envir = FALSE)
-		#rm(currentproject, envir = .subset2(DataInSets, "impl")$.values)
-		#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
-		#.subset2(DataInSets, "impl")$.values$remove(currentproject)
-	})
+	} else {
+		working_project(NULL)
+	}
+
+	DS_names(names(DataInSets_List))
+	#make(lock_envir = FALSE)
+	#rm(currentproject, envir = .subset2(DataInSets, "impl")$.values)
+	#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
+	#.subset2(DataInSets, "impl")$.values$remove(currentproject)
+})
 	## save tables
 	observeEvent(input$results, {
 		req(length(working_project()) > 0)
