@@ -312,6 +312,11 @@ mergedata_server <- function(id) {
 						DataInSets[["Merged Dataset"]]$results_long = res
 						DataInSets[["Merged Dataset"]]$tests_order = merged_name
 						DataInSets[["Merged Dataset"]]$Species = DataInSets[[working_project()]]$Species
+						#change DS_names
+						DataInSets_List<-reactiveValuesToList(DataInSets)
+						DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
+						DS_names(names(DataInSets_List))
+	
 					}
 					return(list("res" = res, "datasource_res" = datasource_res))
 				})
