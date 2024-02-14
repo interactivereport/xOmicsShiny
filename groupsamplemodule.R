@@ -47,7 +47,7 @@ groupsample_server <- function(id) {
 
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)
-				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=names(DataInSets), inline = F, selected=working_project())
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 			})
 
 			observeEvent(input$current_dataset, {
