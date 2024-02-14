@@ -133,6 +133,10 @@ deg_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- shiny::NS(id)
+			
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
 
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)

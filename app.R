@@ -10,8 +10,10 @@
 ###########################################################################################################
 source("global.R",local = TRUE)$value
 
+
 ui <- fluidPage(
 	theme = shinytheme("cerulean"),
+	useShinyjs(),
 	titlePanel(
 		fluidRow(
 			column(4, img(height =75 , src = "")),

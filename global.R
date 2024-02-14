@@ -10,17 +10,20 @@
 ###########################################################################################################
 options(stringsAsFactors=F)
 options(ggrepel.max.overlaps = Inf)
-options(shiny.maxRequestSize = 60*1024^2)  #upload files up to 50 Mb
+options(shiny.maxRequestSize = 120*1024^2)  #upload files up to 100 Mb
+options(rgl.useNULL = TRUE)
 
 suppressPackageStartupMessages({
 	library(shiny)
 	library(shinythemes)
 	library(shinyalert)
 	library(shinyjqui)
-	library(dplyr)
-	library(purrr)
-	library(tidyr)
-	library(tibble)
+  library(shinyjs)
+  library(tidyverse)
+	#library(dplyr)
+	#library(purrr)
+	#library(tidyr)
+	#library(tibble)
 	library(plotly)
 	library(ggpubr)
 	library(ggrepel)
@@ -30,6 +33,7 @@ suppressPackageStartupMessages({
 	library(stringr)
 	library(ggrastr)
 	library(ggpmisc)
+  library(rclipboard)
 })
 
 resultfilter <- function(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label) {
@@ -212,42 +216,55 @@ ProcessUploadGeneList <- function(gene_list) {
 	return(gene_list)
 }
 
-ORAEnrichment <- function(deGenes, universe, detected_genes, gsets, logFC, Dir="Both"){
-	deGenes = deGenes[which(deGenes %in% universe)]
-	tmp = rep(NA, length(gsets))
-	ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp, UpGene= tmp, DownGene=tmp, SetNum = tmp)
-	totalDE = length(deGenes)
-	n = length(universe) - totalDE
-
-	for (j in 1:length(gsets)){
-		gset = gsets[[j]]
-		DEinS = intersect(gset, deGenes)
-		logFCinS = logFC[DEinS]
-		totalDEinS = length(intersect(gset, deGenes))
-		totalSinUniverse = length(intersect(gset, universe))
-		totalSinDetected = length(intersect(gset, detected_genes))
-
-		N_q=totalDEinS- 0.5
-		if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5
-		} else if (Dir=="Down") {
-			N_q=length(logFCinS[logFCinS < 0])-0.5
-		}
-
-		ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
-		ora.stats[j, "DeGeneNum"] = totalDEinS
-		ora.stats[j, "SetNum"] = length(gset)
-		ora.stats[j, "SetNum(detected)"] = totalSinDetected
-		ora.stats[j, "UpGene"] = length(logFCinS[logFCinS > 0])
-		ora.stats[j, "DownGene"] = length(logFCinS[logFCinS < 0])
-
-	}
-	ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
-	row.names(ora.stats) = names(gsets)
-
-	ora.stats = ora.stats[order(ora.stats[,"p.value"]),]
-	ora.stats = cbind(Rank=seq(1, nrow(ora.stats)),ora.stats)
-	return(ora.stats)
+ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
+  deGenes = deGenes[which(deGenes %in% universe)]
+  tmp = rep(NA, length(gsets))
+  ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,UpGene= tmp, DownGene=tmp, SetNum = tmp, N_q=tmp)
+  totalDE = length(deGenes)
+  n = length(universe) - totalDE
+  
+  for (j in 1:length(gsets)){
+    gset = gsets[[j]]
+    DEinS = intersect(gset, deGenes)
+    logFCinS = logFC[DEinS]
+    totalDEinS = length(intersect(gset, deGenes))
+    totalSinUniverse = length(intersect(gset, universe))
+    
+    N_q=totalDEinS- 0.5
+    if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5 
+    } else if (Dir=="Down") {N_q=length(logFCinS[logFCinS < 0])-0.5}
+    
+    ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
+    ora.stats[j, "DeGeneNum"] = totalDEinS
+    ora.stats[j, "SetNum"] = totalSinUniverse  #previous versions used length(gset)
+    ora.stats[j, "UpGene"] = length(logFCinS[logFCinS > 0])
+    ora.stats[j, "DownGene"] = length(logFCinS[logFCinS < 0])
+    ora.stats[j, "N_q"]=N_q 
+    
+  }
+  ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
+  ora.stats<-ora.stats%>%mutate(GeneSet= names(gsets))%>%
+    arrange(p.value, dplyr::desc(N_q))%>% rownames_to_column('rank')%>%dplyr::select(-N_q)%>%relocate(GeneSet)
+  return(ora.stats)
 }
+
+homologs=readRDS("db/Homologs.rds")
+homolog_mapping<-function(genelist, species1, species2, homologs) {
+  if (species2=="human") {
+    genelist2=toupper(genelist)
+  } else {
+    genelist2=str_to_title(genelist)
+  }
+  if (tolower(species1) %in% c("human", "mouse", "rat")) {
+    species1=tolower(species1)
+    lookup<-homologs%>%filter(Species1==species1, Species2==species2)
+    df<-data.frame(genelist, genelist2)%>%left_join(lookup%>%transmute(genelist=symbol1, mapped_symbol=symbol2))%>%
+      mutate(mapped_symbol=ifelse(is.na(mapped_symbol), genelist2, mapped_symbol))
+    genelist2<-df$mapped_symbol
+  }
+  return(genelist2)
+}
+
 
 UserColorPlalette <- function (colpalette, items){
 	n <- brewer.pal.info[colpalette,'maxcolors']
@@ -266,12 +283,15 @@ mycss <- "select ~ .selectize-control .selectize-input { max-height: 200px;  ove
 config=NULL
 server_dir=NULL
 test_dir=NULL
+gmt_file_info=NULL
 if (file.exists("config.csv")) { #load optional configuration file
 	config=read_csv("config.csv")
 	N=match("server_dir", config$category)
 	if (!is.na(N)) {server_dir=config$value[N]}
 	N=match("test_dir", config$category)
 	if (!is.na(N)) {test_dir=config$value[N]}
+	N=match("gmt_file_info", config$category)
+	if (!is.na(N)) {gmt_file_info=config$value[N]}
 	#browser() #debug
 }
 
