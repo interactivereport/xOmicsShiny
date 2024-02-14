@@ -150,7 +150,7 @@ deg_server <- function(id) {
 			output$loaddatasets <- renderUI({
 				req(length(working_project()) > 0)
 				projectlist <- list()
-				for (project in names(DataInSets)) {
+				for (project in DS_names()) {
 					projectlist <-	append(projectlist, paste(project, DataInSets[[project]]$tests_order, sep="->"))
 				}
 				tagList(
@@ -172,7 +172,7 @@ deg_server <- function(id) {
 				req(input$tabset)
 				req(input$add_dataset)
 				projectlist <- list()
-				for (project in names(DataInSets)) {
+				for (project in DS_names()) {
 					projectlist <-	append(projectlist, paste(project, DataInSets[[project]]$tests_order, sep="->"))
 				}
 				if(length(input$add_dataset) > maxcomparison()){
