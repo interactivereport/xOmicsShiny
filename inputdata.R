@@ -214,8 +214,6 @@ DataReactiveRData <- reactive({
 			load(file1)
 		}
 
-
-
 		returnlist[["ProjectID"]] = ProjectID
 		returnlist[["Name"]] = ProjectName
 		returnlist[["Species"]] = Species
@@ -991,7 +989,6 @@ observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 
 observeEvent(input$removedata, {
 	DataInSets[[working_project()]] <- NULL
-	#currentproject = working_project()
 	DataInSets_List<-reactiveValuesToList(DataInSets)
 	DataInSets_List<-DataInSets_List[!sapply(DataInSets_List, is.null)]
 	if (length(names(DataInSets_List))>0) {
@@ -1006,144 +1003,144 @@ observeEvent(input$removedata, {
 	#.subset2(DataInSets, "impl")$.valuesDeps$invalidate()
 	#.subset2(DataInSets, "impl")$.values$remove(currentproject)
 })
-	## save tables
-	observeEvent(input$results, {
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$data_results)
-		results = DataInSets[[working_project()]]$data_results
-		results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
-		saved_table$results <- results
-	})
+## save tables
+observeEvent(input$results, {
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$data_results)
+	results = DataInSets[[working_project()]]$data_results
+	results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+	saved_table$results <- results
+})
 
-	observeEvent(input$sample, {
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$MetaData)
-		saved_table$sample <- DataInSets[[working_project()]]$MetaData
-	})
+observeEvent(input$sample, {
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$MetaData)
+	saved_table$sample <- DataInSets[[working_project()]]$MetaData
+})
 
-	observeEvent(input$data_wide, {
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$data_wide)
-		data_wide <- DataInSets[[working_project()]]$data_wide %>%
-		tibble::rownames_to_column(var = "ID")
-		saved_table$data <- data_wide
-	})
+observeEvent(input$data_wide, {
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$data_wide)
+	data_wide <- DataInSets[[working_project()]]$data_wide %>%
+	tibble::rownames_to_column(var = "ID")
+	saved_table$data <- data_wide
+})
 
-	observeEvent(input$ProteinGeneName, {
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$ProteinGeneName)
-		saved_table$ProteinGeneName <- DataInSets[[working_project()]]$ProteinGeneName
-	})
+observeEvent(input$ProteinGeneName, {
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$ProteinGeneName)
+	saved_table$ProteinGeneName <- DataInSets[[working_project()]]$ProteinGeneName
+})
 
-	### unit and short name
-	output$exp_unit <- renderUI({
-		req(length(working_project()) > 0)
-		textInput("exp_unit", "Expression Data Units", value="Expression Level", width="300px")
-	})
+### unit and short name
+output$exp_unit <- renderUI({
+	req(length(working_project()) > 0)
+	textInput("exp_unit", "Expression Data Units", value="Expression Level", width="300px")
+})
 
-	output$ShortName <- renderUI({
-		req(length(working_project()) > 0)
-		textInput("ShortName", "Rename Project Name", value="", width="300px")
-	})
+output$ShortName <- renderUI({
+	req(length(working_project()) > 0)
+	textInput("ShortName", "Rename Project Name", value="", width="300px")
+})
 
-	observe({
-		req(length(working_project()) > 0)
-		updateTextInput(session, "exp_unit", value=DataInSets[[working_project()]]$exp_unit)
-		updateTextInput(session, "ShortName", value=DataInSets[[working_project()]]$ShortName)
-	})
+observe({
+	req(length(working_project()) > 0)
+	updateTextInput(session, "exp_unit", value=DataInSets[[working_project()]]$exp_unit)
+	updateTextInput(session, "ShortName", value=DataInSets[[working_project()]]$ShortName)
+})
 
-	observeEvent(input$exp_unit, {
-		req(length(working_project()) > 0)
-		DataInSets[[working_project()]]$exp_unit <- input$exp_unit
-	})
+observeEvent(input$exp_unit, {
+	req(length(working_project()) > 0)
+	DataInSets[[working_project()]]$exp_unit <- input$exp_unit
+})
 
-	observeEvent(input$ShortName, {
-		req(length(working_project()) > 0)
-		DataInSets[[working_project()]]$ShortName <- input$ShortName
-	})
+observeEvent(input$ShortName, {
+	req(length(working_project()) > 0)
+	DataInSets[[working_project()]]$ShortName <- input$ShortName
+})
 
-	###
-	output$loadedprojects <- renderUI({
-		req(length(working_project()) > 0)
-		radioButtons("current_dataset", label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
-	})
+###
+output$loadedprojects <- renderUI({
+	req(length(working_project()) > 0)
+	radioButtons("current_dataset", label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+})
 
-	observeEvent(input$current_dataset, {
-		working_project(input$current_dataset)
-	})
+observeEvent(input$current_dataset, {
+	working_project(input$current_dataset)
+})
 
-	output$project <- renderText({
-		if (length(working_project()) == 0){
-			""
-		} else {
-			paste("Project: ", working_project(), sep=" ")
-		}
-	})
+output$project <- renderText({
+	if (length(working_project()) == 0){
+		""
+	} else {
+		paste("Project: ", working_project(), sep=" ")
+	}
+})
 
-	output$summary <- renderText({
-		req(length(working_project()) > 0)
+output$summary <- renderText({
+	req(length(working_project()) > 0)
 
-		summary=stringr::str_c('<style type="text/css">
-			.disc {	list-style-type: disc;}
-			.square { list-style-type: square; margin-left: -2em;	font-size: small}
-			</style>',
-			"<h2>Project ID: ", DataInSets[[working_project()]]$ProjectID, "</h2><br>",
-			"<ul class='disc'>",
-			"<li>Project Short Name: ", DataInSets[[working_project()]]$ShortName, "</li>",
-			"<li>Description: ", DataInSets[[working_project()]]$Name, "</li>",
-			"<li>Species: ", DataInSets[[working_project()]]$Species, "</li>",
-			"<li>Data Path: ", DataInSets[[working_project()]]$Path, "</li>",
-			"<li>Number of Samples: ", nrow(DataInSets[[working_project()]]$MetaData), "</li>",
-			"<li>Number of Groups: ", length(DataInSets[[working_project()]]$groups), " (please see group table below)</li>",
-			"<li>Number of Genes/Proteins: ", nrow(DataInSets[[working_project()]]$data_wide), "</li>",
-			"<li>Number of Comparison Tests: ", length(DataInSets[[working_project()]]$tests), "</li>",
-			'<ul class="square">', paste(stringr::str_c("<li>", DataInSets[[working_project()]]$tests, "</li>"), collapse=""), "</ul></li></ul><br><hr>",
-			"<h4>Number of Samples in Each Group</h4>"
-		)
-	})
+	summary=stringr::str_c('<style type="text/css">
+		.disc {	list-style-type: disc;}
+		.square { list-style-type: square; margin-left: -2em;	font-size: small}
+		</style>',
+		"<h2>Project ID: ", DataInSets[[working_project()]]$ProjectID, "</h2><br>",
+		"<ul class='disc'>",
+		"<li>Project Short Name: ", DataInSets[[working_project()]]$ShortName, "</li>",
+		"<li>Description: ", DataInSets[[working_project()]]$Name, "</li>",
+		"<li>Species: ", DataInSets[[working_project()]]$Species, "</li>",
+		"<li>Data Path: ", DataInSets[[working_project()]]$Path, "</li>",
+		"<li>Number of Samples: ", nrow(DataInSets[[working_project()]]$MetaData), "</li>",
+		"<li>Number of Groups: ", length(DataInSets[[working_project()]]$groups), " (please see group table below)</li>",
+		"<li>Number of Genes/Proteins: ", nrow(DataInSets[[working_project()]]$data_wide), "</li>",
+		"<li>Number of Comparison Tests: ", length(DataInSets[[working_project()]]$tests), "</li>",
+		'<ul class="square">', paste(stringr::str_c("<li>", DataInSets[[working_project()]]$tests, "</li>"), collapse=""), "</ul></li></ul><br><hr>",
+		"<h4>Number of Samples in Each Group</h4>"
+	)
+})
 
-	group_info <- reactive({
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$MetaData)
-		group_info <- DataInSets[[working_project()]]$MetaData %>% dplyr::group_by(group) %>% dplyr::count()
-		return(t(group_info))
-	})
-	output$group_table <- renderTable(group_info(), colnames=F)
+group_info <- reactive({
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$MetaData)
+	group_info <- DataInSets[[working_project()]]$MetaData %>% dplyr::group_by(group) %>% dplyr::count()
+	return(t(group_info))
+})
+output$group_table <- renderTable(group_info(), colnames=F)
 
-	output$results <- DT::renderDataTable(server=TRUE,{
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$data_results)
+output$results <- DT::renderDataTable(server=TRUE,{
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$data_results)
 
-		results <- DataInSets[[working_project()]]$data_results %>%
-		#dplyr::select(-one_of(c("UniqueID","id")))
-		dplyr::select(-any_of(c("id")))
+	results <- DataInSets[[working_project()]]$data_results %>%
+	#dplyr::select(-one_of(c("UniqueID","id")))
+	dplyr::select(-any_of(c("id")))
 
-		results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+	results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
 
-		DT::datatable(results,  extensions = 'Buttons',
-			options = list(	dom = 'lBfrtip', pageLength = 15,
-				buttons = list(
-					list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
-				)
-			),
-		rownames= T)
-	})
-
-	output$sample <-  DT::renderDT(server=FALSE, {
-		req(length(working_project()) > 0)
-		req(DataInSets[[working_project()]]$MetaData)
-
-		meta <- DataInSets[[working_project()]]$MetaData
-		DT::datatable(meta,  extensions = 'Buttons',
-			options = list(dom = 'lBfrtip', pageLength = 15,
-				buttons = list(
-					list(extend = "csv", text = "Download Current Page", filename = "Page_Samples",	exportOptions = list(modifier = list(page = "current"))),
-					list(extend = "csv", text = "Download All", filename = "All_Samples",	exportOptions = list(modifier = list(page = "all")
-					)
-				)
+	DT::datatable(results,  extensions = 'Buttons',
+		options = list(	dom = 'lBfrtip', pageLength = 15,
+			buttons = list(
+				list(extend = "csv", text = "Download Current Page", filename = "Page_Results",	exportOptions = list(modifier = list(page = "current")))
 			)
 		),
-	rownames= F)
+	rownames= T)
+})
+
+output$sample <-  DT::renderDT(server=FALSE, {
+	req(length(working_project()) > 0)
+	req(DataInSets[[working_project()]]$MetaData)
+
+	meta <- DataInSets[[working_project()]]$MetaData
+	DT::datatable(meta,  extensions = 'Buttons',
+		options = list(dom = 'lBfrtip', pageLength = 15,
+			buttons = list(
+				list(extend = "csv", text = "Download Current Page", filename = "Page_Samples",	exportOptions = list(modifier = list(page = "current"))),
+				list(extend = "csv", text = "Download All", filename = "All_Samples",	exportOptions = list(modifier = list(page = "all")
+				)
+			)
+		)
+	),
+rownames= F)
 })
 
 output$comp_info <- renderUI ({
