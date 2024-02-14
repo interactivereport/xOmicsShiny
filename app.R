@@ -15,9 +15,9 @@ ui <- fluidPage(
 	titlePanel(
 		fluidRow(
 			column(4, img(height =75 , src = "")),
-			column(8,  h2(strong("xOmicsShiny"), align = 'left'))
+			column(8,  h2(strong("Multiomics Visualization"), align = 'left'))
 		),
-	windowTitle = "xOmicsShiny"),
+	windowTitle = "Multiomics Visualization"),
 	includeCSS("menuhexagonal.css"),
 	navbarPage(title = "", id="menu", selected = "Dataset",
 		#tabPanel(textOutput('project')),
