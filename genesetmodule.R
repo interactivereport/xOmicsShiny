@@ -80,14 +80,6 @@ geneset_ui <- function(id) {
 
                               )
              ),
-             conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
-                              radioButtons(ns("kegg_more_tests"), label= "Add more comparisons?", choices= c("Yes", "No"),selected="No", inline = TRUE),
-                              conditionalPanel(ns = ns, "input.kegg_more_tests=='Yes'",
-                                               selectInput(ns("geneset_test2"), label="2nd Comparison", choices=NULL),
-                                               selectInput(ns("geneset_test3"), label="3rd Comparison", choices=NULL),
-                                               selectInput(ns("geneset_test4"), label="4th Comparison", choices=NULL),
-                                               selectInput(ns("geneset_test5"), label="5th Comparison", choices=NULL))
-             ),				
              conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Heatmap'",
                               column(width=6,sliderInput(ns("hxfontsize_gsh"), "Column Font Size:", min = 2, max = 24, step = 1, value = 12)),
                               column(width=6,sliderInput(ns("hyfontsize_gsh"), "Row Font Size:", min = 2, max = 24, step = 1, value = 10)),
@@ -99,6 +91,12 @@ geneset_ui <- function(id) {
              ),
              
              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
+                              radioButtons(ns("kegg_more_tests"), label= "Add more comparisons?", choices= c("Yes", "No"),selected="No", inline = TRUE),
+                              conditionalPanel(ns = ns, "input.kegg_more_tests=='Yes'",
+                                               selectInput(ns("geneset_test2"), label="2nd Comparison", choices=NULL),
+                                               selectInput(ns("geneset_test3"), label="3rd Comparison", choices=NULL),
+                                               selectInput(ns("geneset_test4"), label="4th Comparison", choices=NULL),
+                                               selectInput(ns("geneset_test5"), label="5th Comparison", choices=NULL)),
                               column(width=6, selectInput(ns("kegg_logFC"), label= "Gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
                               column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "Compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
                               radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE))
@@ -127,8 +125,11 @@ geneset_ui <- function(id) {
                                                                     column(4,textInput(ns('x2'), 'Gene Set')) ),
                                 actionButton(ns("genesetheatmap"), "Save to output"),
                                 uiOutput(ns("plot.geneset.heatmap"))),
-                       tabPanel(title="KEGG Pathway View", fluidRow( column(4,textInput(ns('analysis_type_3'), 'Analysis Type')%>%disabled()),
-                                                                     column(4,textInput(ns('x3'), 'Gene Set')) ), actionButton(ns("keggSave"), "Save to output"),plotOutput(ns('keggView'))),
+                       tabPanel(title="KEGG Pathway View",
+                              p("Select a KEGG Pathway by either clicking its name from the results table in the GSEA/ORA tab, or choose/search from the dropdown list below."),
+                                selectizeInput(ns("sel_kegg_set"), label="KEGG Pathway for Visualization", choices = NULL, multiple = FALSE, width="600px", 
+                                               options = list(placeholder =	'Type to search')),
+                                actionButton(ns("keggSave"), "Save to output"),plotOutput(ns('keggView'))),
                        tabPanel(title="Help", htmlOutput('help_geneset'))
            )
     )
@@ -307,6 +308,18 @@ geneset_server <- function(id, activeData=NULL) {
                           }
                         })
                         
+                        observeEvent(input$MSigDB_species, {
+                          kegg_file=str_c("db/", input$MSigDB_species, "/kegg.gmt")
+                          if (file.exists(kegg_file)) {
+                            path1<-gmtPathways(kegg_file)
+                            kegg_names=names(path1)
+                            kegg_choices= c('Type to Search' = '', kegg_names)
+                            #browser()
+                            updateSelectizeInput(session, "sel_kegg_set", choices = kegg_choices, selected="Type to Search", server = TRUE)
+                          }
+                        })
+                        
+                        
                         observeEvent(c(input$ORA_input_type, input$geneset_tabset),{
                           req(input$ORA_input_type, input$geneset_tabset)
                           if (input$ORA_input_type=='Gene List' && input$geneset_tabset=='Over-Representation Analysis (ORA)')  {
@@ -449,10 +462,11 @@ geneset_server <- function(id, activeData=NULL) {
                           updateTabsetPanel(session, 'geneset_tabset', selected = 'Gene Expression')
                           updateTextInput(session, 'x1', value = info$value)
                           updateTextInput(session, 'x2', value = info$value)
-                          updateTextInput(session, 'x3', value = info$value)
+                          #updateTextInput(session, 'x3', value = info$value)
+                          updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
                           updateTextInput(session, 'analysis_type_1', value = analysis_type)
                           updateTextInput(session, 'analysis_type_2', value = analysis_type)
-                          updateTextInput(session, 'analysis_type_3', value = analysis_type)
+                         # updateTextInput(session, 'analysis_type_3', value = analysis_type)
                         })
                         
                         
@@ -621,10 +635,11 @@ geneset_server <- function(id, activeData=NULL) {
                             updateTabsetPanel(session, 'geneset_tabset', selected = 'Gene Expression')
                             updateTextInput(session, 'x1', value = info$value)
                             updateTextInput(session, 'x2', value = info$value)
-                            updateTextInput(session, 'x3', value = info$value)
+                            #updateTextInput(session, 'x3', value = info$value)
+                            updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
                             updateTextInput(session, 'analysis_type_1', value = analysis_type)
                             updateTextInput(session, 'analysis_type_2', value = analysis_type)
-                            updateTextInput(session, 'analysis_type_3', value = analysis_type)
+                            #updateTextInput(session, 'analysis_type_3', value = analysis_type)
                           }
                         })
                         
@@ -695,19 +710,13 @@ geneset_server <- function(id, activeData=NULL) {
                         } )
                         
                         keggView_out <- reactive({withProgress(message = 'Making KEGG Pathway View...', value = 0, {
-                          analysis_type = input$analysis_type_2
-                          ID = input$x2
-                          validate(need(ID!="", message = "Select a KEGG gene set by clicking a GeneSet name from 'Gene Set Enrichment Analysis (GSEA)' or 'Over-Representation Analysis (ORA)' tab."))
+                          #analysis_type = input$analysis_type_2
+                          #ID = input$x3
+                          ID=input$sel_kegg_set
+                          validate(need(ID!="", message = "Please select a KEGG pathway to map logFC data to it."))
                           validate(need(str_detect(ID, "^(hsa|mmu|rno)\\d{5}"), message = "Only works on human/mouse/rat KEGG pathways."))
                           species=input$MSigDB_species
                           if (species=="rat") {species="rno"}
-                          if (analysis_type == "GSEA") {
-                            getresults <- DataGenesetReactive_GSEA()
-                            sig_genes <-  getresults$gene_list
-                          } else if (analysis_type == "ORA") {
-                            getresults <- DataGenesetReactive_ORA()
-                            sig_genes <-  getresults$sig_genes
-                          }
                           pid <- strsplit(ID,"_")[[1]][1]
                           img.file <- paste(pid,"pathview","png",sep=".")
                           dataIn=DataReactive()
@@ -781,7 +790,8 @@ geneset_server <- function(id, activeData=NULL) {
                         
                         
                         observeEvent(input$keggSave, {
-                          ID = input$x3
+                          #ID = input$x3
+                          ID=input$sel_kegg_set
                           img.file <- keggView_out()
                           if (file.exists(img.file)) {
                             img <- readPNG(img.file)
@@ -798,7 +808,7 @@ geneset_server <- function(id, activeData=NULL) {
                         
                         genesetheatmap_out <- reactive({withProgress(message = 'Making heatmap...', value = 0, {
                           analysis_type = input$analysis_type_3
-                          ID = input$x3
+                          ID = input$x2
                           #validate(need(ID!="", message = "Select one geneset by clicking a GeneSet name from 'Gene Set Enrichment Analysis (GSEA)' or 'Over-Representation Analysis (ORA)' tab."))
                           
                           DataIn = DataReactive()
@@ -857,7 +867,7 @@ geneset_server <- function(id, activeData=NULL) {
                         })
                         
                         output$SetHeatMap = renderPlot({
-                          ID = input$x3
+                          ID = input$x2
                           validate(need(ID!="", message = "Select one geneset by clicking a GeneSet name from 'Gene Set Enrichment Analysis (GSEA)' or 'Over-Representation Analysis (ORA)' tab."))
                           #grid.draw(genesetheatmap_out()$gtable)
                           draw(genesetheatmap_out(), merge_legend=T,  auto_adjust = FALSE)
