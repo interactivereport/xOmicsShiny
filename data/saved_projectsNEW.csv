@@ -1,0 +1,17 @@
+Names,ShortNames,ProjectID,Species
+Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data,Mouse Microglia RNA,Mouse_microglia_RNA-Seq,mouse
+LRRK2 Neuron Transcriptome,LRRK2 Neuron RNA,LRRK2_Neuron_RNA,human
+LRRK2 Neuron Proteome,LRRK2 Neuron Proteome,LRRK2_Neuron_Protein,human
+RNASeqtest2,RNASeqtest2,RNASeqtest2,rat
+Human Brain (Cortex) Proteome in AD and PD by Maxquant,ADPD_cortex_Maxquant,ADPD_cortex_Maxquant,human
+Human Brain (ACG) Proteome in AD and PD by Maxquant,ADPD_ACG_Maxquant,ADPD_ACG_Maxquant,human
+Human Brain (Cortex) Proteome in AD and PD by proteome discoverer,ADPD_cortex_Pdiscover,ADPD_cortex_Pdiscover,human
+Human Brain (Cortex) Proteome in AD and PD by  proteome discoverer,ADPD_ACG_Pdiscover,ADPD_ACG_Pdiscover,human
+2021_RG_FMR1_MS2,2021_RG_FMR1_MS2,2021_RG_FMR1_MS2,human
+2021_RG_FMR1_MS3,2021_RG_FMR1_MS3,2021_RG_FMR1_MS3,human
+2023_LZ_DMFMMF_Dose,2023_LZ_DMFMMF_Dose,2023_LZ_DMFMMF_Dose,human
+2022_RG_CPZ_Timecourse,2022_RG_CPZ_Timecourse,2022_RG_CPZ_Timecourse,human
+Rat_brain_OGA_Proteomics,Rat_brain_OGA_Proteomics,Rat_brain_OGA_Proteomics,rat
+Rat_brain_OGA_Metabolomics,Rat_brain_OGA_Metabolomics,Rat_brain_OGA_Metabolomics,rat
+Rat_brain_OGA_RNASeq,Rat_brain_OGA_RNASeq,Rat_brain_OGA_RNASeq,rat
+
