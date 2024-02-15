@@ -133,7 +133,7 @@ deg_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- shiny::NS(id)
-			
+
 			observeEvent(input$current_dataset, {
 				working_project(input$current_dataset)
 			})
@@ -141,10 +141,6 @@ deg_server <- function(id) {
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)
 				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
-			})
-
-			observeEvent(input$current_dataset, {
-				working_project(input$current_dataset)
 			})
 
 			output$loaddatasets <- renderUI({
@@ -180,7 +176,6 @@ deg_server <- function(id) {
 				}
 			})
 
-			#################
 			observeEvent(input$label , {
 				req(length(working_project()) > 0)
 				req(input$label == "Geneset")
@@ -196,7 +191,6 @@ deg_server <- function(id) {
 				geneset_genenames <- GetGenesFromGeneSet(sel_geneset)
 				updateTextAreaInput(session, "geneset_genes", value=paste(geneset_genenames, collapse=","))
 			})
-			###############
 
 			observe({
 				req(length(working_project()) > 0)
@@ -266,6 +260,7 @@ deg_server <- function(id) {
 				) %>%
 				dplyr::mutate(logFC_ori = logFC)
 
+
 				if (Max_Pvalue > 0) {
 					if (psel == "Padj")
 					res <- res %>% dplyr::mutate(Adj.P.Value=pmax(Adj.P.Value, 10^(0-Max_Pvalue) ))
@@ -279,7 +274,7 @@ deg_server <- function(id) {
 
 				if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(data_results))) {
 					res <- res %>%
-					dplyr::left_join(data_results %>% dplyr::select(id, unique.peptides), by="id")
+					dplyr::left_join(.,(data_results %>% dplyr::select(id, unique.peptides)), by="id")
 				}
 				return(res)
 			})
@@ -302,10 +297,10 @@ deg_server <- function(id) {
 				if (psel == "Adj.P.Value") {
 					if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(res))) {  #02122024 by bgao
 						res <- res %>%
-						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance ,unique.peptides,logFC_ori)
+						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance,unique.peptides,logFC_ori)
 					} else {
 						res <- res %>%
-						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance , logFC_ori)
+						dplyr::select(UniqueID, labelid, logFC, Adj.P.Value, Significance, logFC_ori)
 					}
 
 					p <- ggplot(res, aes(x = logFC, y = -log10(Adj.P.Value), text = labelid))
@@ -321,10 +316,10 @@ deg_server <- function(id) {
 				} else {
 					if (input$showpep == "Yes" & ("unique.peptides" %in% colnames(res))) { #02122024 by bgao
 						res <- res %>%
-						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance , unique.peptides, logFC_ori)
+						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance, unique.peptides, logFC_ori)
 					} else {
 						res <- res %>%
-						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance , logFC_ori)
+						dplyr::select(UniqueID, labelid, logFC, P.Value, Significance, logFC_ori)
 					}
 
 					filterSig <- paste0(psel,"<", pvalcut," & abs(log2FC)>=", FCcut_rd)
@@ -356,7 +351,7 @@ deg_server <- function(id) {
 					validate(need(nrow(data.label)>0, message = "no gene found in result"))
 				}
 
-				p <- p	+
+				p <- p +
 				scale_color_manual(values = c("grey", "red2","green2"))
 
 				if (input$rasterize=="Yes") {
@@ -474,7 +469,6 @@ deg_server <- function(id) {
 				req(length(working_project()) > 0)
 				req(DataInSets[[working_project()]]$results_long)
 				results_long <-  DataInSets[[working_project()]]$results_long
-				#test_sel <- DataInSets[[working_project()]]$tests_order
 
 				p_sel   <- input$psel
 				FCcut <- log2(as.numeric(input$FCcut))
@@ -490,25 +484,6 @@ deg_server <- function(id) {
 				dplyr::group_by(test) %>%
 				dplyr::summarize(DEG=n(), Up=sum(logFC>0), Down=sum(logFC<0)) %>%
 				dplyr::ungroup()
-
-				if (FALSE) {
-					names(deg_stat)[1]="Comparison"
-					more_comp=setdiff(unique(results_long$test), deg_stat$Comparison)
-					if (length(more_comp)>0) {deg_stat<-rbind(deg_stat, data.frame(Comparison=more_comp, DEG=0, Up=0, Down=0))}
-					deg_stat<-deg_stat%>%arrange(Comparison)%>%filter(!is.na(Comparison))
-
-					comp_info=DataInSets[[working_project()]]$comp_info
-
-					if (!is.null(comp_info)) {
-						name1=rownames(comp_info)
-						if ( all(sort(name1)==sort(deg_stat$Comparison)) ) {
-							new_order=match(name1, deg_stat$Comparison)
-							deg_stat=deg_stat[new_order, ]
-						} else {
-							cat("comp_info row names doesn't match comparison data results!\n")
-						}
-					}
-				}
 
 				return(deg_stat)
 			})
@@ -646,7 +621,6 @@ deg_server <- function(id) {
 					ylab <- "-log10(P.Value)"
 				}
 
-
 				if (input$label=="Upload" | input$label=="Geneset") {
 					if (input$label=="Upload") {
 						req(input$gene_list)
@@ -734,7 +708,6 @@ deg_server <- function(id) {
 				pvalcut = as.numeric(input$pvalcut)
 				genelabel = input$genelabel
 
-
 				selectdatasetsdf <- stringr::str_split(selectdatasets, "->", simplify = TRUE) %>%
 				as.data.frame() %>%
 				rlang::set_names(c("project", "tests"))
@@ -764,7 +737,6 @@ deg_server <- function(id) {
 					res$labelid = res[,match(genelabel, colnames(res))]
 
 					if (input$psel == "Padj") {
-
 						res$Sig[which((abs(res$logFC)>FCcut)*(res$Adj.P.Value<pvalcut)==1)] = sigstr
 
 						if (input$Max_Pvalue>0) {
@@ -853,8 +825,7 @@ deg_server <- function(id) {
 
 					if (input$psel == "Padj") {
 						res <- res %>%
-						dplyr::mutate(size=-pmin(log10(Adj.P.Value.x),log10(Adj.P.Value.y))) #%>%
-						#dplyr::select(labelid.x, logFC.x, logFC.y, color, size)
+						dplyr::mutate(size=-pmin(log10(Adj.P.Value.x),log10(Adj.P.Value.y)))
 
 						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color, size=size, text=labelid.x))
 
@@ -871,7 +842,6 @@ deg_server <- function(id) {
 							mutate_if(is.numeric, round, digits = 4)
 						}
 
-
 						if (input$rasterize=="Yes") {
 							p <- p + geom_point_rast(na.rm=TRUE, dev="ragg")
 						} else {
@@ -884,8 +854,7 @@ deg_server <- function(id) {
 						labs(color='Significance', size='-log10 min Adj.P.Value', title=cor_string)
 					} else {
 						res <- res %>%
-						dplyr::mutate(size=-pmin(log10(P.Value.x),log10(P.Value.y))) #%>%
-						#dplyr::select(labelid.x, logFC.x, logFC.y, color, size)
+						dplyr::mutate(size=-pmin(log10(P.Value.x),log10(P.Value.y))) 
 
 						p <- ggplot(res, aes(x=logFC.x, y=logFC.y, color=color,	size=size, text=labelid.x))
 						fitresult <- data.frame()
@@ -929,15 +898,12 @@ deg_server <- function(id) {
 						dplyr::pull(UniqueID)
 
 						data.label <- res %>%
-						#dplyr::filter(UniqueID %in% uploadlist)
 						dplyr::filter(if_any(starts_with("UniqueID"), ~ . %in% uploadlist))
 						validate(need(nrow(data.label)>0, message = "no gene found in result"))
 					}
 
-
 					p <- p + scale_color_manual(values=c('X_sig Y_sig'='blue3','X_sig Y_notsig'='green3', 'X_notsig Y_sig'='orange','X_notsig Y_notsig'='#00000022')) +
 					theme(legend.position=input$vlegendpos, legend.text=element_text(size=input$yfontsize), legend.title=element_text(size=input$yfontsize+1))
-
 
 					if (input$DEG_comp_XY=="Yes"){
 						XY_min <- min(min(res$logFC.x), min(res$logFC.y))
@@ -1004,10 +970,7 @@ deg_server <- function(id) {
 						buttons = list(
 							list(extend = "csv", text = "Download Page", filename = "Page_results",
 								exportOptions = list(modifier = list(page = "current"))
-							)#,
-							#list(extend = "csv", text = "Download All", filename = "All_Results",
-							#	exportOptions = list(modifier = list(page = "all"))
-							#)
+							)
 						)
 					),
 				rownames= FALSE)
@@ -1038,7 +1001,6 @@ deg_server <- function(id) {
 
 				saved_table$DEGCompareData <- DEGCompareRes
 			})
-
 
 			observeEvent(input$DEG_comp, {
 				selectdatasets <- input$add_dataset
