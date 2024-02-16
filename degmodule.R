@@ -372,7 +372,7 @@ deg_server <- function(id) {
 					p <- ggplot(res, aes(x = logFC, y = -log10(P.Value), text = labelid)) +
 					scale_color_manual(values = c("grey", "red2","green2")) +
 					geom_point(aes(color = Significance , size = unique.peptides)) +
-					scale_size(range = c(1,3), breaks = c(1, 2, 3), labels=c("1","2",">3"), guide = "legend") +
+					scale_size(range = c(1,3), breaks = c(1, 2, 3), labels=c("1","2",">=3"), guide = "legend") +
 					theme_bw(base_size = 20) +
 					geom_hline(yintercept = -log10(pvalcut), colour="grey") +
 					geom_vline(xintercept = c(-FCcut,0,FCcut), colour="grey") +
