@@ -807,7 +807,7 @@ geneset_server <- function(id, activeData=NULL) {
                         }, deleteFile = FALSE)
                         
                         genesetheatmap_out <- reactive({withProgress(message = 'Making heatmap...', value = 0, {
-                          analysis_type = input$analysis_type_3
+                          analysis_type = input$analysis_type_2
                           ID = input$x2
                           #validate(need(ID!="", message = "Select one geneset by clicking a GeneSet name from 'Gene Set Enrichment Analysis (GSEA)' or 'Over-Representation Analysis (ORA)' tab."))
                           
