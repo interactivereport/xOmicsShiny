@@ -23,6 +23,42 @@ library(ComplexHeatmap)
 library(fgsea)
 library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 
+
+ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
+  deGenes = deGenes[which(deGenes %in% universe)]
+  tmp = rep(NA, length(gsets))
+  ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,UpGene= tmp, DownGene=tmp, SetNum = tmp, N_q=tmp, SetNumAll=tmp, DeGene_in_Set=tmp)
+  totalDE = length(deGenes)
+  n = length(universe) - totalDE
+  
+  for (j in 1:length(gsets)){
+    gset = gsets[[j]]
+    DEinS = intersect(gset, deGenes)
+    logFCinS = logFC[DEinS]
+    totalDEinS = length(intersect(gset, deGenes))
+    totalSinUniverse = length(intersect(gset, universe))
+    
+    N_q=totalDEinS- 0.5
+    if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5 
+    } else if (Dir=="Down") {N_q=length(logFCinS[logFCinS < 0])-0.5}
+    
+    ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
+    ora.stats[j, "DeGeneNum"] = totalDEinS
+    ora.stats[j, "SetNum"] = totalSinUniverse  #previous versions used length(gset)
+    ora.stats[j, "UpGene"] = length(logFCinS[logFCinS > 0])
+    ora.stats[j, "DownGene"] = length(logFCinS[logFCinS < 0])
+    ora.stats[j, "N_q"]=N_q
+    ora.stats[j, "SetNumAll"]=length(gset)
+    ora.stats[j, "DeGene_in_Set"]=paste(DEinS, collapse = ",")
+    
+  }
+  ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
+  ora.stats<-ora.stats%>%mutate(GeneSet= names(gsets))%>%
+    arrange(p.value, dplyr::desc(N_q))%>% rownames_to_column('rank')%>%dplyr::select(-N_q)%>%relocate(GeneSet)
+  return(ora.stats)
+}
+
+
 geneset_ui <- function(id) {
   ns <- shiny::NS(id)
   fluidRow(
@@ -147,6 +183,7 @@ geneset_server <- function(id, activeData=NULL) {
                             if (system_info=="quickomics" ) { system="QuickOmics"}
                           }
                         }
+                        #cat(system_info, date(), "\n")
 
                         
                         ###Modify UI and input data based on QuickOmics or xOmicsShiny system
@@ -157,9 +194,8 @@ geneset_server <- function(id, activeData=NULL) {
                             req(ProjectInfo)
                             working_project(ProjectInfo$ProjectID)
                           })
-                          DataReactive <-reactive({
-                            activeData
-                          })
+                          DataReactive <-activeData
+                          #browser()
                         } else if (system=="xOmicsShiny") {
                           output$loadedprojects <- renderUI({
                             req(length(working_project()) > 0)
@@ -228,7 +264,7 @@ geneset_server <- function(id, activeData=NULL) {
                                       results_long2_otherTests<-Data2$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value)%>%
                                         dplyr::filter(test!=input$geneset_test_2nd,  !(UniqueID %in% ProteinGeneName1$UniqueID), 
                                                       test %in% unique(Data1$results_long$test) ) #add other tests if test name match
-                                      cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
+                                      #cat("Add", nrow(results_long2_selTest), "for", input$geneset_test_2nd, " |all other tests", nrow(results_long2_otherTests), "\n") #debug
                                       if (nrow(results_long2_selTest)==0) {results_long2_selTest=NULL}
                                       if (nrow(results_long2_otherTests)==0) {results_long2_otherTests=NULL}
                                       results_long_combined<-rbind(Data1$results_long%>%dplyr::select(UniqueID, Gene.Name, test, logFC, P.Value, Adj.P.Value), results_long2_selTest, results_long2_otherTests)
@@ -250,28 +286,22 @@ geneset_server <- function(id, activeData=NULL) {
                         }
                         ###
                         
-                        active_tests<-reactiveVal(NULL)
+                        #active_tests<-reactiveVal(NULL)
                         observe({
                           req(working_project())
                           req(DataReactive())
                           DataIn = DataReactive()
                           tests=DataIn$tests
-                          active_tests(tests)
+                          updateSelectizeInput(session,'geneset_test',choices=tests, selected=tests[1])
+                         # active_tests(tests)
+                          #cat("Update tests.", working_project(),  tests, "\n")
                           tests_more=c("None", tests)
                           updateSelectizeInput(session,'geneset_test2',choices=tests_more, selected="None")
                           updateSelectizeInput(session,'geneset_test3',choices=tests_more, selected="None")
                           updateSelectizeInput(session,'geneset_test4',choices=tests_more, selected="None")
                           updateSelectizeInput(session,'geneset_test5',choices=tests_more, selected="None")
                         })
-                        
-                        observeEvent(working_project(),{
-                          req(working_project())
-                          req(DataReactive())
-                          DataIn = DataReactive()
-                          tests=DataIn$tests
-                          updateSelectizeInput(session,'geneset_test',choices=tests, selected=tests[1])
-                        })
-                        
+
                         
                         observe({
                           if (!is.null(gmt_file_info)) {  #update gmt file choices
@@ -289,6 +319,7 @@ geneset_server <- function(id, activeData=NULL) {
                         })
                         #browser() 
                         observeEvent(working_project(),{
+                          req(ProjectInfo)
                           if (!is.null(ProjectInfo$Species)) {
                             if (ProjectInfo$Species %in% c("human","mouse", "rat") ) {
                               updateRadioButtons(session, "MSigDB_species", selected = ProjectInfo$Species)
@@ -398,7 +429,7 @@ geneset_server <- function(id, activeData=NULL) {
                             if (input$custom_set_option=="File"){
                               req(input$custom_gmt_file)
                               CustomGeneset=gmtPathways(input$custom_gmt_file$datapath)
-                              cat("loaded", length(CustomGeneset), "custom gene sets.\n")
+                              #cat("loaded", length(CustomGeneset), "custom gene sets.\n")
                               #browser() 
                               gsets_GSEA=c(gsets_GSEA, CustomGeneset)
                             }
@@ -475,6 +506,7 @@ geneset_server <- function(id, activeData=NULL) {
                         ####################### ORA
                         DataGenesetReactive_ORA <- reactive({
                           req(DataReactive(), input$ORA_input_type, input$map_genes)
+                          req( input$geneset_test %in% DataReactive()$tests)
                           if (input$ORA_input_type!='Gene List') {
                             DataIn = DataReactive()
                             results_long = DataIn$results_long
@@ -555,7 +587,7 @@ geneset_server <- function(id, activeData=NULL) {
                         observe({
                           req(working_project())
                           req(input$geneset_test)
-                          seq(DataReactive())
+                          req(DataReactive())
                           req(DataGenesetReactive_ORA())
                           req(DataGenesetReactive_ORA()$sig_genes)
                           tmpdat=DataGenesetReactive_ORA()$sig_genes

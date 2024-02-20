@@ -216,37 +216,6 @@ ProcessUploadGeneList <- function(gene_list) {
 	return(gene_list)
 }
 
-ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
-  deGenes = deGenes[which(deGenes %in% universe)]
-  tmp = rep(NA, length(gsets))
-  ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,UpGene= tmp, DownGene=tmp, SetNum = tmp, N_q=tmp)
-  totalDE = length(deGenes)
-  n = length(universe) - totalDE
-  
-  for (j in 1:length(gsets)){
-    gset = gsets[[j]]
-    DEinS = intersect(gset, deGenes)
-    logFCinS = logFC[DEinS]
-    totalDEinS = length(intersect(gset, deGenes))
-    totalSinUniverse = length(intersect(gset, universe))
-    
-    N_q=totalDEinS- 0.5
-    if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5 
-    } else if (Dir=="Down") {N_q=length(logFCinS[logFCinS < 0])-0.5}
-    
-    ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
-    ora.stats[j, "DeGeneNum"] = totalDEinS
-    ora.stats[j, "SetNum"] = totalSinUniverse  #previous versions used length(gset)
-    ora.stats[j, "UpGene"] = length(logFCinS[logFCinS > 0])
-    ora.stats[j, "DownGene"] = length(logFCinS[logFCinS < 0])
-    ora.stats[j, "N_q"]=N_q 
-    
-  }
-  ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
-  ora.stats<-ora.stats%>%mutate(GeneSet= names(gsets))%>%
-    arrange(p.value, dplyr::desc(N_q))%>% rownames_to_column('rank')%>%dplyr::select(-N_q)%>%relocate(GeneSet)
-  return(ora.stats)
-}
 
 homologs=readRDS("db/Homologs.rds")
 homolog_mapping<-function(genelist, species1, species2, homologs) {
