@@ -27,7 +27,10 @@ library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
   deGenes = deGenes[which(deGenes %in% universe)]
   tmp = rep(NA, length(gsets))
-  ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,UpGene= tmp, DownGene=tmp, SetNum = tmp, N_q=tmp, SetNumAll=tmp, DeGene_in_Set=tmp)
+  #ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,UpGene= tmp, DownGene=tmp, SetNum = tmp, N_q=tmp, SetNumAll=tmp, DeGene_in_Set=tmp)
+  ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,DE_UpGene= tmp, DE_DownGene=tmp, SetNum = tmp, N_q=tmp, Fold_Enrich=tmp,
+                         SetNumAll=tmp, Total_DEG=tmp, Total_Gene=tmp,  DeGene_in_Set=tmp)
+  
   totalDE = length(deGenes)
   n = length(universe) - totalDE
   
@@ -45,10 +48,13 @@ ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
     ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
     ora.stats[j, "DeGeneNum"] = totalDEinS
     ora.stats[j, "SetNum"] = totalSinUniverse  #previous versions used length(gset)
-    ora.stats[j, "UpGene"] = length(logFCinS[logFCinS > 0])
-    ora.stats[j, "DownGene"] = length(logFCinS[logFCinS < 0])
+    ora.stats[j, "DE_UpGene"] = length(logFCinS[logFCinS > 0])
+    ora.stats[j, "DE_DownGene"] = length(logFCinS[logFCinS < 0])
     ora.stats[j, "N_q"]=N_q
     ora.stats[j, "SetNumAll"]=length(gset)
+    ora.stats[j, "Fold_Enrich"]= round( (totalDEinS/totalDE) / (totalSinUniverse/length(universe) )*100)/100
+    ora.stats[j, "Total_DEG"]=totalDE
+    ora.stats[j, "Total_Gene"]=length(universe)
     ora.stats[j, "DeGene_in_Set"]=paste(DEinS, collapse = ",")
     
   }
@@ -91,9 +97,13 @@ geneset_ui <- function(id) {
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Enrichment Analysis (GSEA)'",
                                                column(width=6,numericInput(ns("gsetMin"), label= "GeneSet Min Size",  value = 15, min=5, step=1)),
                                                column(width=6,numericInput(ns("gsetMax"), label= "GeneSet Max Size",  value = 1000, min=100, step=1)),
-                                               sliderInput(ns("gsea_FDR"), "GSEA Adjusted P-Value Cutoff:", min = 0, max = 1, step = 0.01, value = 0.25)),
+                                               sliderInput(ns("gsea_FDR"), "GSEA Adjusted P-Value Cutoff:", min = 0, max = 1, step = 0.01, value = 0.25),
+                                               checkboxInput(ns("gsea_collapase"), "Collapse Gene Sets",  FALSE, width="90%"),
+                                               ),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Over-Representation Analysis (ORA)'",
-                                               sliderInput(ns("ora_pvalue"), "ORA P-Value Cutoff:", min = 0, max = 1, step = 0.01, value = 0.05)),
+                                               sliderInput(ns("ora_pvalue"), "ORA p.adj Cutoff:", min = 0, max = 1, step = 0.01, value = 0.05),
+                                               checkboxInput(ns("ora_collapase"), "Collapse Gene Sets",  FALSE, width="90%"),
+                                               ),
                               conditionalPanel(ns = ns, "input.MSigDB_species=='human'",
                                                checkboxGroupInput(ns("MSigDB_species_human_GSEA"), label= "Human Collections",
                                                                   choices= NULL, selected = NULL) ),
@@ -287,7 +297,7 @@ geneset_server <- function(id, activeData=NULL) {
                         ###
                         
                         #active_tests<-reactiveVal(NULL)
-                        observe({
+                        observeEvent(working_project(), {
                           req(working_project())
                           req(DataReactive())
                           DataIn = DataReactive()
@@ -374,8 +384,7 @@ geneset_server <- function(id, activeData=NULL) {
                           comp_sel = input$geneset_test
                           
                           
-                          GSEAgene <- results_long %>% dplyr::filter(!is.na(`Gene.Name`), test==comp_sel) %>% 
-                            dplyr::filter(!is.na(`logFC`))  %>% 
+                          GSEAgene <- results_long %>% dplyr::filter(test==comp_sel, !is.na(Gene.Name), Gene.Name!="", !is.na(logFC) ) %>% 
                             dplyr::select(one_of(c("Gene.Name","logFC", "P.Value", "Adj.P.Value", "UniqueID", "test"))) %>%
                             dplyr::distinct(., Gene.Name,.keep_all = TRUE)
                           #browser()#bebug
@@ -387,7 +396,7 @@ geneset_server <- function(id, activeData=NULL) {
                             if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
                               mapped_symbols<-homolog_mapping(GSEA.terminals.df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
                             GSEA.terminals.df<-GSEA.terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>% 
-                              dplyr::distinct(., Gene.Name,.keep_all = TRUE)
+                              dplyr::distinct(., Gene.Name,.keep_all = TRUE)%>%dplyr::filter(!is.na(Gene.Name), Gene.Name!="") 
                           }
                           
                           
@@ -434,7 +443,7 @@ geneset_server <- function(id, activeData=NULL) {
                               gsets_GSEA=c(gsets_GSEA, CustomGeneset)
                             }
 
-                            # browser() #debug
+                            #browser() #debug
                           }
                           return(gsets_GSEA)
                         })
@@ -455,6 +464,10 @@ geneset_server <- function(id, activeData=NULL) {
                             gsMax = input$gsetMax
                             ############################
                             output <- fgseaMultilevel(gsets_GSEA,logFC_list,minSize=gsMin,maxSize=gsMax)
+                            if (input$gsea_collapase) {
+                              collapsed_set <- collapsePathways(output[order(pval)][padj <= input$gsea_FDR], gsets_GSEA,logFC_list )
+                              output= output[pathway %in% collapsed_set$mainPathways]
+                            }
                             
                             res = output %>%                   # Using dplyr functions
                               mutate_if(is.numeric,
@@ -463,7 +476,7 @@ geneset_server <- function(id, activeData=NULL) {
                             
                             res <- res %>% dplyr::rename(GeneSet=pathway)%>%
                               dplyr::select(-ES, -log2err) %>%  #keep leadingEdge
-                              arrange(padj, dplyr::desc(abs(NES))) %>%dplyr::filter(padj<input$gsea_FDR)%>%
+                              arrange(padj, dplyr::desc(abs(NES))) %>%dplyr::filter(padj<=input$gsea_FDR)%>%
                               rownames_to_column('rank') %>%
                               relocate(GeneSet)
                           } )
@@ -514,13 +527,13 @@ geneset_server <- function(id, activeData=NULL) {
                             
                             comp_sel = input$geneset_test
                             
-                            all_genes <- dplyr::filter(ProteinGeneName, !is.na(`Gene.Name`)) %>%
+                            all_genes <- dplyr::filter(ProteinGeneName, !is.na(Gene.Name), Gene.Name!="") %>%
                               dplyr::select(one_of(c("Gene.Name"))) %>% 
                               collect %>% .[["Gene.Name"]] %>% unique()
                             
                             absFCcut = log2(as.numeric(input$geneset_FCcut))
                             pvalcut = as.numeric(input$geneset_pvalcut)
-                            terminals.df <-  results_long %>% dplyr::filter(test == comp_sel) %>%dplyr::filter(!is.na(`Gene.Name`))%>%
+                            terminals.df <-  results_long %>% dplyr::filter(test == comp_sel) %>%dplyr::filter(!is.na(Gene.Name),  Gene.Name!="")%>%
                               dplyr::select(one_of(c("Gene.Name","logFC","P.Value", "Adj.P.Value", "UniqueID", "test")))%>%arrange(P.Value)  %>%
                               dplyr::distinct(., Gene.Name,.keep_all = TRUE)
                             
@@ -536,11 +549,11 @@ geneset_server <- function(id, activeData=NULL) {
                                 all_genes <-homolog_mapping(all_genes , ProjectInfo$Species, input$MSigDB_species, homologs)
                               } 
                               terminals.df<-terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>%
-                                dplyr::distinct(., Gene.Name,.keep_all = TRUE)
+                                dplyr::distinct(., Gene.Name,.keep_all = TRUE)%>%dplyr::filter(!is.na(Gene.Name),  Gene.Name!="")
                               }
                             
-                            filteredgene <-  terminals.df %>%  mutate(P.stat=ifelse(input$geneset_psel == "Padj",  Adj.P.Value,  P.Value)) %>%
-                              dplyr::filter(abs(logFC) >= absFCcut & P.stat < pvalcut) %>%
+                            filteredgene <-  terminals.df %>%  mutate(psel=input$geneset_psel, P.stat=ifelse(psel == "Padj",  Adj.P.Value,  P.Value)) %>%
+                              dplyr::filter(abs(logFC) > absFCcut,  P.stat < pvalcut) %>%
                               dplyr::select(one_of(c("Gene.Name","logFC","P.Value", "Adj.P.Value", "UniqueID", "test")))
                             
                             sig_genes <- filteredgene$logFC
@@ -569,13 +582,21 @@ geneset_server <- function(id, activeData=NULL) {
                             }
                             ORA_list<-ORA_list [ORA_list !=""]
                             validate(need(length(ORA_list)>1, message = "Please input at least 2 valid genes."))
-                            if (input$ORA_universe=="Genes in current project") {
                               DataIn = DataReactive()
                               ProteinGeneName = DataIn$ProteinGeneName
-                              all_genes <- dplyr::filter(ProteinGeneName, !is.na(`Gene.Name`)) %>%
-                                dplyr::select(one_of(c("Gene.Name"))) %>% 
-                                collect %>% .[["Gene.Name"]] %>% unique()
-                            } else {
+                              all_genes <- dplyr::filter(ProteinGeneName, !is.na(Gene.Name), Gene.Name!="") %>%
+                                dplyr::select(one_of(c("Gene.Name"))) %>% collect %>% .[["Gene.Name"]] %>% unique()
+                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                              if (input$map_genes=="Change to UPPER case (human)")  {
+                                ORA_list<-toupper(ORA_list); all_genes=toupper(all_genes)
+                              } else if ( input$map_genes=="Change to Title Case (mouse/rat)" ) {
+                                ORA_list<-str_to_title(ORA_list); all_genes=str_to_title(all_genes)
+                              } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                                ORA_list<-homolog_mapping(ORA_list, ProjectInfo$Species, input$MSigDB_species, homologs)
+                                all_genes <-homolog_mapping(all_genes , ProjectInfo$Species, input$MSigDB_species, homologs)
+                              } 
+                            }
+                            if (input$ORA_universe!="Genes in current project") {
                               gsets_GSEA<-gsets_Reactive()
                               all_genes<-unlist(gsets_GSEA)%>%unique()
                             }
@@ -610,9 +631,20 @@ geneset_server <- function(id, activeData=NULL) {
                             logFC_list <- 	getresults$sig_genes
                             all_genes <- 	getresults$all_genes
                             gsa <- ORAEnrichment (deGenes=names(logFC_list),universe=all_genes, gsets_GSEA, logFC =logFC_list, Dir=input$geneset_direction)
+                            if (input$ora_collapase) {
+                              Dir=input$geneset_direction
+                              logFC_list1=logFC_list
+                              if (Dir=="Up") {logFC_list1=logFC_list[logFC_list>0]
+                              } else if (Dir=="Down") {logFC_list1=logFC_list[logFC_list<0]}
+                              collapsed_set <- collapsePathwaysORA(foraRes=gsa%>%mutate(pathway=GeneSet)%>%filter(p.adj<= input$ora_pvalue),
+                                                    pathways=gsets_GSEA,genes=names(logFC_list1), universe=all_genes, pval.threshold=0.05) 
+                              #browser()
+                              gsa<-gsa%>%dplyr::filter(GeneSet %in% collapsed_set$mainPathways)
+                            }
                             ############################
-                            res <- 	gsa %>%dplyr::filter( p.value < input$ora_pvalue) %>%                   # Using dplyr functions
-                              mutate_if(is.numeric,signif,digits = 3)
+                            #browser()
+                            res <- 	gsa %>%dplyr::filter( p.adj <= input$ora_pvalue)                    # Using dplyr functions
+                           #   mutate_if(is.numeric,signif,digits = 3)
                           })
                         })
                         
@@ -625,10 +657,15 @@ geneset_server <- function(id, activeData=NULL) {
                             all_genes <- 	getresults$all_genes
                             
                             gsa <- ORAEnrichment (deGenes=names(logFC_list),universe=all_genes, gsets_GSEA, logFC =logFC_list, Dir="Both")%>%
-                              dplyr::select(-UpGene, -DownGene)
+                              dplyr::select(-DE_UpGene, -DE_DownGene)
+                            if (input$ora_collapase) {
+                              collapsed_set <- collapsePathwaysORA(foraRes=gsa%>%mutate(pathway=GeneSet)%>%filter(p.adj<= input$ora_pvalue),
+                                                                   pathways=gsets_GSEA,genes=names(logFC_list), universe=all_genes, pval.threshold=0.05) 
+                              gsa<-gsa%>%dplyr::filter(GeneSet %in% collapsed_set$mainPathways)
+                            }
                             ############################
-                            res <- 	gsa %>%dplyr::filter( p.value < input$ora_pvalue) %>%                   # Using dplyr functions
-                              mutate_if(is.numeric,signif,digits = 3)
+                            res <- 	gsa %>%dplyr::filter( p.adj <= input$ora_pvalue)                   # Using dplyr functions
+                             #mutate_if(is.numeric,signif,digits = 3)
                           })
                         })
                         
