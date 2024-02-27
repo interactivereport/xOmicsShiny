@@ -132,6 +132,8 @@ geneset_ui <- function(id) {
                               )
              ),
              conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Heatmap'",
+                              radioButtons(ns("gs_heatmap_DE"),label="From the Gene Set, Show",inline = FALSE, choices=c("All Genes", "DE/LeadingEdge Genes Only"), 
+                                           selected="All Genes"),
                               column(width=6,sliderInput(ns("hxfontsize_gsh"), "Column Font Size:", min = 2, max = 24, step = 1, value = 12)),
                               column(width=6,sliderInput(ns("hyfontsize_gsh"), "Row Font Size:", min = 2, max = 24, step = 1, value = 10)),
                               column(width=6,sliderInput(ns("htfontsize_gsh"), "Title Font Size:", min = 10, max = 32, step = 1, value = 14)),
@@ -931,8 +933,18 @@ geneset_server <- function(id) {
                           data_long = DataIn$data_long
                           ProteinGeneName = DataIn$ProteinGeneName
                           
-                          gsets_GSEA<-gsets_Reactive()
-                          GenesetSig=gsets_GSEA[[ID]]
+                          if (input$gs_heatmap_DE=="All Genes") {
+                            gsets_GSEA<-gsets_Reactive()
+                            GenesetSig=gsets_GSEA[[ID]]
+                          } else if (analysis_type == "GSEA"){
+                            res<-gsea_results()
+                            GenesetSig<-res%>%dplyr::filter(GeneSet==ID)%>%dplyr::select(leadingEdge)%>%unlist
+                          } else {
+                            res<-ora_results()
+                            GenesetSig<-res%>%dplyr::filter(GeneSet==ID)%>%dplyr::select(DeGene_in_Set)
+                            GenesetSig<-str_split(GenesetSig, ",")[[1]]
+                          }
+                          #browser()
                           if (analysis_type == "GSEA") {
                             getresults <- DataGenesetReactive_GSEA()
                             terminals.df <- getresults$GSEA.terminals.df
