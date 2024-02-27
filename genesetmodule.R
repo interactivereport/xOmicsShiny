@@ -32,6 +32,8 @@ ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
                          SetNumAll=tmp, Total_DEG=tmp, Total_Gene=tmp,  DeGene_in_Set=tmp)
   
   totalDE = length(deGenes)
+  if (Dir=="Up") {totalDE = sum(logFC > 0)
+  } else if (Dir=="Down") {totalDE = sum(logFC < 0) }
   n = length(universe) - totalDE
   
   for (j in 1:length(gsets)){
@@ -42,8 +44,8 @@ ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
     totalSinUniverse = length(intersect(gset, universe))
     
     N_q=totalDEinS- 0.5
-    if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5 
-    } else if (Dir=="Down") {N_q=length(logFCinS[logFCinS < 0])-0.5}
+    if (Dir=="Up") {N_q=length(logFCinS[logFCinS > 0])-0.5; DEinS<-names(logFCinS[logFCinS > 0])
+    } else if (Dir=="Down") {N_q=length(logFCinS[logFCinS < 0])-0.5; DEinS<-names(logFCinS[logFCinS < 0]) }
     
     ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
     ora.stats[j, "DeGeneNum"] = totalDEinS
@@ -59,8 +61,10 @@ ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
     
   }
   ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
+  ora.stats[, "DE_Direction"]=Dir
   ora.stats<-ora.stats%>%mutate(GeneSet= names(gsets))%>%
     arrange(p.value, dplyr::desc(N_q))%>% rownames_to_column('rank')%>%dplyr::select(-N_q)%>%relocate(GeneSet)
+  
   return(ora.stats)
 }
 
@@ -68,6 +72,7 @@ ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
 geneset_ui <- function(id) {
   ns <- shiny::NS(id)
   fluidRow(
+    rclipboard::rclipboardSetup(),
     column(3,
            wellPanel(
              uiOutput(ns('loadedprojects')),
@@ -182,7 +187,7 @@ geneset_ui <- function(id) {
   )
 }
 
-geneset_server <- function(id, activeData=NULL) {
+geneset_server <- function(id) {
   shiny::moduleServer(id,
                       function(input, output, session) {
                         ns <- shiny::NS(id)
@@ -204,7 +209,6 @@ geneset_server <- function(id, activeData=NULL) {
                             req(ProjectInfo)
                             working_project(ProjectInfo$ProjectID)
                           })
-                          DataReactive <-activeData
                           #browser()
                         } else if (system=="xOmicsShiny") {
                           output$loadedprojects <- renderUI({
@@ -485,9 +489,23 @@ geneset_server <- function(id, activeData=NULL) {
                         
                         output$MSigDB_GSEA <-  DT::renderDT(server=FALSE,{ withProgress(message = 'Processing...', value = 0, {
                           res<-gsea_results()
-                          #browser()	  
+                          validate(need(nrow(res)>0,"No results. Try to increase p.adj cutoff, or try a different comparison."))
+                          res$Action<-vapply(1:nrow(res), function(i){
+                            as.character(
+                              rclipButton(
+                                paste0("clipbtn_", i), 
+                                label = "Copy Leading Edge Genes", 
+                                clipText = paste(unlist(res[i,  "leadingEdge"]), collapse=","), 
+                                #icon = icon("clipboard"),
+                                icon = icon("copy", lib = "glyphicon"),
+                                class = "btn-primary btn-sm"
+                              )
+                            )
+                          }, character(1L))
+                          res<-res%>%dplyr::relocate(Action, .before=leadingEdge)
+                          
                           DT::datatable(
-                            res,  extensions = 'Buttons', selection = 'none', class = 'cell-border strip hover', 
+                            res,  extensions = 'Buttons', escape = FALSE, selection = 'none', class = 'cell-border strip hover',
                             options = list(    dom = 'lBfrtip', pageLength = 15,
                                                buttons = list(
                                                  list(extend = "csv", text = "Download Page", filename = "Page_results",
@@ -657,7 +675,7 @@ geneset_server <- function(id, activeData=NULL) {
                             all_genes <- 	getresults$all_genes
                             
                             gsa <- ORAEnrichment (deGenes=names(logFC_list),universe=all_genes, gsets_GSEA, logFC =logFC_list, Dir="Both")%>%
-                              dplyr::select(-DE_UpGene, -DE_DownGene)
+                              dplyr::select(-DE_UpGene, -DE_DownGene, -DE_Direction)
                             if (input$ora_collapase) {
                               collapsed_set <- collapsePathwaysORA(foraRes=gsa%>%mutate(pathway=GeneSet)%>%filter(p.adj<= input$ora_pvalue),
                                                                    pathways=gsets_GSEA,genes=names(logFC_list), universe=all_genes, pval.threshold=0.05) 
@@ -672,8 +690,23 @@ geneset_server <- function(id, activeData=NULL) {
                         
                         output$MSigDB_ORA <-DT::renderDT(server=FALSE,{ withProgress(message = 'Processing...', value = 0, {
                           res<-ora_results()
+                          validate(need(nrow(res)>0,"No results. Try to increase p.adj cutoff, or ajust DEG cutoff."))
+                          res$Action<-vapply(1:nrow(res), function(i){
+                            as.character(
+                              rclipButton(
+                                paste0("clipbtn_", i), 
+                                label = "Copy DE Gene Names", 
+                                clipText = res[i,  "DeGene_in_Set"], 
+                                #icon = icon("clipboard"),
+                                icon = icon("copy", lib = "glyphicon"),
+                                class = "btn-primary btn-sm"
+                              )
+                            )
+                          }, character(1L))
+                          res<-res%>%dplyr::relocate(Action, .before=DeGene_in_Set)
+                  
                           DT::datatable(
-                            res,  extensions = 'Buttons', selection = 'none', class = 'cell-border strip hover',
+                            res,  extensions = 'Buttons', escape = FALSE, selection = 'none', class = 'cell-border strip hover',
                             options = list(    dom = 'lBfrtip', pageLength = 15,
                                                buttons = list(
                                                  list(extend = "csv", text = "Download Page", filename = "Page_results",
@@ -685,8 +718,22 @@ geneset_server <- function(id, activeData=NULL) {
                         
                         output$MSigDB_ORA_list <-DT::renderDT(server=FALSE,{ withProgress(message = 'Processing...', value = 0, {
                           res<-ora_results_list()
+                          validate(need(nrow(res)>0,"No results. Try to increase p.adj cutoff, or use a different list."))
+                          res$Action<-vapply(1:nrow(res), function(i){
+                            as.character(
+                              rclipButton(
+                                paste0("clipbtn_", i), 
+                                label = "Copy DE Gene Names", 
+                                clipText = res[i,  "DeGene_in_Set"], 
+                                #icon = icon("clipboard"),
+                                icon = icon("copy", lib = "glyphicon"),
+                                class = "btn-primary btn-sm"
+                              )
+                            )
+                          }, character(1L))
+                          res<-res%>%dplyr::relocate(Action, .before=DeGene_in_Set)
                           DT::datatable(
-                            res,  extensions = 'Buttons', 
+                            res,  extensions = 'Buttons',  escape = FALSE, 
                             options = list(    dom = 'lBfrtip', pageLength = 15,
                                                buttons = list(
                                                  list(extend = "csv", text = "Download Page", filename = "Page_results",
