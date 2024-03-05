@@ -29,7 +29,8 @@ wgcna_ui <- function(id) {
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Run"),
 				br(),
-				span("Running time may be long, so refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
+				span("1.After clicking 'Run', the app will load precalcluated results and generate the dendrograms using the default parameters defined above.
+				     2. If you wish to run with a different parameter, please also click 'Run', but refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
 
 			)
 		),
@@ -69,12 +70,12 @@ wgcna_server <- function(id) {
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
-  			  wgcnafile <- paste("wgcnadata/", ProjectID, ".RData", sep = "")
+  			  wgcnafile <- paste("wgcnadata/wgcna_", ProjectID, ".RDS", sep = "")
   			  if (file.exists(wgcnafile)) {
-  			    load(wgcnafile)
+  			    #load(wgcnafile)
+  			    netwk <- readRDS(wgcnafile)
   			  } else {
-  			    
-  			    # Top number of genes
+  			    ## Top number of genes
   			    topNum <- as.numeric(input$WGCNAtopNum)
   			    # Gene Label
   			    gene_label <- input$WGCNAgenelable
