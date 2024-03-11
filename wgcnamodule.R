@@ -38,8 +38,8 @@ wgcna_ui <- function(id) {
 		  
 			tabsetPanel(id="WGCNA_tabset",
 				tabPanel(title="Dendrogram", value="Dendrogram",
-					# plotOutput(ns("Dendrogram"), height=800),
-					uiOutput(NS(id, 'dendro_container_ui'))
+					plotOutput(ns("Dendrogram"), height=800)
+					#uiOutput(NS(id, 'dendro_container_ui'))
 				),
 				#tabPanel(title="Heatmap", value="Heatmap", uiOutput(ns("Heatmap"), style = "background-color: #eeeeee;")), #height="800px"
 				#tabPanel(title="Adjacency Matrix", value="Adjacency Matrix", 	DT::dataTableOutput(ns("adj_WGCNA"))),
@@ -211,46 +211,19 @@ wgcna_server <- function(id) {
 			  })
 			})
 			
-			# Create UI for potentially multiple dendrograms
-			output$dendro_container_ui <- renderUI({
-			   dendro_ui()
-			})
-			
-			
-			dendro_ui <- eventReactive(WGCNAReactive(), {
-			  
-			  wgcna <- WGCNAReactive()
-			  
-			  lapply(seq(length(wgcna$dendrograms)), function(i) {
-			    fluidRow(
-			      column(
-			        width = 12,
-			        div(
-			          #style = 'margin-bottom: 80px;',
-			          p(style = 'text-align:center; font-weight:bold; font-size:18px; color:black; text-decoration: underline;', glue::glue('Block {i}')),
-			          plotOutput(NS(id, glue::glue("dendro_{i}")))
-			        )
-			      )
-			    )
-			  })
-			  
-			})
-			
 			# use input$WGCNAReactive() as event handler to ensure observeEvent() depends on it only
 			# and does not directly depends on input$, which ensure WGCNAReactive() will be calculated first.
 			observeEvent(WGCNAReactive(),{
-			  
+			  print("***********************")
+			  print("WGCNAReactive() -> output$Dendrogram")
 			  wgcna <- WGCNAReactive()
 			  mergedColors = labels2colors(wgcna$colors)
 			  
-			  # rendering potentially multiple dendrograms
-			  lapply(seq(length(wgcna$dendrograms)), function(i) {
-			    
-			    output[[glue::glue("dendro_{i}")]] <- renderPlot({
+			    output$Dendrogram <- renderPlot({
 	
 			      plotDendroAndColors(
-			        wgcna$dendrograms[[i]],
-			        mergedColors[wgcna$blockGenes[[i]]],
+			        wgcna$dendrograms[[1]],
+			        mergedColors[wgcna$blockGenes[[1]]],
 			        "Module colors",
 			        dendroLabels = FALSE,
 			        hang = 0.03,
@@ -258,22 +231,6 @@ wgcna_server <- function(id) {
 			        guideHang = 0.05 )
 			      
 			    })
-			    })
-
-				# output$Dendrogram <- renderPlot({
-				# 	netwk <-	WGCNAReactive()
-				# 	mergedColors = labels2colors(netwk$colors)
-				# 
-				# 	plotDendroAndColors(
-				# 		netwk$dendrograms[[1]],
-				# 		mergedColors[netwk$blockGenes[[1]]],
-				# 		"Module colors",
-				# 		dendroLabels = FALSE,
-				# 		hang = 0.03,
-				# 		addGuide = TRUE,
-				# 	guideHang = 0.05 )
-				# 	
-				# })
 				
 				#### generate table showing clustered genes ####
 				ProteinGeneName  <- DataInSets[[working_project()]]$ProteinGeneName
