@@ -29,8 +29,9 @@ wgcna_ui <- function(id) {
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Run"),
 				br(),
-				span("1.After clicking 'Run', the app will load precalcluated results and generate the dendrograms using the default parameters defined above.
-				     2. If you wish to run with a different parameter, please also click 'Run', but refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
+				span("1. If the data is one of the saved projects in the CSV file, after clicking 'Run' the app will load precomputed WGCNA results using default parameter values." ,style="color:red", inline = TRUE),
+				br(),
+				span("2. If you wish to run WGCNA on the saved project with a different parameter or on the data you import, please also click 'Run' but refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
 
 			)
 		),
@@ -211,6 +212,7 @@ wgcna_server <- function(id) {
 			  })
 			})
 			
+			#### generate dendrogram and gene cluster table #####
 			# use input$WGCNAReactive() as event handler to ensure observeEvent() depends on it only
 			# and does not directly depends on input$, which ensure WGCNAReactive() will be calculated first.
 			observeEvent(WGCNAReactive(),{
@@ -232,7 +234,7 @@ wgcna_server <- function(id) {
 			      
 			    })
 				
-				#### generate table showing clustered genes ####
+				# generate table showing clustered genes #
 				ProteinGeneName  <- DataInSets[[working_project()]]$ProteinGeneName
 				gene_label <- input$WGCNAgenelable
 				
