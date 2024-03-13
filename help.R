@@ -162,7 +162,6 @@ output$help_WGCNA <- renderText({
   htmlstr <- "
 	<br>
 	<ul>
-	<li><b>R Squared Cutoff</b>: Desired minimum scale free topology fitting index R2 for picking solft-thresholding power for network construction.</li>
 	<li><b>Top N Genes</b>: The first N number of genes in the data, where N is selected by users. We also set this number to be the max block size to avoid multiple dendrograms whose interpretation is more challenging than a single dendrogram.</li>
 	<li><b>Dendrogram cut height for merging</b>: Dendrogram cut height for module merging.</li>
 	</ul>"

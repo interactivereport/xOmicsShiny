@@ -21,10 +21,10 @@ wgcna_ui <- function(id) {
 		column(3,
 			wellPanel(
 				radioButtons(ns("WGCNAgenelable"),label="Select Gene Label",inline = TRUE, choices=c("Gene.Name","UniqueID"), selected="Gene.Name"),
-				sliderInput(ns("wgcna_rcut"), label= "Choose r Cutoff",  min = 0.7, max = 1, value = 0.9, step=0.02),
+				#sliderInput(ns("wgcna_rcut"), label= "R-Squared Cutoff for Picking Soft-threshold Power",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
-				numericInput(ns("WGCNAtopNum"), label= "Top Number of Genes (also set to be max block size):",  value=250L, min=250L, step=25L, max = 5000L),
-				numericInput(ns("mergeCutHeight"), label= "Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
+				numericInput(ns("WGCNAtopNum"), label= "Select Top N Genes, where N is :",  value=250L, min=250L, step=25L, max = 5000L),
+				numericInput(ns("mergeCutHeight"), label= "Dendrogram Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
 				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
 				actionButton(ns("plotwgcna"),"Run"),
@@ -72,7 +72,7 @@ wgcna_server <- function(id) {
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
   			  wgcnafile <- paste("wgcnadata/wgcna_", ProjectID, ".RDS", sep = "")
-  			  if (file.exists(wgcnafile) & input$wgcna_rcut == 0.9 & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
+  			  if (file.exists(wgcnafile) & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
   			    #load(wgcnafile)
   			    netwk <- readRDS(wgcnafile)
   			  } else {
@@ -113,7 +113,7 @@ wgcna_server <- function(id) {
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
-  			    r2_cutoff <- input$wgcna_rcut
+  			    #r2_cutoff <- input$wgcna_rcut
   			    
   			    cor <- WGCNA::cor
   			    sft <- WGCNA::pickSoftThreshold(dataExpr, dataIsExpr = TRUE, powerVector = powers,	corFnc = cor, corOptions = list(use = 'p'),	networkType = "unsigned")
