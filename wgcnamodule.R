@@ -71,7 +71,7 @@ wgcna_server <- function(id) {
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
   			  wgcnafile <- paste("wgcnadata/wgcna_", ProjectID, ".RDS", sep = "")
-  			  if (file.exists(wgcnafile)) {
+  			  if (file.exists(wgcnafile) & input$wgcna_rcut == 0.9 & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
   			    #load(wgcnafile)
   			    netwk <- readRDS(wgcnafile)
   			  } else {
