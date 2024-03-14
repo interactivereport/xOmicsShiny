@@ -71,7 +71,7 @@ wgcna_server <- function(id) {
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
-  			  wgcnafile <- paste("wgcnadata/wgcna_", ProjectID, ".RDS", sep = "")
+  			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
   			  if (file.exists(wgcnafile) & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
   			    #load(wgcnafile)
   			    netwk <- readRDS(wgcnafile)
@@ -116,7 +116,7 @@ wgcna_server <- function(id) {
   			    #r2_cutoff <- input$wgcna_rcut
   			    
   			    cor <- WGCNA::cor
-  			    sft <- WGCNA::pickSoftThreshold(dataExpr, dataIsExpr = TRUE, powerVector = powers,	corFnc = cor, corOptions = list(use = 'p'),	networkType = "unsigned")
+  			    sft <- WGCNA::pickSoftThreshold(dataExpr, dataIsExpr = TRUE, powerVector = powers,	corFnc = cor, corOptions = list(use = 'p'),	networkType = "signed")
   			    
   			    # Generating adjacency and TOM similarity matrices based on the selected softpower
   			    picked_power <- softPower <- sft$powerEstimate
