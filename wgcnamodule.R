@@ -20,6 +20,7 @@ wgcna_ui <- function(id) {
 	  rclipboard::rclipboardSetup(),
 		column(3,
 			wellPanel(
+			  uiOutput(ns('loadedprojects')),
 				radioButtons(ns("WGCNAgenelable"),label="Select Gene Label",inline = TRUE, choices=c("Gene.Name","UniqueID"), selected="Gene.Name"),
 				#sliderInput(ns("wgcna_rcut"), label= "R-Squared Cutoff for Picking Soft-threshold Power",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
@@ -56,12 +57,22 @@ wgcna_server <- function(id) {
 		function(input, output, session) {
 			ns <- session$ns
       
+			output$loadedprojects <- renderUI({
+			  req(length(working_project()) > 0)
+			  radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+			})
+			
+			observeEvent(input$current_dataset, {
+			  working_project(input$current_dataset)
+			})
+			
 			# use eventReactive to control reactivity of WGCNAReactive;
 			# otherwise, whenever an input change, WGCNAReactive will be re-calculated
 			# and its re-calculation could take a long time.
 			WGCNAReactive <- eventReactive(input$plotwgcna, {
 			  withProgress(message = "Running WGCNA", detail = 'This may take a while...', value = 0.2, {
 			    
+			    # what if the user-imported data doesn't have $data_wide, $ProjectID..etc?
   			  req(length(working_project()) > 0)
   			  req(DataInSets[[working_project()]]$data_wide)
   			  req(DataInSets[[working_project()]]$ProjectID)
@@ -216,8 +227,7 @@ wgcna_server <- function(id) {
 			# use input$WGCNAReactive() as event handler to ensure observeEvent() depends on it only
 			# and does not directly depends on input$, which ensure WGCNAReactive() will be calculated first.
 			observeEvent(WGCNAReactive(),{
-			  print("***********************")
-			  print("WGCNAReactive() -> output$Dendrogram")
+
 			  wgcna <- WGCNAReactive()
 			  mergedColors = labels2colors(wgcna$colors)
 			  
