@@ -201,7 +201,7 @@ wgcna_server <- function(id) {
   			                              deepSplit = 2L,
   			                              pamRespectsDendro = F,
   			                              # detectCutHeight = 0.75,
-  			                              minModuleSize = 30, #input$minModuleSize, #30,
+  			                              minModuleSize = min(20, ncol(dataExpr/2)), # al# 30, #input$minModuleSize, #30,
   			                              # set block size to be number of genes, so that all
   			                              # genes will be analyzed in a single block
   			                              maxBlockSize = input$WGCNAtopNum,#4000,
