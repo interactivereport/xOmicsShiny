@@ -28,7 +28,7 @@ wgcna_ui <- function(id) {
 				numericInput(ns("mergeCutHeight"), label= "Dendrogram Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
 				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
-				actionButton(ns("plotwgcna"),"Run"),
+				actionButton(ns("plotwgcna"),"Re-Run"),
 				br(),
 				span("1. If the data is one of the saved projects in the CSV file, after clicking 'Run' the app will load precomputed WGCNA results using default parameter values." ,style="color:red", inline = TRUE),
 				br(),
@@ -63,8 +63,94 @@ wgcna_server <- function(id) {
 			})
 			
 			observeEvent(input$current_dataset, {
+			  
+			  req(length(working_project()) > 0)
+			  req(DataInSets[[working_project()]]$data_wide)
+			  req(DataInSets[[working_project()]]$ProjectID)
+			  req(DataInSets[[working_project()]]$ProteinGeneName)
+			  
 			  working_project(input$current_dataset)
+			  
+			  default_n_gene <- nrow(DataInSets[[working_project()]]$data_wide)
+			  print(paste0("**default_n_gene is", default_n_gene))
+			  updateNumericInput(session, "WGCNAtopNum", 
+			                     label= "Select Top N Genes, where N is :",  value=default_n_gene, min=250L, step=25L, max = max(5000, default_n_gene))
+			  
+			  ProjectID <- DataInSets[[working_project()]]$ProjectID
+			  print(paste0("**observeEvent ProjectID is", ProjectID))
+			  
+			  
+			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
+			  
+			  wgcna <- readRDS(wgcnafile)
+			  
+			  #wgcna #<- netwk
+			  mergedColors = labels2colors(wgcna$colors)
+			  
+			  output$Dendrogram <- renderPlot({
+			    withProgress(message = "Creating plot using pre-calculated data", value = 0, {
+  			    plotDendroAndColors(
+  			      wgcna$dendrograms[[1]],
+  			      mergedColors[wgcna$blockGenes[[1]]],
+  			      "Module colors",
+  			      dendroLabels = FALSE,
+  			      hang = 0.03,
+  			      addGuide = TRUE,
+  			      guideHang = 0.05 )
+			    })
+			  })
+			  
+			  ProteinGeneName  <- DataInSets[[working_project()]]$ProteinGeneName
+			  gene_label <- input$WGCNAgenelable
+			  
+			  # t0: merge WGCNA output with ProteinGeneName so that genes can be shown as UniqueID or Gene.Name
+			  t0 <- tibble::tibble(UniqueID = names(wgcna$colors), color = labels2colors(wgcna$colors)) %>%
+			    dplyr::left_join(ProteinGeneName[, c("UniqueID","Gene.Name")], by = "UniqueID") %>%
+			    dplyr::select(color,all_of(gene_label)) %>%
+			    dplyr::rename(gene = gene_label)
+			  
+			  # t1: collapse all genes in a cluster into a cell
+			  t1 <- t0 %>%
+			    dplyr::group_by(color) %>% 
+			    dplyr::summarize(n_gene = n(),
+			                     gene_group = paste0(gene, collapse = ",")) %>%
+			    dplyr::ungroup()
+			  
+			  # t2: add the copy button
+			  t2 <- t1
+			  t2$copy <- vapply(1L:nrow(t1), function(i){
+			    as.character(
+			      rclipButton(
+			        paste0("clipbtn_", i), 
+			        label = "Copy all genes in cluster", 
+			        clipText = t1[i, "gene_group"], 
+			        #icon = icon("clipboard"),
+			        icon = icon("copy", lib = "glyphicon"),
+			        class = "btn-primary btn-sm"
+			      )
+			    )
+			  }, character(1L))
+			  
+			  # rearrange columns
+			  t2 <- t2 %>% dplyr::select(color, n_gene, copy, gene_group)
+			  
+			  output$gene_cluster <- DT::renderDT({
+			    DT::datatable(
+			      t2,
+			      escape = FALSE,
+			      selection = "none",
+			      colnames=c("Color of cluster", "Number of genes", "Action","Genes in cluster")
+			    )
+			  })
 			})
+			
+			
+			
+			file_set <- tibble(dataset = c("ADPD_ACG_Maxquant", "ADPD_ACG_Pdiscover",
+			                               "ADPD_cortex_Maxquant","ADPD_cortex_Pdiscover", 
+			                               "LRRK2_Neuron_Protein","LRRK2_Neuron_RNA",
+			                               "Mouse_microglia_RNA-Seq","RNASeqtest","RNASeqtest2"),
+			                   picked_power = c(10,12,5,12,4,20,6,9,9))
 			
 			# use eventReactive to control reactivity of WGCNAReactive;
 			# otherwise, whenever an input change, WGCNAReactive will be re-calculated
@@ -78,11 +164,12 @@ wgcna_server <- function(id) {
   			  req(DataInSets[[working_project()]]$ProjectID)
   			  req(DataInSets[[working_project()]]$ProteinGeneName)
   			  ProjectID <- DataInSets[[working_project()]]$ProjectID
-  			  
+  			  print(paste0("**eventReactive ProjectID is", ProjectID))
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
   			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
+  			  
   			  if (file.exists(wgcnafile) & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
   			    #load(wgcnafile)
   			    netwk <- readRDS(wgcnafile)
