@@ -23,6 +23,25 @@ library(ComplexHeatmap)
 library(fgsea)
 library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 
+#Use metabaser only when the gmt file exists
+if (file.exists("db/human/metabase_maps_genesymbols.gmt")) {
+  library(metabaser) 
+  #Now launch metabaser and connect to database
+  if (!metabase.alive()){
+    library(metabaser) 
+    load("metabase_config.RData") 
+    metabase.connect(dbname, uid, pwd, host=host, port=port, type=type, driver=driver) 
+  }
+  MetabaseOutput <- function(outputId, width = "100%", height = "1200px") {
+    htmlwidgets::shinyWidgetOutput(outputId, "cyBasicMap", width, height, package = "metabaser")
+  }
+  renderMetabase <- function(expr, env = parent.frame(), quoted = FALSE) {
+    if (!quoted) { expr <- substitute(expr) } # force quoted
+    htmlwidgets::shinyRenderWidget(expr, "cyBasicMapOutput", env, quoted = TRUE)
+  }
+}
+
+
 
 ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
   deGenes = deGenes[which(deGenes %in% universe)]
@@ -143,16 +162,20 @@ geneset_ui <- function(id) {
                               sliderInput(ns("geneset_heatmap_height"), "Heatmap Height:", min = 200, max = 3000, step = 50, value = 800)
              ),
              
-             conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
+             conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View' || input.geneset_tabset=='MetaBase Pathway View' ",
                               radioButtons(ns("kegg_more_tests"), label= "Add more comparisons?", choices= c("Yes", "No"),selected="No", inline = TRUE),
                               conditionalPanel(ns = ns, "input.kegg_more_tests=='Yes'",
                                                selectInput(ns("geneset_test2"), label="2nd Comparison", choices=NULL),
                                                selectInput(ns("geneset_test3"), label="3rd Comparison", choices=NULL),
                                                selectInput(ns("geneset_test4"), label="4th Comparison", choices=NULL),
                                                selectInput(ns("geneset_test5"), label="5th Comparison", choices=NULL)),
-                              column(width=6, selectInput(ns("kegg_logFC"), label= "Gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
-                              column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "Compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
-                              radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE))
+                              conditionalPanel(ns = ns, "input.geneset_tabset=='KEGG Pathway View'",
+                                column(width=6, selectInput(ns("kegg_logFC"), label= "Gene log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
+                                column(width=6, selectInput(ns("kegg_logFC_cpd"), label= "Compound log2FC Range:", choices= c(0.5, 1, 2, 3), selected=1)),
+                                radioButtons(ns("kegg_mapsample"), label= "Map Symbols to KEGG Nodes?", choices= c("Yes"=TRUE, "No"=FALSE),inline = TRUE)),
+                              conditionalPanel(ns = ns, "input.geneset_tabset=='MetaBase Pathway View'",
+                                               selectInput(ns("obj_style"), label="Network Object Style", choices=c("icon", "polygon", "none"), selected="icon")),
+                              )
            )
     ),
     column(9,
@@ -183,6 +206,12 @@ geneset_ui <- function(id) {
                                 selectizeInput(ns("sel_kegg_set"), label="KEGG Pathway for Visualization", choices = NULL, multiple = FALSE, width="600px", 
                                                options = list(placeholder =	'Type to search')),
                                 actionButton(ns("keggSave"), "Save to output"),plotOutput(ns('keggView'))),
+                       tabPanel(title="MetaBase Pathway View",
+                                p("Select a MetaBase Pathway by either clicking its name from the results table in the GSEA/ORA tab, or choose/search from the dropdown list below."),
+                                selectizeInput(ns("sel_metabase_set"), label="MetaBase Pathway for Visualization", choices = NULL, multiple = FALSE, width="600px", 
+                                               options = list(placeholder =	'Type to search')),
+                                #actionButton(ns("metabaseSave"), "Save to output"),
+                                uiOutput(ns("plot.metabase"))),
                        tabPanel(title="Help", htmlOutput('help_geneset'))
            )
     )
@@ -194,6 +223,10 @@ geneset_server <- function(id) {
                       function(input, output, session) {
                         ns <- shiny::NS(id)
                         
+                        #Use metabaser only when the gmt file exists
+                        if (!file.exists("db/human/metabase_maps_genesymbols.gmt")) {
+                          removeTab(session=session, inputId = "geneset_tabset", target = "MetaBase Pathway View")
+                        }
                         system="xOmicsShiny"
                         if (exists("system_info")){
                           if (!is.null(system_info)) {
@@ -353,6 +386,14 @@ geneset_server <- function(id) {
                             }
                             output$SpeciesGSEAInfo <- renderText({species_info})
                           }
+                          #Update MetaBase Pathway View tab
+                          if (file.exists("db/human/metabase_maps_genesymbols.gmt")) {
+                            if (input$MSigDB_species!="human") {
+                              hideTab(session=session, inputId = "geneset_tabset", target = "MetaBase Pathway View")
+                            } else {
+                              showTab(session=session, inputId = "geneset_tabset", target = "MetaBase Pathway View")
+                            }
+                          }
                         })
                         
                         observeEvent(input$MSigDB_species, {
@@ -366,6 +407,15 @@ geneset_server <- function(id) {
                           }
                         })
                         
+                        observe({
+                          metabase_file="db/human/metabase_maps_genesymbols.gmt"
+                          if (file.exists(metabase_file)) {
+                            path1<-gmtPathways(metabase_file)
+                            path_names=names(path1)
+                            path_choices= c('Type to Search' = '', path_names)
+                            updateSelectizeInput(session, "sel_metabase_set", choices = path_choices, selected="Type to Search", server = TRUE)
+                          }
+                        })
                         
                         observeEvent(c(input$ORA_input_type, input$geneset_tabset),{
                           req(input$ORA_input_type, input$geneset_tabset)
@@ -528,6 +578,7 @@ geneset_server <- function(id) {
                           updateTextInput(session, 'x2', value = info$value)
                           #updateTextInput(session, 'x3', value = info$value)
                           updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
+                          updateSelectizeInput(session, "sel_metabase_set",selected=info$value)
                           updateTextInput(session, 'analysis_type_1', value = analysis_type)
                           updateTextInput(session, 'analysis_type_2', value = analysis_type)
                          # updateTextInput(session, 'analysis_type_3', value = analysis_type)
@@ -755,6 +806,7 @@ geneset_server <- function(id) {
                             updateTextInput(session, 'x2', value = info$value)
                             #updateTextInput(session, 'x3', value = info$value)
                             updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
+                            updateSelectizeInput(session, "sel_metabase_set",selected=info$value)
                             updateTextInput(session, 'analysis_type_1', value = analysis_type)
                             updateTextInput(session, 'analysis_type_2', value = analysis_type)
                             #updateTextInput(session, 'analysis_type_3', value = analysis_type)
@@ -906,6 +958,67 @@ geneset_server <- function(id) {
                         })
                         })
                         
+                        ##MetabaseR map, only when human gene set is selected
+                        Data_metabase <- reactive({
+                          req(DataReactive())
+                          if (input$sel_metabase_set!="") {
+                            cat(input$sel_metabase_set, "\n") #for debug
+                            #get data
+                            dataIn=DataReactive()
+                            results_long=dataIn$results_long
+                            ProteinGeneName = dataIn$ProteinGeneName
+                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                              if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-(ProteinGeneName$Gene.Name)
+                              if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(ProteinGeneName$Gene.Name)
+                              if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                                mapped_symbols<-homolog_mapping(ProteinGeneName$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
+                              ProteinGeneName<-ProteinGeneName%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)
+                            }
+                            #gene entrezID
+                            Name_list<-ProteinGeneName%>%dplyr::filter(!is.na(Gene.Name), Gene.Name!="", Gene.Name!="NA")%>%
+                                dplyr::select(Gene.Name)%>%unlist%>%unname
+                            Gene2ID=mapIds(org.Hs.eg.db, keys=Name_list, column="ENTREZID", keytype="SYMBOL")
+                            #browser()
+                            df_ID<-data.frame(Gene.Name=names(Gene2ID), EntrezID=Gene2ID)%>%filter(!is.na(Gene.Name), Gene.Name!="", 
+                                                                                                   !duplicated(Gene.Name) )
+                            ProteinGeneName1<-ProteinGeneName%>%dplyr::select(UniqueID, Gene.Name)%>%left_join(df_ID)
+                            results_long<-results_long%>%left_join(ProteinGeneName1%>%dplyr::select(UniqueID, EntrezID))
+                            #get logFC data from data_results
+                            tests=input$geneset_test
+                            if (input$kegg_more_tests=="Yes") {
+                              if (input$geneset_test2!="None") {tests=c(tests, input$geneset_test2)}
+                              if (input$geneset_test3!="None") {tests=c(tests, input$geneset_test3)}
+                              if (input$geneset_test4!="None") {tests=c(tests, input$geneset_test4)}
+                              if (input$geneset_test5!="None") {tests=c(tests, input$geneset_test5)}
+                            }
+                            data_plot<-list()
+                            for (t in tests){
+                              data1<-results_long%>%filter(test==t, !is.na(EntrezID))%>%dplyr::select(EntrezID, logFC, Adj.P.Value, UniqueID)
+                              list1=list(data1); names(list1)[1]=t
+                              data_plot=c(data_plot, list1)
+                            }
+                            return(data_plot)
+                          }
+                    
+                        })
+                        observe({
+                          req(working_project())
+                          req(input$geneset_test)
+                          req(DataReactive())
+                          if (input$sel_metabase_set!="") {
+                            withProgress(message = 'Plotting...', value = 0, {
+                            cat(input$sel_metabase_set, "\n") #for debug
+                            suppressWarnings(metabase_map<-  view.map(input$sel_metabase_set,
+                                                     datasets = Data_metabase(),  bg_image=FALSE,  input.types="gene", nwobj_style=input$obj_style ) )
+                            output$my_widget <- renderMetabase(metabase_map)
+                            plot_height=metabase_map$height+50
+                            plot_width=metabase_map$width+50
+                            output$plot.metabase=renderUI({
+                              MetabaseOutput(ns("my_widget"), width = plot_width, height = plot_height)
+                            })
+                          })}
+                        })
+                        
                         
                         observeEvent(input$keggSave, {
                           #ID = input$x3
@@ -923,6 +1036,8 @@ geneset_server <- function(id) {
                             list(src = img.file, contentType = 'image/png',	alt = "This is alternate text")
                           }
                         }, deleteFile = FALSE)
+                        
+                        
                         
                         genesetheatmap_out <- reactive({withProgress(message = 'Making heatmap...', value = 0, {
                           analysis_type = input$analysis_type_2
