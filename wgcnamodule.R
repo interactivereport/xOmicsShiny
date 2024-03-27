@@ -80,11 +80,11 @@ wgcna_server <- function(id) {
 			  print(paste0("**observeEvent ProjectID is", ProjectID))
 			  
 			  
-			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
+			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RData", sep = "")
 			  
-			  wgcna <- readRDS(wgcnafile)
+			  load(wgcnafile)
+			  wgcna <- netwk
 			  
-			  #wgcna #<- netwk
 			  mergedColors = labels2colors(wgcna$colors)
 			  
 			  output$Dendrogram <- renderPlot({
@@ -168,11 +168,12 @@ wgcna_server <- function(id) {
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
-  			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
+  			  #wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
+  			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RData", sep = "")
   			  
-  			  if (file.exists(wgcnafile) & input$mergeCutHeight == 0.25 & input$WGCNAtopNum == 250L) {
-  			    #load(wgcnafile)
-  			    netwk <- readRDS(wgcnafile)
+  			  if (file.exists(wgcnafile)) {
+  			    load(wgcnafile)
+  			    #netwk <- readRDS(wgcnafile)
   			  } else {
   			    ## Top number of genes
   			    topNum <- as.numeric(input$WGCNAtopNum)
