@@ -33,7 +33,9 @@ venn_ui <- function(id) {
 				radioButtons(ns("sel_label"), label= "Label name", choices= c("Gene.Name"="Gene.Name", "UniqueID"="UniqueID"), inline = TRUE, selected = "Gene.Name"),
 				conditionalPanel(ns = ns, "input.venn_tabset=='UpSets' || input.venn_tabset=='UpSets Table'",
 					radioButtons(ns("combinationmode"), label="Combination Mode", inline = TRUE,	choices = c("intersect" = "intersect", "distinct" = "distinct", "union" = "union"), selected = "intersect"),
-					radioButtons(ns("combinationtranspose"), label="Transposing Combination Matrix", inline = TRUE,	choices = c("no" = "no", "yes" = "yes"), selected = "no")
+					radioButtons(ns("combinationtranspose"), label="Transposing Combination Matrix", inline = TRUE,	choices = c("no" = "no", "yes" = "yes"), selected = "no"),
+					sliderInput(ns("upset_font_size"), "Row Font Size:", min = 1, max = 20, step = 1, value = 12),
+					sliderInput(ns("upset_row_width"), "Row Label Width (cm):", min = 1, max = 20, step = 1, value = 6)
 				)
 			)
 		),
@@ -53,7 +55,7 @@ venn_ui <- function(id) {
 								),
 								fluidRow(
 									column(width=6, sliderInput(ns("venn_maincex"), "Title Size", min = 0, max = 6, step=1, value = 3)),
-									column(width=6, sliderInput(ns("venn_margin"), "Margin", min = 0.05, max = 0.3, step=0.05, value = 0.1))
+									column(width=6, sliderInput(ns("venn_margin"), "Margin", min = 0.05, max = 1, step=0.05, value = 0.1))
 								),
 								fluidRow(
 									column(width=6, sliderInput(ns("venn_alpha"), "Opacity", min = 0, max = 1, value = 0.4)),
@@ -424,6 +426,7 @@ venn_server <- function(id) {
 					comb_col = "#0000FF",
 					bg_col = c("#F0F0FF", "#FFF0F0"),
 					bg_pt_col = "#CCCCFF",
+					row_names_max_width = unit(input$upset_row_width, "cm"), row_names_gp = gpar(fontsize = input$upset_font_size),
 					top_annotation = upset_top_annotation(m, ylim = c(0, max(comb_size(m))*1.1), height = unit(4, "cm"), add_numbers = TRUE),
 					right_annotation = upset_right_annotation(m, ylim = c(0, max(set_size(m))*1.1), gp = gpar(fill = "black"),	width = unit(4, "cm"), add_numbers = TRUE)
 				)
