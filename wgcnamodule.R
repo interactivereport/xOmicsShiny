@@ -24,7 +24,7 @@ wgcna_ui <- function(id) {
 				radioButtons(ns("WGCNAgenelable"),label="Select Gene Label",inline = TRUE, choices=c("Gene.Name","UniqueID"), selected="Gene.Name"),
 				#sliderInput(ns("wgcna_rcut"), label= "R-Squared Cutoff for Picking Soft-threshold Power",  min = 0.7, max = 1, value = 0.9, step=0.02),
 				# selectInput("wgcna_pcut", label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
-				numericInput(ns("WGCNAtopNum"), label= "Select Top N Genes, where N is :",  value=250L, min=250L, step=25L, max = 5000L),
+				numericInput(ns("WGCNAtopNum"), label= "Select Top N Genes, where N is :",  value=250L, min=250L, step=25L, max = 10000L),
 				numericInput(ns("mergeCutHeight"), label= "Dendrogram Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
 				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
@@ -71,10 +71,26 @@ wgcna_server <- function(id) {
 			  
 			  working_project(input$current_dataset)
 			  
-			  default_n_gene <- min(10000, nrow(DataInSets[[working_project()]]$data_wide))
+			  data_wide <- DataInSets[[working_project()]]$data_wide
+			  
+			  if (nrow(data_wide)>10000 ) {
+			    data_wide <- data_wide %>% na.omit()
+			    dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
+			    dataM=rowMeans(data_wide)
+			    diff=dataSD/(dataM+median(dataM))
+			    data_wide=data_wide[order(diff, decreasing=TRUE)[1:10000], ] 
+			    dataExpr <- data_wide
+			    cat("reduce gene size to 10K for project ", ProjectID, "\n")
+			  } else {
+			    dataExpr <- data_wide %>%
+			      na.omit()
+			  }
+			  
+			  default_n_gene <- min(10000, nrow(dataExpr))
+			  
 			  print(paste0("**default_n_gene is", default_n_gene))
 			  updateNumericInput(session, "WGCNAtopNum", 
-			                     label= "Select Top N Genes, where N is :",  value=default_n_gene, min=250L, step=25L, max = max(5000, default_n_gene))
+			                     label= "Select Top N Genes, where N is :",  value=default_n_gene, min=250L, step=25L, max = default_n_gene)
 			  
 			  ProjectID <- DataInSets[[working_project()]]$ProjectID
 			  
@@ -158,20 +174,37 @@ wgcna_server <- function(id) {
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
+  			  if (nrow(data_wide)>10000 ) {
+  			    data_wide <- data_wide %>% na.omit()
+  			    dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
+  			    dataM=rowMeans(data_wide)
+  			    diff=dataSD/(dataM+median(dataM))
+  			    data_wide=data_wide[order(diff, decreasing=TRUE)[1:10000], ] 
+  			    dataExpr <- data_wide
+  			    cat("reduce gene size to 10K for project ", ProjectID, "\n")
+  			  } else {
+  			    dataExpr <- data_wide %>%
+  			      na.omit()
+  			  }
+  			  
+  			  # The rerun_*.RData contains two objects, dataExpr and picked_power, so that
+  			  # the app doesn't need to recalculate either from scratch
   			  # Note: if launching app from the server, the path for `rerun_`  files should be
   			  # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM
   			  rerun_wgcna_file <- paste("data/wgcna_data/rerun_", ProjectID, ".RData", sep = "")
   			  
-  			  # file exist and gene selected within 10% of topNum, load pre-computed soft
-  			  # power
-  			  if (file.exists(rerun_wgcna_file)) {
+  			  default_n_gene <- min(10000, nrow(dataExpr))
+  			  
+  			  # If file exist and the number of genes selected within 10% of the default number, 
+  			  # then load rerun_ to save computing time
+  			  if (file.exists(rerun_wgcna_file) & (default_n_gene - input$WGCNAtopNum)/default_n_gene < 0.1) {
   			    load(rerun_wgcna_file)
   			   
   			    print(paste0("**** pre-computed soft power is ****", picked_power))
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads()   
+  			    #enableWGCNAThreads()   
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -189,7 +222,7 @@ wgcna_server <- function(id) {
   			                              minModuleSize = min(20, ncol(dataExpr/2)), # al# 30, #input$minModuleSize, #30,
   			                              # set block size to be number of genes, so that all
   			                              # genes will be analyzed in a single block
-  			                              maxBlockSize = input$WGCNAtopNum,#4000,
+  			                              maxBlockSize = input$WGCNAtopNum,
   			                              
   			                              # == Module Adjustments ==
   			                              reassignThreshold = 0,
