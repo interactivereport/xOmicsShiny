@@ -61,7 +61,7 @@ wgcna_server <- function(id) {
 			  req(length(working_project()) > 0)
 			  radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 			})
-			
+
 			observeEvent(input$current_dataset, {
 			  
 			  req(length(working_project()) > 0)
@@ -71,14 +71,12 @@ wgcna_server <- function(id) {
 			  
 			  working_project(input$current_dataset)
 			  
-			  default_n_gene <- nrow(DataInSets[[working_project()]]$data_wide)
+			  default_n_gene <- min(10000, nrow(DataInSets[[working_project()]]$data_wide))
 			  print(paste0("**default_n_gene is", default_n_gene))
 			  updateNumericInput(session, "WGCNAtopNum", 
 			                     label= "Select Top N Genes, where N is :",  value=default_n_gene, min=250L, step=25L, max = max(5000, default_n_gene))
 			  
 			  ProjectID <- DataInSets[[working_project()]]$ProjectID
-			  print(paste0("**observeEvent ProjectID is", ProjectID))
-			  
 			  
 			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RData", sep = "")
 			  
@@ -144,14 +142,6 @@ wgcna_server <- function(id) {
 			  })
 			})
 			
-			
-			
-			file_set <- tibble(dataset = c("ADPD_ACG_Maxquant", "ADPD_ACG_Pdiscover",
-			                               "ADPD_cortex_Maxquant","ADPD_cortex_Pdiscover", 
-			                               "LRRK2_Neuron_Protein","LRRK2_Neuron_RNA",
-			                               "Mouse_microglia_RNA-Seq","RNASeqtest","RNASeqtest2"),
-			                   picked_power = c(10,12,5,12,4,20,6,9,9))
-			
 			# use eventReactive to control reactivity of WGCNAReactive;
 			# otherwise, whenever an input change, WGCNAReactive will be re-calculated
 			# and its re-calculation could take a long time.
@@ -164,16 +154,60 @@ wgcna_server <- function(id) {
   			  req(DataInSets[[working_project()]]$ProjectID)
   			  req(DataInSets[[working_project()]]$ProteinGeneName)
   			  ProjectID <- DataInSets[[working_project()]]$ProjectID
-  			  print(paste0("**eventReactive ProjectID is", ProjectID))
+  			  
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
-  			  #wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RDS", sep = "")
-  			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RData", sep = "")
+  			  # Note: if launching app from the server, the path for `rerun_`  files should be
+  			  # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM
+  			  rerun_wgcna_file <- paste("data/wgcna_data/rerun_", ProjectID, ".RData", sep = "")
   			  
-  			  if (file.exists(wgcnafile)) {
-  			    load(wgcnafile)
-  			    #netwk <- readRDS(wgcnafile)
+  			  # file exist and gene selected within 10% of topNum, load pre-computed soft
+  			  # power
+  			  if (file.exists(rerun_wgcna_file)) {
+  			    load(rerun_wgcna_file)
+  			   
+  			    print(paste0("**** pre-computed soft power is ****", picked_power))
+  			    
+  			    WGCNA::allowWGCNAThreads()
+  			    ALLOW_WGCNA_THREADS=8L
+  			    enableWGCNAThreads()   
+  			    cor <- WGCNA::cor
+  			    
+  			    temp_cor <- cor
+  			    cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
+  			    netwk <- blockwiseModules(dataExpr,                # <= input here
+  			                              
+  			                              # == Adjacency Function ==
+  			                              power = picked_power,                # <= power here
+  			                              networkType = "signed",
+  			                              
+  			                              # == Tree and Block Options ==
+  			                              deepSplit = 2L,
+  			                              pamRespectsDendro = F,
+  			                              # detectCutHeight = 0.75,
+  			                              minModuleSize = min(20, ncol(dataExpr/2)), # al# 30, #input$minModuleSize, #30,
+  			                              # set block size to be number of genes, so that all
+  			                              # genes will be analyzed in a single block
+  			                              maxBlockSize = input$WGCNAtopNum,#4000,
+  			                              
+  			                              # == Module Adjustments ==
+  			                              reassignThreshold = 0,
+  			                              mergeCutHeight = input$mergeCutHeight,#,0.25,
+  			                              
+  			                              # == TOM == Archive the run results in TOM file (saves time)
+  			                              saveTOMs = F,
+  			                              loadTOM = TRUE,
+
+  			                              # Note: When launching from server, the path for TOM should be
+  			                              # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM_",x)
+  			                              saveTOMFileBase = paste0("./data/wgcna_data/TOM_", ProjectID),
+  			                              
+  			                              # == Output Options
+  			                              numericLabels = T,
+  			                              verbose = 3L)
+  			    cor <- temp_cor
+
   			  } else {
   			    ## Top number of genes
   			    topNum <- as.numeric(input$WGCNAtopNum)
