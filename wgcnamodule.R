@@ -61,9 +61,14 @@ wgcna_server <- function(id) {
 			  req(length(working_project()) > 0)
 			  radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 			})
+      
+			toListen <- reactive({
+			  req(input$current_dataset) 
+			  req(input$WGCNAgenelable)
+			})
+			
+			observeEvent(toListen(), {
 
-			observeEvent(input$current_dataset, {
-			  
 			  req(length(working_project()) > 0)
 			  req(DataInSets[[working_project()]]$data_wide)
 			  req(DataInSets[[working_project()]]$ProjectID)
@@ -80,7 +85,6 @@ wgcna_server <- function(id) {
 			    diff=dataSD/(dataM+median(dataM))
 			    data_wide=data_wide[order(diff, decreasing=TRUE)[1:10000], ] 
 			    dataExpr <- data_wide
-			    cat("reduce gene size to 10K for project ", ProjectID, "\n")
 			  } else {
 			    dataExpr <- data_wide %>%
 			      na.omit()
@@ -88,7 +92,6 @@ wgcna_server <- function(id) {
 			  
 			  default_n_gene <- min(10000, nrow(dataExpr))
 			  
-			  print(paste0("**default_n_gene is", default_n_gene))
 			  updateNumericInput(session, "WGCNAtopNum", 
 			                     label= "Select Top N Genes, where N is :",  value=default_n_gene, min=250L, step=25L, max = default_n_gene)
 			  
