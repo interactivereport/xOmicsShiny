@@ -28,11 +28,11 @@ wgcna_ui <- function(id) {
 				numericInput(ns("mergeCutHeight"), label= "Dendrogram Cut Height for Merging:",  value=0.25, min= 0, max = 1.0, step = 0.01),
 				#numericInput(ns("minModuleSize"), label= "Mininum Module Size:",  value=30L, min= 1L, max = 1000L),
 				#numericInput(ns("maxBlockSize"), label= "Max Block Size:",  value=4000, min = 100, max = 30000),
-				actionButton(ns("plotwgcna"),"Re-Run"),
+				actionButton(ns("plotwgcna"),"Re-run"),
 				br(),
-				span("1. If the data is one of the saved projects in the CSV file, after clicking 'Run' the app will load precomputed WGCNA results using default parameter values." ,style="color:red", inline = TRUE),
+				span("1. If the data is one of the saved projects in the CSV file,the app will load precomputed results based on up to 10,000 genes with default parameter values." ,style="color:red", inline = TRUE),
 				br(),
-				span("2. If you wish to run WGCNA on the saved project with a different parameter or on the data you import, please also click 'Run' but refrain from clicking the button repeatedly.",style="color:red", inline = TRUE)
+				span("2. If you wish to re-run WGCNA on the saved project with a different parameter or number of genes, please click 'Re-run' but refrain from clicking it repeatedly.",style="color:red", inline = TRUE)
 
 			)
 		),
@@ -207,7 +207,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    #enableWGCNAThreads()   
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -278,7 +278,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads()
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
