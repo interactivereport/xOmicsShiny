@@ -189,22 +189,26 @@ wgcna_server <- function(id) {
   			    dataExpr <- data_wide %>%
   			      na.omit()
   			  }
+  			  print(paste0("**** dim of dataExpr after-preprocssin is ****", dim(dataExpr)))
   			  
-  			  # The rerun_*.RData contains two objects, dataExpr and picked_power, so that
-  			  # the app doesn't need to recalculate either from scratch
-  			  # Note: if launching app from the server, the path for `rerun_`  files should be
+  			  # Note: if launching app from the server, the path for `load_`  files should be
   			  # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM
-  			  rerun_wgcna_file <- paste("data/wgcna_data/rerun_", ProjectID, ".RData", sep = "")
+  			  load_wgcna_file <- paste("data/wgcna_data/load_", ProjectID, ".RData", sep = "")
   			  
   			  default_n_gene <- min(10000, nrow(dataExpr))
   			  
-  			  # If file exist and the number of genes selected within 10% of the default number, 
-  			  # then load rerun_ to save computing time
-  			  if (file.exists(rerun_wgcna_file) & (default_n_gene - input$WGCNAtopNum)/default_n_gene < 0.1) {
-  			    load(rerun_wgcna_file)
-  			   
-  			    print(paste0("**** pre-computed soft power is ****", picked_power))
+  			  if (file.exists(load_wgcna_file) & default_n_gene==input$WGCNAtopNum){
+  			  
+  			    # If file exist and the number of genes selected rename the same, load 
+  			    # pre-computed result and TOM file (blockwiseModules(loadTom = T)) to 
+  			    # reduce running time
   			    
+  			    # The load_*.RData contains two objects, dataExpr and picked_power, so that
+  			    # the app doesn't need to recalculate either from scratch
+  			     load(load_wgcna_file)
+  			    
+  			    print(paste0("**** scenario 1 ****"))
+ 
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
   			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
@@ -234,6 +238,57 @@ wgcna_server <- function(id) {
   			                              # == TOM == Archive the run results in TOM file (saves time)
   			                              saveTOMs = F,
   			                              loadTOM = TRUE,
+  			                              
+  			                              # Note: When launching from server, the path for TOM should be
+  			                              # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM_",x)
+  			                              saveTOMFileBase = paste0("./data/wgcna_data/TOM_", ProjectID),
+  			                              
+  			                              # == Output Options
+  			                              numericLabels = T,
+  			                              verbose = 3L)
+  			    cor <- temp_cor
+  			    
+  			  } else if (file.exists(load_wgcna_file) & (default_n_gene - input$WGCNAtopNum)/default_n_gene < 0.1) {
+  			    
+  			    # If file exist and the number of genes selected is within 10% of 
+  			    # the default number of genes, load pre-computed result
+  			    # but do not load TOM file (blockwiseModules(loadTom = F))
+  			    
+  			    load(load_wgcna_file)
+  			    
+  			    print(paste0("**** scenario 2 ****"))
+  			    
+  			    dataExpr= dataExpr[,1L:input$WGCNAtopNum]
+  			    
+  			    WGCNA::allowWGCNAThreads()
+  			    ALLOW_WGCNA_THREADS=8L
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    cor <- WGCNA::cor
+  			    
+  			    temp_cor <- cor
+  			    cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
+  			    netwk <- blockwiseModules(dataExpr,                # <= input here
+  			                              
+  			                              # == Adjacency Function ==
+  			                              power = picked_power,                # <= power here
+  			                              networkType = "signed",
+  			                              
+  			                              # == Tree and Block Options ==
+  			                              deepSplit = 2L,
+  			                              pamRespectsDendro = F,
+  			                              # detectCutHeight = 0.75,
+  			                              minModuleSize = min(20, ncol(dataExpr/2)), # al# 30, #input$minModuleSize, #30,
+  			                              # set block size to be number of genes, so that all
+  			                              # genes will be analyzed in a single block
+  			                              maxBlockSize = input$WGCNAtopNum,
+  			                              
+  			                              # == Module Adjustments ==
+  			                              reassignThreshold = 0,
+  			                              mergeCutHeight = input$mergeCutHeight,#,0.25,
+  			                              
+  			                              # == TOM == Archive the run results in TOM file (saves time)
+  			                              saveTOMs = F,
+  			                              loadTOM = FALSE,
 
   			                              # Note: When launching from server, the path for TOM should be
   			                              # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM_",x)
@@ -245,6 +300,9 @@ wgcna_server <- function(id) {
   			    cor <- temp_cor
 
   			  } else {
+  			    
+  			    print(paste0("**** compute everything from scratch ****"))
+  			    
   			    ## Top number of genes
   			    topNum <- as.numeric(input$WGCNAtopNum)
   			    # Gene Label
