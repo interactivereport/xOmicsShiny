@@ -1,0 +1,37 @@
+---
+title: "xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" 
+author:
+  - name: Benbo Gao
+    email: benbo.gao@biogen.com
+    affiliation: Biogen
+  - name: Yu (Henry) Sun
+    email: yuhenry.sun@biogen.com
+    affiliation: Biogen
+  - name: Xinmin Zhang
+    email: xinmin@bioinforx.com
+    affiliation: Biogen
+  - name: Tinchi Lin
+    email: tinchi.lin@biogen.com
+    affiliation: Biogen
+  - name: Wei Li
+    email: weili@bioinforx.com
+    affiliation: Biogen
+  - name: Romi Admanit
+    email: romi.admanit@biogen.com
+    affiliation: Biogen
+  - name: Baohong Zhang (Corresponding Author)
+    email: baohong.zhang@biogen.com
+    affiliation: Biogen
+  - name: These authors contribute equally: Benbo Gao, Yu (Henry) Sun
+address:
+  - code: Research Data Sciences, Translational Biology, Biogen, Inc
+    address: 225 Binney St, Cambridge, MA 02142, USA
+  - code: Data Science, BioInfoRx, Inc
+    address: 510 Charmany Dr, Suite 275A, Madison, WI 53719, USA
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+---
+
+# Preface
+
+This is a *user manual* written using Bookdown, which provides a detailed guide for xOmicsShiny.
