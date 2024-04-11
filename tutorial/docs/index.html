@@ -4,25 +4,25 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>SpaceSequest: pipeline for spatial transcriptomics data analysis</title>
-  <meta name="description" content="SpaceSequest: pipeline for spatial transcriptomics data analysis" />
+  <title>xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="SpaceSequest: pipeline for spatial transcriptomics data analysis" />
+  <meta property="og:title" content="xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="SpaceSequest: pipeline for spatial transcriptomics data analysis" />
+  <meta name="twitter:title" content="xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   
   
   
 
 
 
-<meta name="date" content="2023-09-19" />
+<meta name="date" content="2024-04-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -75,8 +75,9 @@
 <li><a href="./">scRNASequest</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Preface</a></li>
-<li class="chapter" data-level="2" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="installation.html"><a href="installation.html"><i class="fa fa-check"></i><b>2</b> Installation</a></li>
 <li class="divider"></li>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
 </ul>
@@ -88,7 +89,7 @@
       <div class="body-inner">
         <div class="book-header" role="navigation">
           <h1>
-            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">SpaceSequest: pipeline for spatial transcriptomics data analysis</a>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</a>
           </h1>
         </div>
 
@@ -97,28 +98,48 @@
 
             <section class="normal" id="section-">
 <div id="header">
-<h1 class="title">SpaceSequest: pipeline for spatial transcriptomics data analysis</h1>
-<p class="author multi-author"><em>Sarbottam Piya</em></p>
+<h1 class="title">xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</h1>
+<p class="author multi-author"><em>Benbo Gao</em></p>
 <address class="author_afil">
 Biogen<br>
-<a class="author_email" href="mailto:#"><a href="mailto:sarbottam.piya@biogen.com" class="email">sarbottam.piya@biogen.com</a></a>
+<a class="author_email" href="mailto:#"><a href="mailto:benbo.gao@biogen.com" class="email">benbo.gao@biogen.com</a></a>
 </address>
-<p class="author multi-author"><em>…</em></p>
+<p class="author multi-author"><em>Yu (Henry) Sun</em></p>
 <address class="author_afil">
-…<br>
-<a class="author_email" href="mailto:#">…</a>
+Biogen<br>
+<a class="author_email" href="mailto:#"><a href="mailto:yuhenry.sun@biogen.com" class="email">yuhenry.sun@biogen.com</a></a>
+</address>
+<p class="author multi-author"><em>Xinmin Zhang</em></p>
+<address class="author_afil">
+Biogen<br>
+<a class="author_email" href="mailto:#"><a href="mailto:xinmin@bioinforx.com" class="email">xinmin@bioinforx.com</a></a>
+</address>
+<p class="author multi-author"><em>Tinchi Lin</em></p>
+<address class="author_afil">
+Biogen<br>
+<a class="author_email" href="mailto:#"><a href="mailto:tinchi.lin@biogen.com" class="email">tinchi.lin@biogen.com</a></a>
+</address>
+<p class="author multi-author"><em>Wei Li</em></p>
+<address class="author_afil">
+Biogen<br>
+<a class="author_email" href="mailto:#"><a href="mailto:weili@bioinforx.com" class="email">weili@bioinforx.com</a></a>
+</address>
+<p class="author multi-author"><em>Romi Admanit</em></p>
+<address class="author_afil">
+Biogen<br>
+<a class="author_email" href="mailto:#"><a href="mailto:romi.admanit@biogen.com" class="email">romi.admanit@biogen.com</a></a>
 </address>
 <p class="author multi-author"><em>Baohong Zhang (Corresponding Author)</em></p>
 <address class="author_afil">
 Biogen<br>
 <a class="author_email" href="mailto:#"><a href="mailto:baohong.zhang@biogen.com" class="email">baohong.zhang@biogen.com</a></a>
 </address>
-<p class="author multi-author"><em>These authors contribute equally …</em></p>
-<p class="date"><em>2023-09-19</em></p>
+<p class="author multi-author"><em>These authors contribute equally, Benbo Gao, Yu (Henry) Sun</em></p>
+<p class="date"><em>2024-04-11</em></p>
 </div>
-<div id="preface" class="section level1 hasAnchor" number="1">
-<h1><span class="header-section-number">Chapter 1</span> Preface<a href="index.html#preface" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This is a <em>user manual</em> written using Bookdown, which provides a detailed guide for SpaceSequest</p>
+<div id="preface" class="section level1 unnumbered hasAnchor">
+<h1>Preface<a href="index.html#preface" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>This is a <em>user manual</em> written using Bookdown, which provides a detailed guide for xOmicsShiny.</p>
 
 </div>
             </section>
@@ -158,7 +179,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/interactivereport/scRNAsequest/edit/gh-pages/index.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/index.Rmd",
 "text": "Edit"
 },
 "history": {
@@ -166,7 +187,7 @@ gitbook.start({
 "text": null
 },
 "view": {
-"link": "https://github.com/interactivereport/scRNAsequest/blob/gh-pages/index.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/index.Rmd",
 "text": null
 },
 "download": null,

@@ -1,3 +1,0 @@
-# Introduction
-
-xOmicsShiny is a pipeline for spatial transcriptomics data analysis.

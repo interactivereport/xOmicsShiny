@@ -22,7 +22,7 @@ author:
   - name: Baohong Zhang (Corresponding Author)
     email: baohong.zhang@biogen.com
     affiliation: Biogen
-  - name: These authors contribute equally: Benbo Gao, Yu (Henry) Sun
+  - name: These authors contribute equally, Benbo Gao, Yu (Henry) Sun
 address:
   - code: Research Data Sciences, Translational Biology, Biogen, Inc
     address: 225 Binney St, Cambridge, MA 02142, USA
@@ -32,6 +32,6 @@ date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 ---
 
-# Preface
+# Preface {-}
 
 This is a *user manual* written using Bookdown, which provides a detailed guide for xOmicsShiny.
