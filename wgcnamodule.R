@@ -32,8 +32,9 @@ wgcna_ui <- function(id) {
 				br(),
 				span("1. If the data is one of the saved projects in the CSV file,the app will load precomputed results based on up to 10,000 genes with default parameter values." ,style="color:red", inline = TRUE),
 				br(),
-				span("2. If you wish to re-run WGCNA on the saved project with a different parameter or number of genes, please click 'Re-run' but refrain from clicking it repeatedly.",style="color:red", inline = TRUE)
-
+				span("2. If you wish to re-run WGCNA on the saved project with a different parameter or number of genes, please click 'Re-run'.",style="color:red", inline = TRUE),
+				br(),
+				strong("3. Re-running the data could take 3-10 minutes",style="color:red"), span("depending on data size and complexity; once re-run starts, please refrain from clicking the button repeatedly.",style="color:red", inline = TRUE),
 			)
 		),
 		column(9,
@@ -211,7 +212,7 @@ wgcna_server <- function(id) {
  
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -262,7 +263,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -336,7 +337,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
