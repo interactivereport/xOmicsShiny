@@ -212,7 +212,7 @@ wgcna_server <- function(id) {
  
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -263,7 +263,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -337,7 +337,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
