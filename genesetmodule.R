@@ -594,11 +594,11 @@ geneset_server <- function(id) {
                           if (input$ORA_input_type!='Gene List') {
                             DataIn = DataReactive()
                             results_long = DataIn$results_long
-                            ProteinGeneName = DataIn$ProteinGeneName
+                            #ProteinGeneName = DataIn$ProteinGeneName
                             
                             comp_sel = input$geneset_test
                             
-                            all_genes <- dplyr::filter(ProteinGeneName, !is.na(Gene.Name), Gene.Name!="") %>%
+                            all_genes <-results_long %>% dplyr::filter(test == comp_sel) %>%dplyr::filter(!is.na(Gene.Name),  Gene.Name!="")%>%
                               dplyr::select(one_of(c("Gene.Name"))) %>% 
                               collect %>% .[["Gene.Name"]] %>% unique()
                             
