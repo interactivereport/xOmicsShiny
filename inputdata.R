@@ -265,6 +265,11 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("MetaData")) {
+			#When MetaData has both group and Group columns, rename Group to Group_rename
+			#otherwise the code below will generate two group columns
+			if ( ("group" %in% colnames(MetaData)) && ("Group" %in% colnames(MetaData)) ) {
+				MetaData <- MetaData %>%dplyr::rename("Group_rename"="Group")
+			}
 			MetaData <- MetaData %>%
 			dplyr::rename(any_of(lookup))
 
