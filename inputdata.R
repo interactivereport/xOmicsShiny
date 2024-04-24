@@ -239,12 +239,16 @@ DataReactiveRData <- reactive({
 			} #Add Protein.ID column as it is required for certain tools.
 			ProteinGeneNameHeader = colnames(ProteinGeneName)
 			ProteinGeneNameHeader <- intersect(ProteinGeneNameHeader, c("UniqueID","Gene.Name","Protein.ID"))
+			ProteinGeneName <- ProteinGeneName %>%
+			dplyr::rename(any_of(lookup))
 
 			# modify by bgao 08/02/2023, keep ProteinGeneName ids only in result table
+			if (exists("results_long")) {
 			ProteinGeneName <- ProteinGeneName %>%
-			dplyr::rename(any_of(lookup)) %>%
+			#dplyr::rename(any_of(lookup)) %>%
 			dplyr::mutate_if(is.factor, as.character)  %>%
 			dplyr::filter(UniqueID %in% (results_long %>% dplyr::pull(UniqueID) %>% unique()))
+			}
 
 			returnlist[["ProteinGeneName"]] = ProteinGeneName
 			returnlist[["ProteinGeneNameHeader"]] = ProteinGeneNameHeader
@@ -281,8 +285,15 @@ DataReactiveRData <- reactive({
 			samples <- sample_order <- as.character(MetaData$sampleid[order(match(MetaData$group,groups))])
 
 			### meta data to long form
+			#04012024 process metadata from curve fitting dataset
+			if("Treatments" %in% colnames(MetaData)) {
+			  Treatments <- MetaData$Treatments[MetaData$Treatments!="" & !is.na(MetaData$Treatments)] %>% unique()
+			  MetaData <- MetaData %>%
+			    dplyr::select(-any_of(c(Treatments, "Treatments"))) 
+			}
+
 			MetaData_long <- MetaData %>%
-			dplyr::select(-any_of(c("Order", "ComparePairs"))) %>%
+			dplyr::select(-any_of(c("Order", "ComparePairs", "Treatments"))) %>%
 			#dplyr::mutate_if(is.numeric, as.character) %>% #this will fail when there are columns in Time format
 			dplyr::mutate_all(as.character) %>%
 			tidyr::pivot_longer(cols = -sampleid,  names_to = "type",values_to = "group")
