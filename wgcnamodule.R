@@ -100,66 +100,73 @@ wgcna_server <- function(id) {
 			  
 			  wgcnafile <- paste("data/wgcna_data/wgcna_", ProjectID, ".RData", sep = "")
 			  
-			  load(wgcnafile)
-			  wgcna <- netwk
+			  if(file.exists(wgcnafile)){
 			  
-			  mergedColors = labels2colors(wgcna$colors)
-			  
-			  output$Dendrogram <- renderPlot({
-			    withProgress(message = "Creating plot using pre-calculated data", value = 0, {
-  			    plotDendroAndColors(
-  			      wgcna$dendrograms[[1]],
-  			      mergedColors[wgcna$blockGenes[[1]]],
-  			      "Module colors",
-  			      dendroLabels = FALSE,
-  			      hang = 0.03,
-  			      addGuide = TRUE,
-  			      guideHang = 0.05 )
-			    })
-			  })
-			  
-			  ProteinGeneName  <- DataInSets[[working_project()]]$ProteinGeneName
-			  gene_label <- input$WGCNAgenelable
-			  
-			  # t0: merge WGCNA output with ProteinGeneName so that genes can be shown as UniqueID or Gene.Name
-			  t0 <- tibble::tibble(UniqueID = names(wgcna$colors), color = labels2colors(wgcna$colors)) %>%
-			    dplyr::left_join(ProteinGeneName[, c("UniqueID","Gene.Name")], by = "UniqueID") %>%
-			    dplyr::select(color,all_of(gene_label)) %>%
-			    dplyr::rename(gene = gene_label)
-			  
-			  # t1: collapse all genes in a cluster into a cell
-			  t1 <- t0 %>%
-			    dplyr::group_by(color) %>% 
-			    dplyr::summarize(n_gene = n(),
-			                     gene_group = paste0(gene, collapse = ",")) %>%
-			    dplyr::ungroup()
-			  
-			  # t2: add the copy button
-			  t2 <- t1
-			  t2$copy <- vapply(1L:nrow(t1), function(i){
-			    as.character(
-			      rclipButton(
-			        paste0("clipbtn_", i), 
-			        label = "Copy all genes in cluster", 
-			        clipText = t1[i, "gene_group"], 
-			        #icon = icon("clipboard"),
-			        icon = icon("copy", lib = "glyphicon"),
-			        class = "btn-primary btn-sm"
-			      )
-			    )
-			  }, character(1L))
-			  
-			  # rearrange columns
-			  t2 <- t2 %>% dplyr::select(color, n_gene, copy, gene_group)
-			  
-			  output$gene_cluster <- DT::renderDT({
-			    DT::datatable(
-			      t2,
-			      escape = FALSE,
-			      selection = "none",
-			      colnames=c("Color of cluster", "Number of genes", "Action","Genes in cluster")
-			    )
-			  })
+  			  load(wgcnafile)
+  
+  			  wgcna <- netwk
+  			  
+  			  mergedColors = labels2colors(wgcna$colors)
+  			  
+  			  output$Dendrogram <- renderPlot({
+  			    withProgress(message = "Creating plot using pre-calculated data", value = 0, {
+    			    plotDendroAndColors(
+    			      wgcna$dendrograms[[1]],
+    			      mergedColors[wgcna$blockGenes[[1]]],
+    			      "Module colors",
+    			      dendroLabels = FALSE,
+    			      hang = 0.03,
+    			      addGuide = TRUE,
+    			      guideHang = 0.05 )
+  			    })
+  			  })
+  			  
+  			  ProteinGeneName  <- DataInSets[[working_project()]]$ProteinGeneName
+  			  gene_label <- input$WGCNAgenelable
+  			  
+  			  # t0: merge WGCNA output with ProteinGeneName so that genes can be shown as UniqueID or Gene.Name
+  			  t0 <- tibble::tibble(UniqueID = names(wgcna$colors), color = labels2colors(wgcna$colors)) %>%
+  			    dplyr::left_join(ProteinGeneName[, c("UniqueID","Gene.Name")], by = "UniqueID") %>%
+  			    dplyr::select(color,all_of(gene_label)) %>%
+  			    dplyr::rename(gene = gene_label)
+  			  
+  			  # t1: collapse all genes in a cluster into a cell
+  			  t1 <- t0 %>%
+  			    dplyr::group_by(color) %>% 
+  			    dplyr::summarize(n_gene = n(),
+  			                     gene_group = paste0(gene, collapse = ",")) %>%
+  			    dplyr::ungroup()
+  			  
+  			  # t2: add the copy button
+  			  t2 <- t1
+  			  t2$copy <- vapply(1L:nrow(t1), function(i){
+  			    as.character(
+  			      rclipButton(
+  			        paste0("clipbtn_", i), 
+  			        label = "Copy all genes in cluster", 
+  			        clipText = t1[i, "gene_group"], 
+  			        #icon = icon("clipboard"),
+  			        icon = icon("copy", lib = "glyphicon"),
+  			        class = "btn-primary btn-sm"
+  			      )
+  			    )
+  			  }, character(1L))
+  			  
+  			  # rearrange columns
+  			  t2 <- t2 %>% dplyr::select(color, n_gene, copy, gene_group)
+  			  
+  			  output$gene_cluster <- DT::renderDT({
+  			    DT::datatable(
+  			      t2,
+  			      escape = FALSE,
+  			      selection = "none",
+  			      colnames=c("Color of cluster", "Number of genes", "Action","Genes in cluster")
+  			    )
+  			  })
+			  } else {
+			    print("no pre-computed wgcna file available and cannot load wgcna results")
+			    showNotification("Cannot find pre-calculated wgcna file and unable to load results", duration = NULL, type = "warning")
+			  }
 			})
 			
 			# use eventReactive to control reactivity of WGCNAReactive;
@@ -200,7 +207,7 @@ wgcna_server <- function(id) {
   			  
   			  if (file.exists(load_wgcna_file) & default_n_gene==input$WGCNAtopNum){
   			  
-  			    # If file exist and the number of genes selected rename the same, load 
+  			    # Scenario 1: If file exist and the number of genes selected rename the same, load 
   			    # pre-computed result and TOM file (blockwiseModules(loadTom = T)) to 
   			    # reduce running time
   			    
@@ -251,7 +258,7 @@ wgcna_server <- function(id) {
   			    
   			  } else if (file.exists(load_wgcna_file) & (default_n_gene - input$WGCNAtopNum)/default_n_gene < 0.1) {
   			    
-  			    # If file exist and the number of genes selected is within 10% of 
+  			    # Scenario 2: If file exist and the number of genes selected is within 10% of 
   			    # the default number of genes, load pre-computed result
   			    # but do not load TOM file (blockwiseModules(loadTom = F))
   			    
@@ -302,6 +309,7 @@ wgcna_server <- function(id) {
 
   			  } else {
   			    
+  			    # Scenario 3: Not scenario 1 or 2, and recalcuate everything
   			    print(paste0("**** compute everything from scratch ****"))
   			    
   			    ## Top number of genes
@@ -337,7 +345,7 @@ wgcna_server <- function(id) {
   			    
   			    WGCNA::allowWGCNAThreads()
   			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
@@ -347,7 +355,15 @@ wgcna_server <- function(id) {
   			    sft <- WGCNA::pickSoftThreshold(dataExpr, dataIsExpr = TRUE, powerVector = powers,	corFnc = cor, corOptions = list(use = 'p'),	networkType = "signed")
   			    
   			    # Generating adjacency and TOM similarity matrices based on the selected softpower
-  			    picked_power <- softPower <- sft$powerEstimate
+  			    #picked_power <- softPower <- sft$powerEstimate
+  			    
+  			    if (!is.na(sft$powerEstimate)){
+  			      print("**** Pick power from sft$powerEstmate **** ")
+  			      picked_power <- softPower <- sft$powerEstimate
+  			    } else {
+  			      print("**** Pick power based on which.max(sft$fidIndices$truncated.R.sq) **** ")
+  			      picked_power <- sft$fitIndices %>% dplyr::slice(which.max(truncated.R.sq)) %>% pull(Power)
+  			    }
   			    
   			    ##calclute the adjacency matrix
   			    #adj= WGCNA::adjacency(dataExpr,type = "unsigned", power = softPower)
