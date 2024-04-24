@@ -21,6 +21,8 @@ library(biomaRt)
 #library(enrichR)
 library(ComplexHeatmap)
 library(fgsea)
+#library(wikiprofiler)
+source("wikiprofiler_Fixed.R")
 library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 
 #Use metabaser only when the gmt file exists
@@ -103,7 +105,8 @@ geneset_ui <- function(id) {
              ),
              conditionalPanel(ns = ns, "input.ORA_input_type!='Gene List' || input.geneset_tabset!='Over-Representation Analysis (ORA)' ",
                               selectInput(ns("geneset_test"), label="Select Comparison for Gene Set Analysis", choices=NULL),
-                              uiOutput(ns('Second_Comparison')),
+                              conditionalPanel(ns = ns, "input.geneset_tabset!='MetaBase Pathway View' && input.geneset_tabset!='Wikipathways View'",
+                                               uiOutput(ns('Second_Comparison'))),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Over-Representation Analysis (ORA)' || input.geneset_tabset=='Gene Expression'",
                                                column(width=6,numericInput(ns("geneset_FCcut"), label= "Fold Change Cutoff", value = 1.2, min=1, step=0.1)),
                                                column(width=6,numericInput(ns("geneset_pvalcut"), label= "P Value Cutoff", value=0.01, min=0, step=0.001)),
@@ -112,12 +115,11 @@ geneset_ui <- function(id) {
                                                span(textOutput(ns("filteredgene1")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
                                                span(textOutput(ns("filteredgene2")), style = "color:red; font-size:15px; font-family:arial; font-style:italic")
                               )),
+             radioButtons(ns("MSigDB_species"), label= "Gene Set Species",choices=c("human","mouse", "rat"), inline = TRUE, selected = "human"),
+             span(textOutput(ns("SpeciesGSEAInfo")), style = "color:red; font-size:13px; font-family:arial; font-style:italic"),
+             selectInput(ns("map_genes"), "Gene Symbol Mapping:", choices = c("Homologous Genes", "Change to UPPER case (human)", 
+                                                                              "Change to Title Case (mouse/rat)", "No Change (as it is)"), selected="Homologous Genes"),
              conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Enrichment Analysis (GSEA)' || input.geneset_tabset=='Over-Representation Analysis (ORA)' || input.geneset_tabset=='Gene Expression'",
-                              radioButtons(ns("MSigDB_species"), label= "Gene Set Species",choices=c("human","mouse", "rat"), inline = TRUE, selected = "human"),
-                              textOutput(ns("SpeciesGSEAInfo")),
-                              selectInput(ns("map_genes"), "Gene Symbol Mapping:", choices = c("Auto homolog mapping", "Change to UPPER case (human)", 
-                                                                                               "Change to Title Case (mouse/rat)", "No Change (as it is)"), selected="Auto homolog mapping"),
-                              tags$head(tags$style("#SpeciesGSEAInfo{color: red; font-size: 14px; font-style: italic;}")),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Enrichment Analysis (GSEA)'",
                                                column(width=6,numericInput(ns("gsetMin"), label= "GeneSet Min Size",  value = 15, min=5, step=1)),
                                                column(width=6,numericInput(ns("gsetMax"), label= "GeneSet Max Size",  value = 1000, min=100, step=1)),
@@ -212,6 +214,12 @@ geneset_ui <- function(id) {
                                                options = list(placeholder =	'Type to search')),
                                 #actionButton(ns("metabaseSave"), "Save to output"),
                                 uiOutput(ns("plot.metabase"))),
+                       tabPanel(title="Wikipathways View",
+                                p("Select a wikipathway by either clicking its name from the results table in the GSEA/ORA tab, or choose/search from the dropdown list below."),
+                                selectizeInput(ns("sel_wikipathways_set"), label="Wikipathways for Visualization", choices = NULL, multiple = FALSE, width="600px", 
+                                               options = list(placeholder =	'Type to search')),
+                                #actionButton(ns("metabaseSave"), "Save to output"),
+                                svgPanZoomOutput(ns("wikipathways_plot"),width = "100%", height = "800px") ),
                        tabPanel(title="Help", htmlOutput('help_geneset'))
            )
     )
@@ -382,7 +390,11 @@ geneset_server <- function(id) {
                           if (!is.null(ProjectInfo$Species)) {
                             species_info=str_c("Current project is for ",ProjectInfo$Species)
                             if (ProjectInfo$Species!=input$MSigDB_species) {
-                              species_info=str_c(species_info, ", but gene set is from ", input$MSigDB_species, ". Try use auto option to map genes across species.")
+                              updateSelectizeInput(session,'map_genes', selected="Homologous Genes")
+                              species_info=str_c(species_info, ", but gene set is from ", input$MSigDB_species, ". Choose how to map to ", 
+                                    input$MSigDB_species, " genes.")
+                            } else {
+                              updateSelectizeInput(session,'map_genes', selected="No Change (as it is)")
                             }
                             output$SpeciesGSEAInfo <- renderText({species_info})
                           }
@@ -417,6 +429,17 @@ geneset_server <- function(id) {
                           }
                         })
                         
+                        observeEvent(input$MSigDB_species, {
+                          wiki_file=str_c("db/", input$MSigDB_species, "/Wikipathways_Symbol.gmt")
+                          if (file.exists(wiki_file)) {
+                            path1<-gmtPathways(wiki_file)
+                            wiki_names=names(path1)
+                            wiki_choices= c('Type to Search' = '', wiki_names)
+                            #browser()
+                            updateSelectizeInput(session, "sel_wikipathways_set", choices = wiki_choices, selected="Type to Search", server = TRUE)
+                          }
+                        })
+                        
                         observeEvent(c(input$ORA_input_type, input$geneset_tabset),{
                           req(input$ORA_input_type, input$geneset_tabset)
                           if (input$ORA_input_type=='Gene List' && input$geneset_tabset=='Over-Representation Analysis (ORA)')  {
@@ -446,10 +469,10 @@ geneset_server <- function(id) {
                           #browser()#bebug
                           
                           GSEA.terminals.df <- GSEAgene %>% arrange(dplyr::desc(logFC))
-                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
                             if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-toupper(GSEA.terminals.df$Gene.Name)
                             if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(GSEA.terminals.df$Gene.Name)
-                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
                               mapped_symbols<-homolog_mapping(GSEA.terminals.df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
                             GSEA.terminals.df<-GSEA.terminals.df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>% 
                               dplyr::distinct(., Gene.Name,.keep_all = TRUE)%>%dplyr::filter(!is.na(Gene.Name), Gene.Name!="") 
@@ -579,6 +602,7 @@ geneset_server <- function(id) {
                           #updateTextInput(session, 'x3', value = info$value)
                           updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
                           updateSelectizeInput(session, "sel_metabase_set",selected=info$value)
+                          updateSelectizeInput(session, "sel_wikipathways_set",selected=info$value)
                           updateTextInput(session, 'analysis_type_1', value = analysis_type)
                           updateTextInput(session, 'analysis_type_2', value = analysis_type)
                          # updateTextInput(session, 'analysis_type_3', value = analysis_type)
@@ -610,12 +634,12 @@ geneset_server <- function(id) {
                             
                             #browser()#bebug
                             #terminals.df <-  filteredgene%>%arrange(P.Value)  #old way
-                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
                               if (input$map_genes=="Change to UPPER case (human)")  {
                                 mapped_symbols<-toupper(terminals.df$Gene.Name); all_genes=toupper(all_genes)
                               } else if ( input$map_genes=="Change to Title Case (mouse/rat)" ) {
                                 mapped_symbols<-str_to_title(terminals.df$Gene.Name); all_genes=str_to_title(all_genes)
-                              } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                              } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
                                 mapped_symbols<-homolog_mapping(terminals.df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs)
                                 all_genes <-homolog_mapping(all_genes , ProjectInfo$Species, input$MSigDB_species, homologs)
                               } 
@@ -657,12 +681,12 @@ geneset_server <- function(id) {
                               ProteinGeneName = DataIn$ProteinGeneName
                               all_genes <- dplyr::filter(ProteinGeneName, !is.na(Gene.Name), Gene.Name!="") %>%
                                 dplyr::select(one_of(c("Gene.Name"))) %>% collect %>% .[["Gene.Name"]] %>% unique()
-                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
                               if (input$map_genes=="Change to UPPER case (human)")  {
                                 ORA_list<-toupper(ORA_list); all_genes=toupper(all_genes)
                               } else if ( input$map_genes=="Change to Title Case (mouse/rat)" ) {
                                 ORA_list<-str_to_title(ORA_list); all_genes=str_to_title(all_genes)
-                              } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                              } else if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
                                 ORA_list<-homolog_mapping(ORA_list, ProjectInfo$Species, input$MSigDB_species, homologs)
                                 all_genes <-homolog_mapping(all_genes , ProjectInfo$Species, input$MSigDB_species, homologs)
                               } 
@@ -807,6 +831,7 @@ geneset_server <- function(id) {
                             #updateTextInput(session, 'x3', value = info$value)
                             updateSelectizeInput(session, "sel_kegg_set",selected=info$value)
                             updateSelectizeInput(session, "sel_metabase_set",selected=info$value)
+                            updateSelectizeInput(session, "sel_wikipathways_set",selected=info$value)
                             updateTextInput(session, 'analysis_type_1', value = analysis_type)
                             updateTextInput(session, 'analysis_type_2', value = analysis_type)
                             #updateTextInput(session, 'analysis_type_3', value = analysis_type)
@@ -918,10 +943,10 @@ geneset_server <- function(id) {
                             }
                           }
                           
-                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
                             if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-toupper(FC_df$Gene.Name)
                             if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(FC_df$Gene.Name)
-                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
                               mapped_symbols<-homolog_mapping(FC_df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
                               FC_df<-FC_df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)
                           }
@@ -957,6 +982,34 @@ geneset_server <- function(id) {
                           return(img.file)
                         })
                         })
+                        output$wikipathways_plot <- renderSvgPanZoom({withProgress(message = 'Making WikiPathways View...', value = 0, {
+                          ID=input$sel_wikipathways_set
+                          validate(need(ID!="", message = "Please select a Wikipathway to map logFC data to it."))
+                          validate(need(str_detect(ID, "WP\\d+$"), message = "Only works on human/mouse/rat KEGG pathways."))
+                          wiki_ID=str_extract(ID, "WP\\d+$")
+                          species=input$MSigDB_species
+                          dataIn=DataReactive()
+                          results_long=dataIn$results_long
+                          ProteinGeneName = dataIn$ProteinGeneName
+                          comp_sel = input$geneset_test
+                          
+                          ##Make FCdata  from results_long
+                          FC_df<-results_long%>%dplyr::filter(test==comp_sel)%>%dplyr::select(UniqueID, logFC, Gene.Name)  
+                          if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
+                            if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-toupper(FC_df$Gene.Name)
+                            if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(FC_df$Gene.Name)
+                            if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
+                              mapped_symbols<-homolog_mapping(FC_df$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
+                            FC_df<-FC_df%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)%>%dplyr::filter(!is.na(Gene.Name), Gene.Name!="")
+                          }
+                          FCdata=FC_df$logFC; names(FCdata)=FC_df$Gene.Name
+                          
+                          cat(comp_sel, wiki_ID, length(FCdata), "\n")
+                          p1 <- wpplot(wiki_ID)
+                          p2 <- p1 |> wp_bgfill(FCdata, low='darkgreen', high='firebrick', legend_x = .9, legend_y = .95)
+                          svgPanZoom(paste(p2$svg, collapse="\n"),  controlIconsEnabled = T)  
+                        } )
+                        })
                         
                         ##MetabaseR map, only when human gene set is selected
                         Data_metabase <- reactive({
@@ -967,10 +1020,10 @@ geneset_server <- function(id) {
                             dataIn=DataReactive()
                             results_long=dataIn$results_long
                             ProteinGeneName = dataIn$ProteinGeneName
-                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Auto homolog mapping") ) {
+                            if (input$map_genes!="No Change (as it is)" && !(ProjectInfo$Species==input$MSigDB_species && input$map_genes=="Homologous Genes") ) {
                               if ( input$map_genes=="Change to UPPER case (human)" )  mapped_symbols<-(ProteinGeneName$Gene.Name)
                               if ( input$map_genes=="Change to Title Case (mouse/rat)" )  mapped_symbols<-str_to_title(ProteinGeneName$Gene.Name)
-                              if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Auto homolog mapping" ) {
+                              if (ProjectInfo$Species!=input$MSigDB_species && input$map_genes=="Homologous Genes" ) {
                                 mapped_symbols<-homolog_mapping(ProteinGeneName$Gene.Name, ProjectInfo$Species, input$MSigDB_species, homologs) }	  
                               ProteinGeneName<-ProteinGeneName%>%mutate(Gene.Name.Ori=Gene.Name, Gene.Name=mapped_symbols)
                             }
