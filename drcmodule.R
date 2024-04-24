@@ -5,22 +5,22 @@
 ##
 ##@file: drcmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 12/16/2021
-##@version 2.0
+##@Date : 04/23/2024
+##@version 3.0
 ###########################################################################################################
-
 
 ##########################################################################################################
 ## Curve Fitting Plot
 ##########################################################################################################
-#pkgs: "drc", "ggpmisc", "parallel", "dplyr", "scales", "DT", "purrr", "modelr", "tibble"  
+#pkgs: "drc", "ggpmisc", "parallel", "dplyr", "scales", "DT", "purrr", "modelr", "tibble"
 
 library(drc)
 library(ggpmisc)
 library(parallel)
 library(gridExtra)
 
-corenumber  = parallel::detectCores(logical = FALSE)
+#corenumber  = parallel::detectCores(logical = FALSE) - 2
+corenumber  = 20 #fixed based on cluster node
 
 fctList <- list(LL.2(), LL.3(), LL.3u(), LL.4(), LL.5(),
 	W1.2(), W1.3(), W1.4(), W2.2(), W2.3(), W2.4()
@@ -108,43 +108,50 @@ plotfitting <- function(model, group, TimeDose="conc",  npcx="auto", npcy="auto"
 drc_ui <- function(id) {
 	ns <- shiny::NS(id)
 	fluidRow(
-		column(2,
+		column(3,
 			wellPanel(
-				conditionalPanel(ns = ns,"input.expression_tabset=='Model Selection' || input.expression_tabset=='Fitting Curve' || input.expression_tabset=='Data Table' || input.expression_tabset=='Result Table' ",
-					selectizeInput(ns("sel_gene1"),	label="Gene Name",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search'))
+				uiOutput(ns('loadedprojects')),
+				conditionalPanel(ns = ns, "input.upper_tabset=='Fitting Curve'",
+					selectizeInput(ns("sel_gene1"),	label="Gene Name",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search')),
+					conditionalPanel(ns = ns, "input.FittingCurve_tabset=='Fitting Curve'",
+						radioButtons(ns("separateplot"), label="Plot Separately ", inline = TRUE, choices = c("Yes" = "Yes","No" = "No")),
+						selectizeInput(ns("sel_model"),	label="Model",	choices = NULL,	multiple=FALSE)
+					),
+					conditionalPanel(ns = ns, "input.FittingCurve_tabset=='Model Selection'",
+						selectizeInput(ns("sel_treatment1b"),	label="Treatment",	choices = NULL,	multiple=FALSE),
+						sliderInput(ns("sel_topn"), "Top Model Number:", min = 1, max = 11, step = 1, value = 5)
+					)
 				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Fitting Curve' || input.expression_tabset=='Browsing' || input.expression_tabset=='Data Table' || input.expression_tabset=='Result Table' ",
+				conditionalPanel(ns = ns,"input.upper_tabset=='Browsing'",
+					radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Browsing", "Upload Genes"), inline = TRUE, selected="Browsing"),
+					conditionalPanel(ns = ns, "input.subset=='Upload Genes'",	textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)),
+					radioButtons(ns("sel_geneid"), label="Select Gene Label", inline = TRUE, choices=c("UniqueID", "Gene.Name","Protein.ID"), selected="UniqueID"),
+					radioButtons(ns("orderby"), label="Sort by", inline = TRUE, choices =  c("p_value" = "p_value", "padjust" = "padjust","r.squared" = "r.squared")),
+					fluidRow(
+						column(width=4,sliderInput(ns("plot_ncol"), label= "Column Number", min = 1, max = 6, step = 1, value = 3)),
+						column(width=4,sliderInput(ns("plot_nrow"), label= "Row Number", min = 1, max = 9, step = 1, value = 3)),
+						column(width=4,selectInput(ns("sel_page"), label="Select Page",	choices = NULL,	selected=1))
+					)
+				),
+				conditionalPanel(ns = ns,"input.upper_tabset=='Fitting Curve' || input.upper_tabset=='Browsing'",
 					selectizeInput(ns("sel_treatment1"),	label="Treatment",	choices = NULL,	multiple=TRUE),
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Fitting Curve' || input.expression_tabset=='Browsing'",
-					selectizeInput(ns("sel_model"),	label="Model",	choices = NULL,	multiple=FALSE),
 					numericInput(ns("upper"), "Upper:", 1, min = 1, max = 100),
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Fitting Curve'",
-					radioButtons(ns("separateplot"), label="Plot Separately ", inline = TRUE, choices = c("Yes" = "Yes","No" = "No"))
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Model Selection'",
-					selectizeInput(ns("sel_treatment1b"),	label="Treatment",	choices = NULL,	multiple=FALSE),
-					sliderInput(ns("sel_topn"), "Top Model Number:", min = 1, max = 11, step = 1, value = 5)
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Browsing'",
-					radioButtons(ns("orderby1"), label="Sort by", inline = TRUE, choices =  c("p_value" = "p_value", "padjust" = "padjust","r.squared" = "r.squared")),
-					column(width=6,selectInput(ns("sel_page1"),	label="Select Page",	choices = NULL,	selected=1)),
-					column(width=6,selectInput(ns("numperpage1"), label= "Plot Number per Page", choices= c("4"=4,"6"=6,"9"=9), selected=6))
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Model Selection' || input.expression_tabset=='Fitting Curve' || input.expression_tabset=='Browsing'",
 					radioButtons(ns("npcx"), label="Label X Position", inline = TRUE, choices =  c("auto" = "auto", "left" = "left","middle"="middle","right"="right")),
 					radioButtons(ns("npcy"), label="Label Y Position", inline = TRUE, choices =  c("auto" = "auto", "top" = "top","center" = "center","bottom" = "bottom")),
 					radioButtons(ns("logbase"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=10),
-					textInput(ns("xlabel"), "xlabel", value = "Log10(Conc.)"),
-					textInput(ns("ylabel"), "ylabel", value = "Response"),
-					sliderInput(ns("labelfontsize"), "Label Font Size:", min = 10, max = 24, step = 2, value = 14),
-					sliderInput(ns("basefontsize"), "Font Size:", min = 10, max = 24, step = 2, value = 14),
+					fluidRow(
+						column(width=6,textInput(ns("xlabel"), "xlabel", value = "Log10(Conc.)")),
+						column(width=6,textInput(ns("ylabel"), "ylabel", value = "Response"))
+					),
+					fluidRow(
+						column(width=6,sliderInput(ns("labelfontsize"), "Label Font Size:", min = 10, max = 24, step = 2, value = 14)),
+						column(width=6,sliderInput(ns("basefontsize"), "Font Size:", min = 10, max = 24, step = 2, value = 14))
+					),
 					sliderInput(ns("refreshrate"), "Plot Refresh Rate:", min = 0, max = 8000, step = 1000, value = 1000)
 				),
-				conditionalPanel(ns = ns,"input.expression_tabset=='Result Table (IC50/EC50)'",
-					radioButtons(ns("parallel1"), label= "parallel processing?", choices= c("yes"="yes","no"="no"),inline = TRUE),
-					numericInput(ns("core1"), "Core will be used:", value = 4, min = 2, max = 12),
+				conditionalPanel(ns = ns,"input.upper_tabset=='Result Table (all)'",
+					radioButtons(ns("parallel"), label= "parallel processing?", choices= c("yes"="yes","no"="no"),inline = TRUE),
+					numericInput(ns("core"), "Core will be used:", value = 4, min = 2, max = 12),
 					radioButtons(ns("psel1"), label= "P value or P.adj Value?", choices= c("Pval"="Pval","Padj"="Padj"),inline = TRUE),
 					numericInput(ns("pvalcut1"), label= "Choose P-value Threshold",  value=0.01, min=0, step=0.001),
 					numericInput(ns("datapoint1"), label= "Minimal Data Points",  value=5, min=5, step=1),
@@ -154,44 +161,41 @@ drc_ui <- function(id) {
 					radioButtons(ns("saveproject1"), label="Save Result?", inline = TRUE,  choices=c("Yes"= 1, "No"= 0), selected=0),
 					textInput(ns("projectname1"), "Project Name"),
 					actionButton(ns("fitallButton1"), "Fit filtered data")
-				),
+				)
 			)
 		),
-		column(10,
-			tabsetPanel(id=ns("expression_tabset"),
-				tabPanel(title="Fitting Curve",
-					#actionButton(ns("FittingCurve"), "Save to output"),
-					fluidRow(
-						plotOutput(ns("FittingCurve"), height=800)
-					),
-					fluidRow(
-						DT::dataTableOutput(ns("fitresult"))
+		column(9,
+			tabsetPanel(id=ns("upper_tabset"),
+				tabPanel(title="Fitting Curve", value ="Fitting Curve",
+					tabsetPanel(id=ns("FittingCurve_tabset"),
+						tabPanel(title="Fitting Curve", value="Fitting Curve", plotOutput(ns("FittingCurve"), height=800)
+						),
+						tabPanel(title="Result Table", value="Result Table", DT::dataTableOutput(ns("fitresult"))
+						),
+						tabPanel(title="Data Table", DT::dataTableOutput(ns("fitdata"))),
+						tabPanel(title="Model Selection", value ="Model Selection",
+							fluidRow(
+								plotOutput(ns("ModelSelection"), height=800)
+							),
+							fluidRow(
+								DT::dataTableOutput(ns("fitresultb"))
+							)
+						)
 					)
 				),
-				tabPanel(title="Model Selection",
-					#actionButton(ns("ModelSelection"), "Save to output"),
-					fluidRow(
-						plotOutput(ns("ModelSelection"), height=800)
-					),
-					fluidRow(
-						DT::dataTableOutput(ns("fitresultb"))
+				tabPanel(title="Result Table (all)", value="Result Table (all)",
+					shiny::downloadButton(outputId = ns("download_results_button"),  label = "Download All as CSV file"),
+					DT::dataTableOutput(ns("results"))
+				),
+				tabPanel(title="Browsing", value="Browsing",
+					tabsetPanel(id=ns("Browsing_tabset"),
+						tabPanel(title="Plot", value="Plot", plotOutput(ns("browsing"), height=1200)
+						),
+						tabPanel(title="Table", value="Table", DT::dataTableOutput(ns("browsing_result"))
+						)
 					)
 				),
-				tabPanel(title="Data Table",	DT::dataTableOutput(ns("fitdata"))),
-				tabPanel(title="Result Table (IC50/EC50)",
-					#actionButton("results", "Save to output"),
-					#shinycssloaders::withSpinner(dataTableOutput(ns("results1")),type = 4, size = 2,color = "#0000FF")
-					dataTableOutput(ns("results1"))
-				),
-				tabPanel(title="Browsing",
-					fluidRow(
-						plotOutput(ns("browsing1"), height=800)
-					),
-					fluidRow(
-						DT::dataTableOutput(ns("browsing1_result"))
-					)
-				),
-				tabPanel(title="Help", htmlOutput('help_FittingCurveDRC'))
+				tabPanel(title="Help", htmlOutput('help_drc'))
 			)
 		)
 	)
@@ -201,13 +205,21 @@ drc_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- shiny::NS(id)
+			output$loadedprojects <- renderUI({
+				req(length(working_project()) > 0)
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+			})
+
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
+
 			observe({
 				req(length(working_project()) > 0)
-				#req(DataInSets[[working_project()]]$data_long)
 				data_long <- DataInSets[[working_project()]]$data_long
 				req("UniqueID" %in% colnames(data_long) & "group" %in% colnames(data_long))
 				DataIngenes <-  data_long  %>% dplyr::pull(UniqueID) %>% unique() %>% as.character()
-					updateSelectizeInput(session,'sel_gene1', choices= DataIngenes, server=TRUE)
+				updateSelectizeInput(session,'sel_gene1', choices= DataIngenes, server=TRUE)
 				group <-  data_long %>% dplyr::pull(group) %>% unique() %>% as.character()
 				updateSelectizeInput(session,'sel_treatment1', choices= group,  selected=group)
 				updateSelectizeInput(session,'sel_treatment1b', choices= group,  selected=group[1])
@@ -304,7 +316,12 @@ drc_server <- function(id) {
 				for (onegroup in sel_treatment) {
 					dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(group == onegroup)
 					model <- try(drm(response~conc, data = dfgene1, fct = fctList[[sel_model]]), silent = TRUE)
-
+					df.summary <- dfgene1 %>%
+					group_by(conc, group) %>%
+					summarise(
+						sd = sd(response),
+						response = mean(response), .groups = "drop"
+					)
 					if (class(model) == "drc") {
 						#models[[onegroup]] <- model
 						fitDATlist[[onegroup]] = model$origData
@@ -351,11 +368,19 @@ drc_server <- function(id) {
 					fitDATdf <- do.call(rbind, fitDATlist)
 
 					p <- ggplot(fitDATdf, aes(x=conc, y=response, color=group)) +
-					geom_point() +
-					ylim(0, max(fitDATdf['response'])) +
-					geom_line(data = predicteddf, aes(x=x, y=predicted, color=group)) +
+					#geom_point() +
+					geom_jitter(aes(color = group),position = position_jitter(0.2)) +
+					ylim(0, max(fitDATdf['response']))
+
+
+					p <- p +
+					geom_line(data = predicteddf, aes(x=x, y=predicted, color=group))
+
+					p <- p +
+
 					#geom_ribbon(data = predicteddf)+
 					#ggtitle(group) +
+
 					theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 					theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0), legend.title = element_blank(), legend.position="bottom")
 					if (logbase != 1) {
@@ -505,11 +530,10 @@ drc_server <- function(id) {
 
 			###########################################################################################################
 			#DRC fit all data
-
 			observe({
 				req(length(working_project()) > 0)
 
-				updateNumericInput(session, 'core1', label = "Core will be used:", value = corenumber,  min = 2, max = corenumber, step =1)
+				updateNumericInput(session, 'core', label = "Core will be used:", value = corenumber,  min = 2, max = corenumber, step =1)
 				pcutoff <- input$pvalcut1
 				datapoint <- input$datapoint1
 				psel <- input$psel1
@@ -527,9 +551,8 @@ drc_server <- function(id) {
 				}
 				output$filteredgene1 =	 renderText({paste("<font color=\'red\'><b>Total Genes: ", UniqueIDnum, "</b></font>",sep="")})
 				if (UniqueIDnum  < 200)
-				updateRadioButtons(session, "parallel1",  label= "parallel processing (not recommended)",  choices= c("yes"="yes","no"="no"),  selected = "no")
+				updateRadioButtons(session, "parallel",  label= "parallel processing (not recommended)",  choices= c("yes"="yes","no"="no"),  selected = "no")
 			})
-
 
 			DRCFitOneS <- function(x,sel_model) {
 				data_tmp <- x %>% arrange(conc)
@@ -559,248 +582,281 @@ drc_server <- function(id) {
 				clusterEvalQ(cl, {
 					library(drc)
 					library(dplyr)
-				}
-			)
-			clusterExport(cl=cl, varlist=c("dataS_ChunkByCore","DRCFitOneS","fctList","sel_model"), envir=environment())
+				})
+				clusterExport(cl=cl, varlist=c("dataS_ChunkByCore","DRCFitOneS","fctList","sel_model"), envir=environment())
 
-			out <- parallel::parLapply(cl, 1:length(dataS_ChunkByCore), function (k) {
-				dataStmp <- dataS_ChunkByCore[[k]]
-				Res <- lapply(dataStmp, DRCFitOneS, sel_model)
-				coedf <- purrr::map_df(Res, ~as.data.frame(.x), .id="id")
-				return(coedf)
+				out <- parallel::parLapply(cl, 1:length(dataS_ChunkByCore), function (k) {
+					dataStmp <- dataS_ChunkByCore[[k]]
+					Res <- lapply(dataStmp, DRCFitOneS, sel_model)
+					coedf <- purrr::map_df(Res, ~as.data.frame(.x), .id="id")
+					return(coedf)
+				})
+
+				stopCluster(cl)
+				return (out)
+			}
+
+			fit_all <- eventReactive(input$fitallButton1, {
+				pcutoff <- input$pvalcut1
+				datapoint <- input$datapoint1
+				psel <- input$psel1
+				parallel <- input$parallel
+				corenum <- input$core
+				sel_model <- input$sel_model2
+
+				data_long <- DataInSets[[working_project()]]$data_long
+				if (!("UniqueID" %in% colnames(data_long))) {
+					results = data.frame("no ID" ="no result")
+				} else {
+					if (!is.null(DataInSets[[working_project()]]$statresult)) {
+						if (psel == "Pval") {
+							filterdata = DataInSets[[working_project()]]$statresult %>% dplyr::filter(pvalue < pcutoff & n >= datapoint)
+						}
+						if (psel == "Padj") {
+							filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
+						}
+
+						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
+						dataS <- named_group_split(data_long_sub,UniqueID,group)
+					} else {
+						dataS <- named_group_split(data_long,UniqueID,group)
+					}
+
+					upperlimit2 = input$upper
+					if (upperlimit2 != 1) {
+						fctList <- list(LL.2(upper = upperlimit), LL.3(), LL.3u(upper = upperlimit), LL.4(), LL.5(),
+							W1.2(upper = upperlimit), W1.3(), W1.4(), W2.2(), W2.3(), W2.4()
+						)
+
+						names(fctList) <- c("LL.2:Log-logistic(lower=0; upper=1)"="LL.2",
+							"LL.3:Log-logistic(lower=0)"="LL.3",
+							"LL.3u:Log-logistic(upper=1)"="LL.3u",
+							"LL.4:Log-logistic"="LL.4",
+							"LL.5:Generalized log-logistic"="LL.5",
+							"W1.2:Weibull(type 1; lower=0; upper=1)"="W1.2",
+							"W1.3:Weibull(type 1; lower=0)"="W1.3",
+							"W1.4:Weibull(type 1)"="W1.4",
+							"W2.2:Weibull(type 2; lower=0; upper=1"="W2.2",
+							"W2.3:Weibull(type 2; lower=0)"="W2.3",
+							"W2.4:Weibull(type 2)"="W2.4"
+						)
+					}
+
+					if (parallel == "yes")  {
+						dataS_ChunkByCore <-  split(dataS, cut(seq_along(dataS), corenum, labels = FALSE))
+						out <- MultiCoreFit(dataS_ChunkByCore, DRCFitOneS, fctList, sel_model= sel_model, corenum)
+						results <- ldply(out, data.frame) %>%
+						#dplyr::filter(!is.na(ED50)) %>%
+						dplyr::mutate_if(is.numeric, round, digits = 6)
+					} else {
+						Res <- lapply(dataS, DRCFitOneS, sel_model)
+						results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
+						#dplyr::filter(!is.na(ED50))  %>%
+						dplyr::mutate_if(is.numeric, round, digits = 6)
+					}
+					results$padjust <- p.adjust(results$p_value, "BH",  n = length(results$p_value))
+				}
+				return(results)
 			})
 
-			stopCluster(cl)
-			return (out)
+			output$results <- DT::renderDataTable({
+				results <- as.data.frame("No Fitting Results")
+
+				if (input$fitallButton1[1] == 0) {
+					if (!is.null(DataInSets[[working_project()]]$results_drc))
+					results <- DataInSets[[working_project()]]$results_drc
+				} else {
+					withProgress(message = 'Caculating...',  detail = 'This may take a while...',  {
+						results <- fit_all()
+						DataInSets[[working_project()]]$results_drc <-  results
+					})
+				}
+				if (input$saveproject1 == 1) {
+					shiny::validate(need(input$projectname1!= "","Please provide project name."))
+					filename <- paste("data/",input$projectname1,".RData",sep="")
+					save(data_long, results, file=filename )
+				}
+
+				results <- results %>%  mutate_if(is.numeric, round, digits = 2)
+				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top')
+			})
+
+			###########################################################################################################
+			observe({
+				req(length(working_project()) > 0)
+				updateSelectInput(session,'sel_page', choices= seq_len(100))
+			})
+
+			browsing_out <- reactive({
+				req(length(working_project()) > 0)
+				req(DataInSets[[working_project()]]$data_long)
+
+				validate(
+					need(DataInSets[[working_project()]]$results_drc, "Need fitting results")
+				)
+				validate(
+					need(DataInSets[[working_project()]]$data_long, "Need data")
+				)
+
+				results_drc <- DataInSets[[working_project()]]$results_drc
+				data_long <- DataInSets[[working_project()]]$data_long
+
+				sel_treatment <- input$sel_treatment1
+				sel_model <- input$sel_model
+				logbase = as.numeric(input$logbase)
+				labelfontsize <- as.numeric(input$labelfontsize)
+				basefontsize <- as.numeric(input$basefontsize)
+				xlabel <- input$xlabel
+				ylabel <- input$ylabel
+				orderby <- input$orderby
+				genelabel <- input$sel_geneid
+
+				ncol = as.numeric(input$plot_ncol)
+				nrow = as.numeric(input$plot_nrow)
+				sel_page <- as.numeric(input$sel_page)-1
+				numberpage = ncol * nrow
+				startslice = sel_page * numberpage  + 1
+				endslice = startslice + numberpage -1
+
+
+				if (orderby == "p_value") {
+					field <- "p_value"
+				}
+				if (orderby == "padjust") {
+					field <- "padjust"
+				}
+				if (orderby == "r.squared") {
+					field <- "r.squared"
+				}
+
+				if (!is.null(results_drc)) {
+					sel_gene <- results_drc %>%
+					dplyr::group_by(UniqueID) %>%
+					dplyr::slice(which.min(!!as.symbol(field))) %>%
+					dplyr::ungroup() %>%
+					dplyr::arrange(!!as.symbol(field)) %>%
+					dplyr::slice(startslice:endslice) %>%
+					dplyr::pull(UniqueID)
+				} else {
+					sel_gene <- data_long %>%
+					dplyr::distinct(UniqueID) %>%
+					dplyr::slice(startslice:endslice) %>%
+					dplyr::pull(UniqueID)
+				}
+
+				if (input$subset == "Upload Genes") {
+					req(input$uploadlist)
+					gene_list <- input$uploadlist
+					gene_list <- ProcessUploadGeneList(gene_list)
+					validate(need(length(gene_list) > 0, message = "Please input at least 1 valid gene."))
+					sel_gene = gene_list
+				}
+
+				data_long_tmp  <- dplyr::filter(data_long, UniqueID %in% sel_gene) %>%
+				dplyr::filter(group %in% sel_treatment) %>% as.data.frame()
+				data_long_tmp$labelgeneid = data_long_tmp[, match(genelabel,colnames(data_long_tmp))]
+				data_long_tmp$group = factor(data_long_tmp$group, levels = sel_treatment)
+
+				data_long_tmp  <- data_long_tmp %>%
+				dplyr::select(labelgeneid, group, conc, response) %>%
+				as.data.frame()
+
+				df.summary <- data_long_tmp %>%
+				group_by(labelgeneid, conc, group) %>%
+				dplyr::summarise(sd = sd(response), response = mean(response),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+				dplyr::select(-n)
+
+				sel_treatment = intersect(sel_treatment, unique(data_long_tmp[['group']]))
+				coedftlist1 <- list()
+				predictedlist1 <- list()
+				for (gene in unique(data_long_tmp[['labelgeneid']])) {
+					dfgene1 <- data_long_tmp %>% as.data.frame() %>% dplyr::filter(labelgeneid == gene)
+
+					predictedlist2 <- list()
+					coedftlist2 <- list()
+					for (onegroup in unique(dfgene1$group)) {
+						df <- dfgene1  %>% as.data.frame() %>% dplyr::filter(group == onegroup)
+						model <- try(drm(response~conc, data = df, fct = fctList[[sel_model]]), silent = TRUE)
+						if (class(model) == "drc") {
+							predicted <- modelr::add_predictions(data.frame(Dose = seq(0,max(df$conc))), model)
+							predictedlist2[[onegroup]] <- predicted  %>%
+							dplyr::mutate(labelgeneid = gene) %>%
+							dplyr::mutate(group = onegroup)
+
+							parameterdf <- data.frame(coename = c("b:(Intercept)", "c:(Intercept)", "d:(Intercept)","e:(Intercept)","f:(Intercept)"), parameter = c("Slope", "Lower Limit", "Upper Limit", "ED50","f") )
+							coedf <- data.frame(coename = names(model$coefficients), val = unname(model$coefficients)) %>% left_join(parameterdf, by = "coename") %>% dplyr::select(one_of("parameter","val"))
+							rSquared <- cor(model$predres[,1], model$data$response)^2
+							Pvalue <- noEffect(model)[3]
+
+							coedf <-  rbind(coedf, data.frame(parameter = "r.squared", val = rSquared))
+							coedf <-  rbind(coedf, data.frame(parameter = "p_value", val = Pvalue))
+							coedft <- setNames(data.frame(t(coedf[,-1])), coedf[,1])
+
+							coedftlist2[[onegroup]]  <- coedft %>%
+							dplyr::mutate(labelgeneid = gene) %>%
+							dplyr::mutate(group = onegroup) %>%
+							dplyr::relocate(c(labelgeneid, group), .before = Slope)
+
+						}
+					}
+					predicteddf2 <- do.call(rbind,predictedlist2)
+					coedftdf2 <- do.call(rbind,coedftlist2)
+					predictedlist1[[gene]] <- predicteddf2
+					coedftlist1[[gene]] <- coedftdf2
+				}
+
+				results  <- do.call(rbind,coedftlist1)
+
+				predicteddf1 <- do.call(rbind, predictedlist1) %>%
+				dplyr::select(c(labelgeneid, group, Dose, pred)) %>%
+				tibble::remove_rownames()  %>%
+				dplyr::rename(conc = Dose,  response = pred)
+
+
+				gg.df <- rbind(cbind(geom="pt", data_long_tmp), cbind(geom="ln", predicteddf1))%>%
+				dplyr::rename(GroupName = group)
+
+				p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
+				facet_wrap(~ labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
+
+				p <- p +
+				geom_point(data=gg.df[gg.df$geom=="pt",], shape=4)+
+				geom_line(data=gg.df[gg.df$geom=="ln",])
+
+				p <- p +
+				geom_errorbar(aes(ymin = response-sd, ymax = response+sd, color = group), data = df.summary, width = 0.2) +
+				theme_bw(base_size = basefontsize) +
+				xlab(xlabel) +  ylab(ylabel) +
+				theme(plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), plot.title = element_text(size=labelfontsize), legend.position="bottom")
+
+				if (logbase != 1){
+					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
+				}
+
+				return(list(plot=p, result = results))
+			})
+
+			output$browsing <- renderPlot({
+				browsing_out()[["plot"]]
+			})
+
+			output$browsing_result  <- DT::renderDataTable({
+				fitresult <- browsing_out()[["result"]]
+				fitresult <- fitresult %>%
+				mutate_if(is.numeric, round, digits = 4)
+				DT::datatable(fitresult, options = list(pageLength = 10))
+			})
+
+			output$download_results_button <- shiny::downloadHandler(
+				filename = function() {
+					paste("Results-", Sys.Date(), ".csv", sep="")
+				},
+				content = function(file) {
+					results <- DataInSets[[working_project()]]$results_drc
+					results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+					write.csv(results, file)
+				}
+			)
 		}
-
-		fit_all <- eventReactive(input$fitallButton1, {
-			pcutoff <- input$pvalcut1
-			datapoint <- input$datapoint1
-			psel <- input$psel1
-			parallel <- input$parallel1
-			corenum <- input$core1
-			sel_model <- input$sel_model2
-
-			data_long <- DataInSets[[working_project()]]$data_long
-			if (!("UniqueID" %in% colnames(data_long))) {
-				results = data.frame("no ID" ="no result")
-			} else {
-				if (!is.null(DataInSets[[working_project()]]$statresult)) {
-					if (psel == "Pval") {
-						filterdata = DataInSets[[working_project()]]$statresult %>% dplyr::filter(pvalue < pcutoff & n >= datapoint)
-					}
-					if (psel == "Padj") {
-						filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
-					}
-
-					data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
-					dataS <- named_group_split(data_long_sub,UniqueID,group)
-				} else {
-					dataS <- named_group_split(data_long,UniqueID,group)
-				}
-
-				upperlimit2 = input$upper
-				if (upperlimit2 != 1) {
-					fctList <- list(LL.2(upper = upperlimit), LL.3(), LL.3u(upper = upperlimit), LL.4(), LL.5(),
-						W1.2(upper = upperlimit), W1.3(), W1.4(), W2.2(), W2.3(), W2.4()
-					)
-
-					names(fctList) <- c("LL.2:Log-logistic(lower=0; upper=1)"="LL.2",
-						"LL.3:Log-logistic(lower=0)"="LL.3",
-						"LL.3u:Log-logistic(upper=1)"="LL.3u",
-						"LL.4:Log-logistic"="LL.4",
-						"LL.5:Generalized log-logistic"="LL.5",
-						"W1.2:Weibull(type 1; lower=0; upper=1)"="W1.2",
-						"W1.3:Weibull(type 1; lower=0)"="W1.3",
-						"W1.4:Weibull(type 1)"="W1.4",
-						"W2.2:Weibull(type 2; lower=0; upper=1"="W2.2",
-						"W2.3:Weibull(type 2; lower=0)"="W2.3",
-						"W2.4:Weibull(type 2)"="W2.4"
-					)
-				}
-
-				if (parallel == "yes")  {
-					dataS_ChunkByCore <-  split(dataS, cut(seq_along(dataS), corenum, labels = FALSE))
-					out <- MultiCoreFit(dataS_ChunkByCore, DRCFitOneS, fctList, sel_model= sel_model, corenum)
-					results <- ldply(out, data.frame) %>%
-					#dplyr::filter(!is.na(ED50)) %>%
-					dplyr::mutate_if(is.numeric, round, digits = 6)
-				} else {
-					Res <- lapply(dataS, DRCFitOneS, sel_model)
-					results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
-					#dplyr::filter(!is.na(ED50))  %>%
-					dplyr::mutate_if(is.numeric, round, digits = 6)
-				}
-				results$padjust <- p.adjust(results$p_value, "BH",  n = length(results$p_value))
-			}
-
-
-			return(results)
-		})
-
-		output$results1 <- DT::renderDataTable({
-			results <- as.data.frame("No Fitting Results")
-
-			if (input$fitallButton1[1] == 0) {
-				if (!is.null(DataInSets[[working_project()]]$results_drc))
-				results <- DataInSets[[working_project()]]$results_drc
-			} else {
-				withProgress(message = 'Caculating...',  detail = 'This may take a while...',  {
-					results <- fit_all()
-					DataInSets[[working_project()]]$results_drc <-  results
-				})
-			}
-			if (input$saveproject1 == 1) {
-				shiny::validate(need(input$projectname1!= "","Please provide project name."))
-				filename <- paste("data/",input$projectname1,".RData",sep="")
-				save(data_long, results, file=filename )
-			}
-
-			results <- results %>%  mutate_if(is.numeric, round, digits = 2)
-			DT::datatable(results, options = list(pageLength = 15), rownames= FALSE)
-		})
-
-		###########################################################################################################
-		#browsing
-		observe({
-			updateSelectInput(session,'sel_page1', choices= seq_len(100))
-		})
-
-		browsing_out_drc <- reactive({
-			req(DataInSets[[working_project()]]$data_long)
-			results_drc <- DataInSets[[working_project()]]$results_drc
-			data_long <- DataInSets[[working_project()]]$data_long
-			sel_treatment <- input$sel_treatment1
-			sel_model <- input$sel_model
-			logbase = as.numeric(input$logbase)
-			labelfontsize <- input$labelfontsize
-			basefontsize <- input$basefontsize
-			xlabel <- input$xlabel
-			ylabel <- input$ylabel
-			numperpage <- as.numeric(input$numperpage1)
-			sel_page <- as.numeric(input$sel_page1)-1
-			orderby <- input$orderby1
-
-			startslice = sel_page * numperpage  + 1
-			endslice = startslice + numperpage -1
-
-			if (orderby == "p_value") {
-				field <- "p_value"
-			}
-			if (orderby == "padjust") {
-				field <- "padjust"
-			}
-			if (orderby == "r.squared") {
-				field <- "r.squared"
-			}
-
-			if (!is.null(results_drc)) {
-				sel_gene <- results_drc %>%
-				dplyr::group_by(UniqueID) %>%
-				dplyr::slice(which.min(!!as.symbol(field))) %>%
-				dplyr::ungroup() %>%
-				dplyr::arrange(!!as.symbol(field)) %>%
-				dplyr::slice(startslice:endslice) %>%
-				dplyr::pull(UniqueID)
-			} else {
-				sel_gene <- data_long %>%
-				dplyr::distinct(UniqueID) %>%
-				dplyr::slice(startslice:endslice) %>%
-				dplyr::pull(UniqueID)
-			}
-
-			#sel_gene <- unique(data_long$UniqueID)[1:10]
-			#sel_model  <- "LL.3"
-			data_long_tmp  <- data_long %>%
-			dplyr::filter((UniqueID %in% sel_gene) & (group %in% sel_treatment)) %>%
-			dplyr::select(UniqueID, group, conc, response) %>%
-			as.data.frame()
-
-			if(numperpage==4) {
-				nrow = 2; ncol = 2
-			} else if(numperpage==6) {
-				nrow = 2; ncol = 3
-			} else {
-				nrow = 3; ncol = 3
-			}
-
-			sel_treatment = intersect(sel_treatment, unique(data_long_tmp[['group']]))
-			coedftlist1 <- list()
-			predictedlist1 <- list()
-			for (gene in  sel_gene) {
-				dfgene1 <- data_long_tmp %>% as.data.frame() %>% dplyr::filter(UniqueID == gene)
-				predictedlist2 <- list()
-				coedftlist2 <- list()
-				for (onegroup in unique(dfgene1$group)) {
-					df <- dfgene1  %>% as.data.frame() %>% dplyr::filter(group == onegroup)
-					model <- try(drm(response~conc, data = df, fct = fctList[[sel_model]]), silent = TRUE)
-					if (class(model) == "drc") {
-						predicted <- modelr::add_predictions(data.frame(Dose = seq(0,max(df$conc))), model)
-						predictedlist2[[onegroup]] <- predicted  %>%
-						dplyr::mutate(UniqueID = gene) %>%
-						dplyr::mutate(group = onegroup)
-
-						parameterdf <- data.frame(coename = c("b:(Intercept)", "c:(Intercept)", "d:(Intercept)","e:(Intercept)","f:(Intercept)"), parameter = c("Slope", "Lower Limit", "Upper Limit", "ED50","f") )
-						coedf <- data.frame(coename = names(model$coefficients), val = unname(model$coefficients)) %>% left_join(parameterdf, by = "coename") %>% dplyr::select(one_of("parameter","val"))
-						rSquared <- cor(model$predres[,1], model$data$response)^2
-						Pvalue <- noEffect(model)[3]
-
-						coedf <-  rbind(coedf, data.frame(parameter = "r.squared", val = rSquared))
-						coedf <-  rbind(coedf, data.frame(parameter = "p_value", val = Pvalue))
-						coedft <- setNames(data.frame(t(coedf[,-1])), coedf[,1])
-
-						coedftlist2[[onegroup]]  <- coedft %>%
-						dplyr::mutate(UniqueID = gene) %>%
-						dplyr::mutate(group = onegroup) %>%
-						dplyr::relocate(c(UniqueID, group), .before = Slope)
-
-					} #else {
-					#coedft <- data.frame("Slope" = NA, "Lower.Limit" = NA, "Upper.Limit" = NA, "ED50" = NA, "r.squared" = NA, "p_value"= NA)
-					#}
-				}
-				predicteddf2 <- do.call(rbind,predictedlist2)
-				coedftdf2 <- do.call(rbind,coedftlist2)
-				predictedlist1[[gene]] <- predicteddf2
-				coedftlist1[[gene]] <- coedftdf2
-			}
-
-			results  <- do.call(rbind,coedftlist1)
-
-			predicteddf1 <- do.call(rbind,predictedlist1) %>%
-			dplyr::select(c( UniqueID, group, Dose, pred)) %>%
-			tibble::remove_rownames()  %>%
-			dplyr::rename(conc = Dose,  response = pred)
-
-			gg.df <- rbind(cbind(geom="pt", data_long_tmp),cbind(geom="ln",predicteddf1))%>%
-			dplyr::rename(GroupName = group)
-
-			p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
-			geom_point(data=gg.df[gg.df$geom=="pt",], shape=4)+
-			geom_line(data=gg.df[gg.df$geom=="ln",])+
-			facet_wrap(~ UniqueID, scales = "free", nrow = nrow, ncol = ncol)	+
-			theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
-			theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
-
-
-			if (logbase != 1){
-				p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
-			}
-
-			return(list(plot=p, result = results))
-		})
-
-		output$browsing1 <- renderPlot({
-			browsing_out_drc()[["plot"]]
-		})
-
-		output$browsing1_result  <- DT::renderDataTable({
-			fitresult <- browsing_out_drc()[["result"]]
-			fitresult <- fitresult %>%
-			mutate_if(is.numeric, round, digits = 4)
-			DT::datatable(fitresult, options = list(pageLength = 10))
-		})
-
-	}
-)
+	)
 }

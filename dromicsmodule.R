@@ -5,8 +5,8 @@
 ##
 ##@file: dromicsmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 12/16/2021
-##@version 2.0
+##@Date : 04/23/2024
+##@version 3.0
 
 ## fitting functions are modified from DRomics R package (https://cran.r-project.org/web/packages/DRomics/)
 ## util-basicandfitfunc.R from https://cran.r-project.org/web/packages/DRomics/
@@ -15,44 +15,56 @@
 ##########################################################################################################
 ## Curve Fitting Plot (no IC50/EC50)
 ##########################################################################################################
-#pkgs: "ggpmisc",  "parallel", "DT", "dplyr","scales","purrr", "tidyr" 
+#pkgs: "ggpmisc",  "parallel", "DT", "dplyr","scales","purrr", "tidyr"
 library(ggpmisc)
 library(parallel)
 
-corenumber  = parallel::detectCores(logical = FALSE)
-
+#corenumber  = parallel::detectCores(logical = FALSE) -2
+corenumber  = 20 #fixed based on cluster node
 dromics_ui <- function(id) {
 	ns <- shiny::NS(id)
 	fluidRow(
-		column(2,
+		column(3,
 			wellPanel(
-				conditionalPanel(ns = ns,"input.expression_tabset2=='Model Selection' || input.expression_tabset2=='Data Table'",
-					selectizeInput(ns("sel_treatment2"),	label="Treatment", choices = NULL,	multiple=FALSE)
-				),
-				conditionalPanel(ns = ns,"input.expression_tabset2=='Model Selection' || input.expression_tabset2=='Data Table'",
+				uiOutput(ns('loadedprojects')),
+				conditionalPanel(ns = ns,"input.upper_tabset=='Fitting Curve'",
+					selectizeInput(ns("sel_treatment2"),	label="Treatment", choices = NULL,	multiple=FALSE),
 					selectizeInput(ns("sel_gene2"),	label="Gene Name",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search'))
 				),
-				conditionalPanel(ns = ns,"input.expression_tabset2=='Browsing'",
+				conditionalPanel(ns = ns,"input.upper_tabset=='Browsing'",
 					selectizeInput(ns("sel_treatment2b"),	label="Treatment", choices = NULL,	multiple=TRUE),
-					selectizeInput(ns("typology"),	label="typology", choices = NULL,	multiple=TRUE),
-					column(width=6,selectInput(ns("sel_page2"),	label="Select Page",	choices = NULL,	selected=1)),
-					column(width=6,selectInput(ns("numperpage2"), label= "Plot Number per Page", choices= c("4"=4,"6"=6,"9"=9), selected=6))
+					selectizeInput(ns("typology"),	label="Typology", choices = NULL,	multiple=TRUE),
+					selectizeInput(ns("trend"),	label="Trend", choices = NULL,	multiple=TRUE),
+					radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Browsing", "Upload Genes"), inline = TRUE, selected="Browsing"),
+					conditionalPanel(ns = ns, "input.subset=='Upload Genes'", textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)),
+					radioButtons(ns("sel_geneid"), label="Select Gene Label", inline = TRUE, choices=c("UniqueID", "Gene.Name","Protein.ID"), selected="UniqueID"),
+					fluidRow(
+						column(width=4,sliderInput(ns("plot_ncol"), label= "Column Number", min = 1, max = 6, step = 1, value = 3)),
+						column(width=4,sliderInput(ns("plot_nrow"), label= "Row Number", min = 1, max = 9, step = 1, value = 3)),
+						column(width=4,selectInput(ns("sel_page"), label="Select Page",	choices = NULL,	selected=1))
+					)
+
 				),
-				conditionalPanel(ns = ns,"input.expression_tabset2=='Model Selection' || input.expression_tabset2=='Browsing'",
-					radioButtons(ns("npcx2"), label="Label X Position", inline = TRUE, choices =  c("auto" = "auto", "left" = "left","middle"="middle","right"="right")),
-					radioButtons(ns("npcy2"), label="Label Y Position", inline = TRUE, choices =  c("auto" = "auto", "top" = "top","center" = "center","bottom" = "bottom")),
-					radioButtons(ns("logbase2"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=10),
-					textInput(ns("xlabel2"), "xlabel", value = "Log10(Conc.)"),
-					textInput(ns("ylabel2"), "ylabel", value = "Response"),
-					sliderInput(ns("basefontsize2"), "Font Size:", min = 10, max = 24, step = 2, value = 14)
+				conditionalPanel(ns = ns,"input.upper_tabset=='Fitting Curve' || input.upper_tabset=='Browsing'",
+					radioButtons(ns("npcx"), label="Label X Position", inline = TRUE, choices =  c("auto" = "auto", "left" = "left","middle"="middle","right"="right")),
+					radioButtons(ns("npcy"), label="Label Y Position", inline = TRUE, choices =  c("auto" = "auto", "top" = "top","center" = "center","bottom" = "bottom")),
+					radioButtons(ns("logbase"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=1),
+					fluidRow(
+						column(width=6,textInput(ns("xlabel"), "xlabel", value = "Time")),
+						column(width=6,textInput(ns("ylabel"), "ylabel", value = "Response"))
+					),
+					fluidRow(
+						column(width=6,sliderInput(ns("labelfontsize"), "Label Font Size:", min = 10, max = 24, step = 2, value = 14)),
+						column(width=6,sliderInput(ns("basefontsize"), "Font Size:", min = 10, max = 24, step = 2, value = 14))
+					)
 				),
-				conditionalPanel(ns = ns,"input.expression_tabset2=='Result Table (no IC50/EC50)'",
-					radioButtons(ns("parallel2"), label= "parallel processing?", choices= c("yes"="yes","no"="no"),inline = TRUE),
-					numericInput(ns("core2"), "Core will be used:", value = 4, min = 2, max = 12),
+				conditionalPanel(ns = ns,"input.upper_tabset=='Result Table (all)'",
+					radioButtons(ns("parallel"), label= "parallel processing?", choices= c("yes"="yes","no"="no"),inline = TRUE),
+					numericInput(ns("core"), "Core will be used:", value = 4, min = 2, max = 12),
 					radioButtons(ns("psel2"), label= "P value or P.adj Value?", choices= c("Pval"="Pval","Padj"="Padj"),inline = TRUE),
 					numericInput(ns("pvalcut2"), label= "Choose P-value Threshold",  value=0.01, min=0, step=0.001),
 					numericInput(ns("datapoint2"), label= "Minimal Data Points",  value=5, min=5, step=1),
-					radioButtons(ns("logbase2b"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=10),
+					radioButtons(ns("logbaseb"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=10),
 					uiOutput(ns("filteredgene2")),
 					radioButtons(ns("saveproject2"), label="Save Result?", inline = TRUE,  choices=c("Yes"= 1, "No"= 0), selected=0),
 					textInput(ns("projectname2"), "Project Name"),
@@ -60,32 +72,30 @@ dromics_ui <- function(id) {
 				)
 			)
 		),
-		column(10,
-			tabsetPanel(id=ns("expression_tabset2"),
-				tabPanel(title="Model Selection",
-					#actionButton(ns("ModelSelection2"), "Save to output"),
-					fluidRow(
-						plotOutput(ns("ModelSelection2"), height=800)
-					),
-					fluidRow(
-						DT::dataTableOutput(ns("fitresult2"))
+		column(9,
+			tabsetPanel(id=ns("upper_tabset"),
+				tabPanel(title="Fitting Curve", value ="Fitting Curve",
+					tabsetPanel(id=ns("FittingCurve_tabset"),
+						tabPanel(title="FittingCurve", value="FittingCurve", plotOutput(ns("ModelSelection"), height=800)
+						),
+						tabPanel(title="Result Table", value="Result Table", DT::dataTableOutput(ns("fitresult"))
+						),
+						tabPanel(title="Data Table",	DT::dataTableOutput(ns("fitdata")))
 					)
 				),
-				tabPanel(title="Data Table",	DT::dataTableOutput(ns("fitdata2"))),
-				tabPanel(title="Result Table (no IC50/EC50)",
-					#actionButton("results2", "Save to output"),
-					#shinycssloaders::withSpinner(dataTableOutput(ns("results2")),type = 4, size = 2,color = "#0000FF")
-					dataTableOutput(ns("results2"))
+				tabPanel(title="Result Table (all)", value="Result Table (all)",
+					shiny::downloadButton(outputId = ns("download_results_button"),  label = "Download All as CSV file"),
+					DT::dataTableOutput(ns("results"))
 				),
-				tabPanel(title="Browsing",
-					fluidRow(
-						plotOutput(ns("browsing2"), height=800)
-					),
-					fluidRow(
-						DT::dataTableOutput(ns("browsing2_result"))
+				tabPanel(title="Browsing", value="Browsing",
+					tabsetPanel(id=ns("Browsing_tabset"),
+						tabPanel(title="Plot", value="Plot", plotOutput(ns("browsing"), height=1200)
+						),
+						tabPanel(title="Table", value="Table", DT::dataTableOutput(ns("browsing_result"))
+						)
 					)
 				),
-				tabPanel(title="Help", htmlOutput('help_expression2'))
+				tabPanel(title="Help", htmlOutput('help_dromics'))
 			)
 		)
 	)
@@ -95,6 +105,15 @@ dromics_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- shiny::NS(id)
+			output$loadedprojects <- renderUI({
+				req(length(working_project()) > 0)
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+			})
+
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
+
 			observe({
 				req(length(working_project()) > 0)
 				req(DataInSets[[working_project()]]$data_long)
@@ -119,20 +138,18 @@ dromics_server <- function(id) {
 			ModelSelection_out2 <- reactive({
 				sel_gene <- input$sel_gene2
 				sel_treatment3 <- input$sel_treatment2
-
-				npcx2 <- input$npcx2
-				npcy2 <- input$npcy2
-				labelfontsize2 <- input$labelfontsize2
-				basefontsize <- input$basefontsize2
-				logbase2 = as.numeric(input$logbase2)
-				xlabel2 = input$xlabel2
-				ylabel2 = input$ylabel2
+				npcx <- input$npcx
+				npcy <- input$npcy
+				labelfontsize <- input$labelfontsize
+				basefontsize <- input$basefontsize
+				logbase = as.numeric(input$logbase)
+				xlabel = input$xlabel
+				ylabel = input$ylabel
 
 				data_tmp <- DataExpReactive2()
 
 				sel_treatment3 = intersect(sel_treatment3, unique(data_tmp[['group']]))
 				dfgene1 <- data_tmp %>% dplyr::filter(group == sel_treatment3)
-
 
 				data_tmp <- dfgene1 %>% arrange(conc)
 
@@ -152,9 +169,10 @@ dromics_server <- function(id) {
 				arrange(conc)  %>%
 				pull(conc)
 
-
 				# preparation of data for modelling with nls
 				dset <- data.frame(signal = signal, dose = dose, doseranks = doseranks)
+				shiny::validate(need(nrow(dset) >= 5, "Need data point >= 5"))
+
 				# calculations for starting values and other uses
 				dosemin <- min(dose)
 				dosemax <- max(dose)
@@ -164,7 +182,6 @@ dromics_server <- function(id) {
 				npts <- length(dose)
 				ndoses <- length(unique(dose))
 				lessthan5doses <- ndoses < 5
-
 
 				# Information criterion definition
 				information.criterion = "AICc"
@@ -205,7 +222,7 @@ dromics_server <- function(id) {
 				#dose_log_transfo = TRUE
 				npts = 50
 
-				if (logbase2 == 10){
+				if (logbase == 10){
 					minx <- min(dose[dose != 0])
 					maxx <- max(dose)
 					xplot <- c(0, 10^seq(log10(minx), log10(maxx), length.out = npts))
@@ -582,28 +599,27 @@ dromics_server <- function(id) {
 
 				fitDAT <- data.frame(conc = dose, response = signal)
 
-
 				p <- ggplot(fitDAT, aes(x=conc, y=response)) +
 				geom_point() +
 				ylim(min(predicteddf['predicted']), max(predicteddf['predicted'])) +
 				geom_line(data = predicteddf, aes(x=x, y=predicted, group=modelname, colour=modelname))+
 				ggtitle("Fit Models") +
-				theme_bw(base_size = basefontsize) + xlab(xlabel2) +  ylab(ylabel2) +
+				theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 				theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0), legend.title = element_blank(), legend.position="bottom")
 
-				if (logbase2 != 1){
-					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase2))
+				if (logbase != 1){
+					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
 				}
 
 				if (nrow(resultdf) >0){
-					if (npcy2 == "auto")
-					npcy2 = "top"
-					if (npcx2 == "auto") {
-						npcx2 = "right"
+					if (npcy == "auto")
+					npcy = "top"
+					if (npcx == "auto") {
+						npcx = "right"
 					}
 
 					npc_table <-  geom_table_npc(data = resultdf, label = list(resultdf), table.colnames = TRUE, table.rownames = TRUE,
-						npcx = npcx2, npcy = npcy2,
+						npcx = npcx, npcy = npcy,
 						table.theme = ttheme_default(base_size = basefontsize, padding = unit(c(1, 1), "mm"))
 					)
 					p <- p + npc_table
@@ -612,17 +628,17 @@ dromics_server <- function(id) {
 				return(list(plot=p, result=resultdf))
 			})
 
-			output$ModelSelection2 <- renderPlot({
+			output$ModelSelection <- renderPlot({
 				ModelSelection_out2()[["plot"]]
 			})
 
-			output$fitdata2 <- DT::renderDataTable({
+			output$fitdata <- DT::renderDataTable({
 				data_tmp <- DataExpReactive2() %>%
 				mutate_if(is.numeric, round, digits = 2)
 				DT::datatable(data_tmp, options = list(pageLength = 15))
 			})
 
-			output$fitresult2 <- DT::renderDataTable({
+			output$fitresult <- DT::renderDataTable({
 				fitresult <- 	ModelSelection_out2()[["result"]]
 				fitresult <- fitresult %>%
 				mutate_if(is.numeric, round, digits = 4)
@@ -633,7 +649,7 @@ dromics_server <- function(id) {
 			#DRomics fit all data
 			observe({
 				req(length(working_project()) > 0)
-				updateNumericInput(session, 'core2', label = "Core will be used:", value = corenumber,  min = 2, max = corenumber, step =1)
+				updateNumericInput(session, 'core', label = "Core will be used:", value = corenumber,  min = 2, max = corenumber, step =1)
 				pcutoff <- input$pvalcut2
 				datapoint <- input$datapoint2
 				psel <- input$psel2
@@ -653,12 +669,10 @@ dromics_server <- function(id) {
 
 				output$filteredgene2 =	 renderText({paste("<font color=\'red\'><b>Total Genes: ", UniqueIDnum, "</b></font>",sep="")})
 				if (UniqueIDnum  < 200)
-				updateRadioButtons(session, "parallel2",  label= "parallel processing (not recommended)",  choices= c("yes"="yes","no"="no"),  selected = "no")
+				updateRadioButtons(session, "parallel",  label= "parallel processing (not recommended)",  choices= c("yes"="yes","no"="no"),  selected = "no")
 			})
 
-
-			DROmicsFitOne <- function(x, logbase2) {
-
+			DROmicsFitOne <- function(x, logbase) {
 				data_tmp <- x %>% arrange(conc)
 				dose <- data_tmp$conc
 				doseranks <- as.numeric(as.factor(dose))
@@ -728,7 +742,7 @@ dromics_server <- function(id) {
 				dose_log_transfo = TRUE
 				npts = 50
 
-				if (logbase2 == 10){
+				if (logbase == 10){
 					minx <- min(dose[dose != 0])
 					maxx <- max(dose)
 					xplot <- c(0, 10^seq(log10(minx), log10(maxx), length.out = npts))
@@ -1085,245 +1099,263 @@ dromics_server <- function(id) {
 				return(resultdf)
 			}
 
-			MultiCoreFitDROmics <- function(dataS_ChunkByCore,corenum,logbase2) {
+			MultiCoreFitDROmics <- function(dataS_ChunkByCore,corenum,logbase) {
 				cl <- parallel::makeCluster(corenum)
 				parallel::clusterEvalQ(cl, {
 					library(dplyr)
 					source("util-basicandfitfunc.R")
-				}
-			)
-			parallel::clusterExport(cl=cl, varlist=c("dataS_ChunkByCore","DROmicsFitOne","logbase2"), envir=environment())
-
-			out <- parallel::parLapply(cl, 1:length(dataS_ChunkByCore), function (k) {
-				dataStmp <- dataS_ChunkByCore[[k]]
-				Res <- lapply(dataStmp, DROmicsFitOne,logbase2)
-				coedf <- purrr::map_df(Res, ~as.data.frame(.x), .id="id")
-				return(coedf)
-			})
-			stopCluster(cl)
-			return (out)
-		}
-
-		fit_all2 <- eventReactive(input$fitallButton2, {
-			pcutoff <- input$pvalcut2
-			datapoint <- input$datapoint2
-			psel <- input$psel2
-			parallel <- input$parallel2
-			corenum <- input$core2
-			logbase2 = as.numeric(input$logbase2b)
-
-			data_long <- DataInSets[[working_project()]]$data_long
-			if (!("UniqueID" %in% colnames(data_long))) {
-				results = data.frame("no ID" ="no result")
-			} else {
-				if (!is.null(DataInSets[[working_project()]]$statresult)) {
-					if (psel == "Pval") {
-						filterdata = DataInSets[[working_project()]]$statresult %>% dplyr::filter(pvalue < pcutoff & n >= datapoint)
-					}
-					if (psel == "Padj") {
-						filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
-					}
-
-					data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
-					dataS <- named_group_split(data_long_sub,UniqueID,group)
-				} else {
-					dataS <- named_group_split(data_long, UniqueID, group)
-				}
-
-				if (parallel == "yes")  {
-					dataS_ChunkByCore <-  split(dataS, cut(seq_along(dataS), corenum, labels = FALSE))
-					out <- MultiCoreFitDROmics(dataS_ChunkByCore,corenum,logbase2)
-					results <- ldply(out, data.frame) %>%
-					#dplyr::filter(!is.na(direction_fit)) %>%
-					dplyr::mutate_if(is.numeric, round, digits = 4)
-				} else {
-					Res <- lapply(dataS, DROmicsFitOne,logbase2)
-					results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
-					#dplyr::filter(!is.na(direction))  %>%
-					dplyr::mutate_if(is.numeric, round, digits = 4)
-				}
-			}
-			return(results)
-		})
-
-		output$results2 <- DT::renderDataTable({
-			results2 <- as.data.frame("No Fitting Results")
-			if (input$fitallButton2[1] == 0) {
-				if (!is.null(DataInSets[[working_project()]]$results_omics))
-				results2 <- DataInSets[[working_project()]]$results_omics
-			} else {
-				withProgress(message = 'Caculating...',  detail = 'This may take a while...',  {
-					results2 <- fit_all2()
-					DataInSets[[working_project()]]$results_omics <-  results2
-
-					if (input$saveproject2 == 1) {
-						shiny::validate(need(input$projectname2!= "","Please provide project name."))
-						filename <- paste("data/",input$projectname2,".RData",sep="")
-						save(data_long, results2, file=filename )
-					}
-
 				})
+				parallel::clusterExport(cl=cl, varlist=c("dataS_ChunkByCore","DROmicsFitOne","logbase"), envir=environment())
+
+				out <- parallel::parLapply(cl, 1:length(dataS_ChunkByCore), function (k) {
+					dataStmp <- dataS_ChunkByCore[[k]]
+					Res <- lapply(dataStmp, DROmicsFitOne,logbase)
+					coedf <- purrr::map_df(Res, ~as.data.frame(.x), .id="id")
+					return(coedf)
+				})
+				stopCluster(cl)
+				return (out)
 			}
-			results2 <- results2 %>%  mutate_if(is.numeric, round, digits = 2)
-			DT::datatable(results2, options = list(pageLength = 15), rownames= FALSE)
-		})
 
+			fit_all2 <- eventReactive(input$fitallButton2, {
+				pcutoff <- input$pvalcut2
+				datapoint <- input$datapoint2
+				psel <- input$psel2
+				parallel <- input$parallel
+				corenum <- input$core
+				logbase = as.numeric(input$logbaseb)
 
-		###########################################################################################################
-		#browsing
-		observe({
-			req(length(working_project()) > 0)
-			updateSelectInput(session,'sel_page2', choices= seq_len(100))
-			validate(
-				need(DataInSets[[working_project()]]$results_omics, "Need fitting results")
+				data_long <- DataInSets[[working_project()]]$data_long
+				if (!("UniqueID" %in% colnames(data_long))) {
+					results = data.frame("no ID" ="no result")
+				} else {
+					if (!is.null(DataInSets[[working_project()]]$statresult)) {
+						if (psel == "Pval") {
+							filterdata = DataInSets[[working_project()]]$statresult %>% dplyr::filter(pvalue < pcutoff & n >= datapoint)
+						}
+						if (psel == "Padj") {
+							filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
+						}
+
+						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
+						dataS <- named_group_split(data_long_sub,UniqueID,group)
+					} else {
+						dataS <- named_group_split(data_long, UniqueID, group)
+					}
+
+					if (parallel == "yes")  {
+						dataS_ChunkByCore <-  split(dataS, cut(seq_along(dataS), corenum, labels = FALSE))
+						out <- MultiCoreFitDROmics(dataS_ChunkByCore,corenum,logbase)
+						results <- ldply(out, data.frame) %>%
+						#dplyr::filter(!is.na(direction_fit)) %>%
+						dplyr::mutate_if(is.numeric, round, digits = 4)
+					} else {
+						Res <- lapply(dataS, DROmicsFitOne,logbase)
+						results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
+						#dplyr::filter(!is.na(direction))  %>%
+						dplyr::mutate_if(is.numeric, round, digits = 4)
+					}
+				}
+				return(results)
+			})
+
+			output$results <- DT::renderDataTable({
+				results <- as.data.frame("No Fitting Results")
+				if (input$fitallButton2[1] == 0) {
+					if (!is.null(DataInSets[[working_project()]]$results_omics))
+					results <- DataInSets[[working_project()]]$results_omics
+				} else {
+					withProgress(message = 'Caculating...',  detail = 'This may take a while...',  {
+						results <- fit_all2()
+						DataInSets[[working_project()]]$results_omics <-  results
+
+						if (input$saveproject2 == 1) {
+							shiny::validate(need(input$projectname2!= "","Please provide project name."))
+							filename <- paste("data/",input$projectname2,".RData",sep="")
+							save(data_long, results, file=filename )
+						}
+
+					})
+				}
+				results <- results %>%  mutate_if(is.numeric, round, digits = 2)
+				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top')
+			})
+
+			###########################################################################################################
+			observe({
+				req(length(working_project()) > 0)
+				updateSelectInput(session,'sel_page2', choices= seq_len(100))
+				validate(
+					need(DataInSets[[working_project()]]$results_omics, "Need fitting results")
+				)
+				sel_treatment <- input$sel_treatment2b
+
+				typology <- DataInSets[[working_project()]]$results_omics %>%
+				dplyr::filter(!is.na(typology)) %>%
+				dplyr::filter(typology != "NA") %>%
+				dplyr::filter(group %in% sel_treatment) %>%
+				dplyr::pull(typology) %>% unique()
+				
+				trend <- DataInSets[[working_project()]]$results_omics %>%
+				dplyr::filter(!is.na(trend)) %>%
+				dplyr::filter(trend != "NA") %>%
+				dplyr::filter(group %in% sel_treatment) %>%
+				dplyr::pull(trend) %>% unique()
+				
+				updateSelectInput(session,'typology', choices=typology,selected=typology)
+				updateSelectInput(session,'trend', choices=trend,selected=trend)
+			})
+
+			observe({
+				req(length(working_project()) > 0)
+				updateSelectInput(session,'sel_page', choices= seq_len(100))
+			})
+
+			browsing_out <- reactive({
+				req(length(working_project()) > 0)
+				req(DataInSets[[working_project()]]$data_long)
+
+				validate(
+					need(DataInSets[[working_project()]]$results_omics, "Need fitting results")
+				)
+				validate(
+					need(DataInSets[[working_project()]]$data_long, "Need data")
+				)
+
+				results_omics <- DataInSets[[working_project()]]$results_omics
+				data_long <- DataInSets[[working_project()]]$data_long
+
+				sel_treatment <- input$sel_treatment2b
+				labelfontsize <- as.numeric(input$labelfontsize)
+				basefontsize <- as.numeric(input$basefontsize)
+				xlabel <- input$xlabel
+				ylabel <- input$ylabel
+				logbase = as.numeric(input$logbase)
+
+				sel_typology <- input$typology
+				sel_trend <- input$trend
+				genelabel <- input$sel_geneid
+
+				ncol = as.numeric(input$plot_ncol)
+				nrow = as.numeric(input$plot_nrow)
+				sel_page <- as.numeric(input$sel_page)-1
+				numberpage = ncol * nrow
+				startslice = sel_page * numberpage  + 1
+				endslice = startslice + numberpage -1
+
+				sliced_id <- results_omics %>%
+				dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
+				dplyr::distinct(UniqueID) %>%
+				dplyr::slice(startslice:endslice)
+
+				sliced_df <- results_omics%>%
+				dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
+				dplyr::filter(UniqueID %in% sliced_id$UniqueID) %>%
+				tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-")
+
+				data_long_tmp  <- data_long %>% as.data.frame() %>%
+				tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-") %>%
+				dplyr::filter(id %in% sliced_df$id)
+
+				###################
+				npts = 50
+				dose = unique(data_long_tmp$conc)
+				if (logbase == 10){
+					minx <- min(dose[dose != 0])
+					maxx <- max(dose)
+					xplot <- c(0, 10^seq(log10(minx), log10(maxx), length.out = npts))
+				} else {
+					xplot <- seq(0, max(dose), length.out = npts)
+				}
+				####################
+				predictedlist <- list()
+
+				for (row in 1:nrow(sliced_df)) {
+
+					modelname <- sliced_df[row, "model"]
+					UniqueID <- sliced_df[row, "UniqueID"]
+					group <- sliced_df[row, "group"]
+
+					c <- sliced_df[row, "c"]
+					d <- sliced_df[row, "d"]
+					b <- sliced_df[row, "b"]
+					e <- sliced_df[row, "e"]
+					f <- sliced_df[row, "f"]
+					### Gauss fit
+					if (modelname ==  "Gauss-probit")
+					datapred <- fGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
+					### LGauss fit
+					if (modelname == "log-Gauss-probit")
+					datapred <- fLGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
+					### Hill fit (npar = 4)
+					if (modelname == "Hill")
+					datapred <- fHill(x = xplot, c = c, d = d, b = b, e = e)
+					### Lprobit fit
+					if (modelname == "log-probit")
+					datapred <- fLGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
+					### Expo fit (npar = 3)
+					if (modelname == "exponential")
+					datapred <- fExpo(x = xplot, d = d, b = b, e = e)
+					### Fit of the linear model
+					if (modelname == "linear")
+					datapred <- xplot * b + d
+					### Fit of the null model (constant)
+					if(modelname == "constant")
+					datapred <- rep(mean(dset$signal), length(xplot))
+
+					predicteddf <- data.frame(UniqueID = UniqueID, group = group,  x = xplot, predicted = datapred)
+					predictedlist[[row]]  = predicteddf
+				}
+
+				predicteddf2 <- do.call(rbind,predictedlist)
+
+				data_long_tmp <- data_long_tmp %>%
+				dplyr::select(UniqueID, group, conc, response)%>% as.data.frame()
+				colnames(predicteddf2) <- colnames(data_long_tmp)
+
+				#data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
+				#data_long_tmp$group = factor(data_long_tmp$group, levels = sel_group)
+
+				gg.df <- rbind(cbind(geom="pt", data_long_tmp), cbind(geom="ln",predicteddf2)) %>%
+				dplyr::rename(GroupName = group)
+
+				p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
+				geom_point(data=gg.df[gg.df$geom=="pt",], shape=4) +
+				geom_line(data=gg.df[gg.df$geom=="ln",]) +
+				facet_wrap(~ UniqueID, scales = "free", nrow = nrow, ncol = ncol) +
+				theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
+				theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), plot.title = element_text(size=labelfontsize), legend.position="bottom")
+
+				if (logbase != 1){
+					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
+				}
+
+				return(list(plot=p, result = sliced_df))
+
+			})
+
+			output$browsing <- renderPlot({
+				browsing_out()[["plot"]]
+			})
+
+			output$browsing_result  <- DT::renderDataTable({
+				fitresult <- browsing_out()[["result"]]
+				fitresult <- fitresult %>%
+				mutate_if(is.numeric, round, digits = 4)
+				DT::datatable(fitresult, options = list(pageLength = 10))
+			})
+
+			output$download_results_button <- shiny::downloadHandler(
+				filename = function() {
+					paste("Results-", Sys.Date(), ".csv", sep="")
+				},
+				content = function(file) {
+					fitresult <- browsing_out()[["result"]]
+					fitresult <- fitresult %>%
+					mutate_if(is.numeric, round, digits = 4)
+					write.csv(results, file)
+				}
 			)
-			sel_treatment <- input$sel_treatment2b
-
-			typology <- DataInSets[[working_project()]]$results_omics  %>%
-			dplyr::filter(group %in% sel_treatment) %>%
-			dplyr::pull(typology) %>% unique()
-
-			updateSelectInput(session,'typology', choices=typology,selected=typology)
-		})
-
-		browsing_out_omics <- reactive({
-			req(length(working_project()) > 0)
-			validate(
-				need(DataInSets[[working_project()]]$results_omics, "Need fitting results")
-			)
-
-			validate(
-				need(DataInSets[[working_project()]]$data_long, "Need data")
-			)
-
-			results_omics <- DataInSets[[working_project()]]$results_omics
-			data_long <- DataInSets[[working_project()]]$data_long
-
-			sel_treatment <- input$sel_treatment2b
-			labelfontsize <- input$labelfontsize2
-			basefontsize <- input$basefontsize2
-			xlabel <- input$xlabel2
-			ylabel <- input$ylabel2
-			logbase2 = as.numeric(input$logbase2)
-			numperpage <- as.numeric(input$numperpage2)
-			sel_page <- as.numeric(input$sel_page2)-1
-			sel_typology <- input$typology
-			startslice = sel_page * numperpage  + 1
-			endslice = startslice + numperpage -1
-
-
-			sliced_id <- results_omics %>%
-			dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology))  %>%
-			dplyr::distinct(UniqueID) %>%
-			dplyr::slice(startslice:endslice)
-
-			sliced_df <- results_omics%>%
-			dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology))  %>%
-			dplyr::filter(UniqueID %in% sliced_id$UniqueID) %>%
-			tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-")
-
-
-			data_long_tmp  <- data_long %>% as.data.frame() %>%
-			tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-") %>%
-			dplyr::filter(id %in% sliced_df$id)
-
-			###################
-			#dose_log_transfo = TRUE
-			npts = 50
-			dose = unique(data_long_tmp$conc)
-			if (logbase2 == 10){
-				minx <- min(dose[dose != 0])
-				maxx <- max(dose)
-				xplot <- c(0, 10^seq(log10(minx), log10(maxx), length.out = npts))
-			} else {
-				xplot <- seq(0, max(dose), length.out = npts)
-			}
-
-			####################
-			predictedlist <- list()
-
-			for (row in 1:nrow(sliced_df)) {
-
-				modelname <- sliced_df[row, "model"]
-				UniqueID <- sliced_df[row, "UniqueID"]
-				group <- sliced_df[row, "group"]
-
-				c <- sliced_df[row, "c"]
-				d <- sliced_df[row, "d"]
-				b <- sliced_df[row, "b"]
-				e <- sliced_df[row, "e"]
-				f <- sliced_df[row, "f"]
-				### Gauss fit
-				if (modelname ==  "Gauss-probit")
-				datapred <- fGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
-				### LGauss fit
-				if (modelname == "log-Gauss-probit")
-				datapred <- fLGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
-				### Hill fit (npar = 4)
-				if (modelname == "Hill")
-				datapred <- fHill(x = xplot, c = c, d = d, b = b, e = e)
-				### Lprobit fit
-				if (modelname == "log-probit")
-				datapred <- fLGauss5p(x = xplot, c = c, d = d, b = b, e = e, f = f)
-				### Expo fit (npar = 3)
-				if (modelname == "exponential")
-				datapred <- fExpo(x = xplot, d = d, b = b, e = e)
-				### Fit of the linear model
-				if (modelname == "linear")
-				datapred <- xplot * b + d
-				### Fit of the null model (constant)
-				if(modelname == "constant")
-				datapred <- rep(mean(dset$signal), length(xplot))
-
-				predicteddf <- data.frame(UniqueID = UniqueID, group = group,  x = xplot, predicted = datapred)
-				predictedlist[[row]]  = predicteddf
-			}
-
-			predicteddf2 <- do.call(rbind,predictedlist)
-
-			if(numperpage==4) {
-				nrow = 2; ncol = 2
-			} else if (numperpage==6) {
-				nrow = 2; ncol = 3
-			} else {
-				nrow = 3; ncol = 3
-			}
-
-			data_long_tmp <- data_long_tmp %>%
-			dplyr::select(UniqueID,group,conc,response)%>% as.data.frame()
-			colnames(predicteddf2) <- colnames(data_long_tmp)
-
-			gg.df <- rbind(cbind(geom="pt", data_long_tmp),cbind(geom="ln",predicteddf2))%>%
-			dplyr::rename(GroupName = group)
-
-			p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
-			geom_point(data=gg.df[gg.df$geom=="pt",], shape=4) +
-			geom_line(data=gg.df[gg.df$geom=="ln",]) +
-			facet_wrap(~ UniqueID, scales = "free", nrow = nrow, ncol = ncol) +
-			theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
-			theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
-
-
-			if (logbase2 != 1){
-				p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase2))
-			}
-
-
-
-			return(list(plot=p, result = sliced_df))
-
-		})
-
-		output$browsing2 <- renderPlot({
-			browsing_out_omics()[["plot"]]
-		})
-
-		output$browsing2_result  <- DT::renderDataTable({
-			fitresult <- browsing_out_omics()[["result"]]
-			fitresult <- fitresult %>%
-			mutate_if(is.numeric, round, digits = 4)
-			DT::datatable(fitresult, options = list(pageLength = 10))
-		})
-	}
-)
+		}
+	)
 }
