@@ -22,6 +22,7 @@ library(biomaRt)
 library(ComplexHeatmap)
 library(fgsea)
 #library(wikiprofiler)
+library(svgPanZoom)
 source("wikiprofiler_Fixed.R")
 library(org.Hs.eg.db); library(org.Mm.eg.db); library(org.Rn.eg.db)
 
