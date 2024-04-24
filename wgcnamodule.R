@@ -217,9 +217,11 @@ wgcna_server <- function(id) {
   			    
   			    print(paste0("**** scenario 1 ****"))
  
-  			    WGCNA::allowWGCNAThreads()
-  			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    # WGCNA::allowWGCNAThreads()
+  			    # ALLOW_WGCNA_THREADS=8L
+  			    # enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads(nThreads = 12)
+  			    
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -268,9 +270,11 @@ wgcna_server <- function(id) {
   			    
   			    dataExpr= dataExpr[,1L:input$WGCNAtopNum]
   			    
-  			    WGCNA::allowWGCNAThreads()
-  			    ALLOW_WGCNA_THREADS=8L
-  			    enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    # WGCNA::allowWGCNAThreads()
+  			    # ALLOW_WGCNA_THREADS=8L
+  			    # enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads(nThreads = 12)
+  			    
   			    cor <- WGCNA::cor
   			    
   			    temp_cor <- cor
@@ -343,9 +347,10 @@ wgcna_server <- function(id) {
   			    dataExpr = as.data.frame(t(dataExpr))
   			    dataExpr= dataExpr[,1L:topNum]
   			    
-  			    WGCNA::allowWGCNAThreads()
-  			    ALLOW_WGCNA_THREADS=8L
+  			    #WGCNA::allowWGCNAThreads()
+  			    #ALLOW_WGCNA_THREADS=8L
   			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
+  			    enableWGCNAThreads(nThreads = 12)
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
