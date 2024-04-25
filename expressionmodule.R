@@ -428,14 +428,13 @@ expression_server <- function(id) {
 						}
 					}
 
-					## By Kyra (modified by bgao 06/22/2023)
+		
 					showPvalues = input$PvalueBar
 					value = sym("expr")
 					pval_sel = input$pval_sel
 					psel = sym(pval_sel)
 
 					results_long_tmp[,sapply(results_long_tmp,is.numeric)] <- signif(results_long_tmp[,sapply(results_long_tmp,is.numeric)],3)
-					#results_long_tmp$labelgeneid = results_long_tmp[,match(genelabel,colnames(results_long_tmp))]
 					results_long_tmp <- results_long_tmp %>%
 					dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
 
@@ -473,10 +472,7 @@ expression_server <- function(id) {
 						annotation_df = results_long_tmp %>%
 						dplyr::filter(!!psel < pv_thresh) %>%
 						as.data.frame()
-						#filename <- paste("H:/Rcode/QuickomicsModule/expressmoduletest.RData",sep="")
-						#save(data_long_tmp, results_long_tmp, MetaData, df.summary, psel,	y_position, sel_group,  annotation_df, Val_colorby, Val_plotx, file=filename )
-						#load("H:/Rcode/QuickomicsModule/expressmoduletest.RData")
-
+		
 						if (nrow(annotation_df) > 0)  {
 							annotation_df <- annotation_df %>%
 							tidyr::separate(test, c('start', 'end'),  sep = "vs") %>%
@@ -503,7 +499,6 @@ expression_server <- function(id) {
 						}
 					}
 
-					## End
 					data_long_tmp <- data_long_tmp %>%
 					dplyr::mutate_at(vars(!!plotx), as.factor)
 
@@ -533,9 +528,7 @@ expression_server <- function(id) {
 					}
 
 					if (input$plotformat == "line") {
-						#data_long_tmp <- data_long_tmp  %>% as_tibble() %>% dplyr::mutate_at(vars(!!plotx), as.numeric)
 						if (input$SeparateOnePlot == "Separate") {
-
 							if (input$plotx == input$colorby) {
 								p <- ggplot(data_long_tmp, aes(x=!!plotx, y=!!value))
 							} else {
@@ -620,33 +613,14 @@ expression_server <- function(id) {
 						if (input$colpalette == "Single") {
 							colorpal = rep(barcol, length(sel_group))
 						} else {
-							#rownames(brewer.pal.info)
-							
-							#n <- brewer.pal.info[input$colpalette,'maxcolors']
-							#if (length(sel_group) <=  n) {
-							#	user_color <- RColorBrewer::brewer.pal(length(sel_group), input$colpalette)
-							#} else {
-							#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(sel_group))
-							#}
-							
 							colorpal <- UserColorPlalette(colpalette = input$colpalette, items = sel_group)
-							
 						}
 						user_alpha = rep(1, length(sel_group))
 					} else {
 						if (input$colpalette == "Single") {
 							colorpal = rep(barcol, length(unique(data_long_tmp$labelgeneid)))
 						} else {
-							
-							#n <- brewer.pal.info[input$colpalette,'maxcolors']
-							#if (length(unique(data_long_tmp$labelgeneid)) <=  n) {
-							#	user_color <- RColorBrewer::brewer.pal(length(unique(data_long_tmp$labelgeneid)), input$colpalette)
-							#} else {
-							#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(unique(data_long_tmp$labelgeneid)))
-							#}
-							#
 							colorpal <- UserColorPlalette(colpalette = input$colpalette, items = unique(data_long_tmp$labelgeneid))
-							
 						}
 						user_alpha = rep(1, length(unique(data_long_tmp$labelgeneid)))
 					}
@@ -671,8 +645,7 @@ expression_server <- function(id) {
 						p <- p + scale_color_prism(input$prismcolpalette) +
 						scale_fill_prism(input$prismfillpalette) +
 						guides(y = "prism_offset_minor") +
-						theme_prism(base_size = 16) #+
-						#theme(legend.position = "none")
+						theme_prism(base_size = 16)
 					}
 
 					p <- p +
@@ -681,7 +654,6 @@ expression_server <- function(id) {
 						axis.text.x = element_text(angle = input$Xangle, hjust=0.5, vjust=0.5),
 						strip.text.x = element_text(size=input$titlefontsize)
 					)
-
 					return(p)
 				})
 			})
@@ -704,7 +676,6 @@ expression_server <- function(id) {
 			output$boxplot_Interactive <- renderPlotly({
 				p <- boxplot_out()
 				pl <- ggplotly(p) %>% layout(dragmode = "pan")
-				#ggplotly((pl + theme_bw(base_size = 16)),  tooltip = c("text")) %>% layout(legend = list(orientation = "h", y = -0.2))
 			})
 
 			output$boxplot <- renderPlot({
@@ -754,13 +725,11 @@ expression_server <- function(id) {
 			Scurve_out <- reactive({
 				req(length(working_project()) > 0)
 				data_results <- DataInSets[[working_project()]]$data_results
-				#if (!"Protein.ID" %in% names(data_results)) {data_results$Protein.ID=NA} #Add Protein.ID column if missing
 				gene_list <- DataExpReactive()$tmpids
 				validate(need(length(gene_list)>0,"Please select a gene or input gene."))
 				validate(need(("Intensity" %in% colnames(data_results)),"Need Intensity in data_result table."))
 
 				scurve.data <- data_results %>%
-				#dplyr::select(one_of(c("UniqueID","Gene.Name","Intensity","Protein.ID"))) %>%
 				dplyr::select(any_of(c("UniqueID","Gene.Name","Protein.ID","Intensity"))) %>%
 
 				dplyr::filter((!is.na(Intensity)) & Intensity > 0) %>%
