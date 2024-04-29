@@ -56,13 +56,13 @@ modelnames = c("LL.2:Log-logistic(lower=0; upper=1)"="LL.2",
 )
 
 names(fctList) <- modelnames
-fctList2 <- fctList
 
-plotfitting <- function(model, group, TimeDose="conc",  npcx="auto", npcy="auto", label = "ED50",xlabel="Log10(conc)", ylabel="Response", basefontsize=14, logbase=10) {
+
+plotfitting <- function(model, treatment, TimeDose="conc",  npcx="auto", npcy="auto", label = "ED50",xlabel="Log10(conc)", ylabel="Response", basefontsize=14, logbase=10) {
 	parameterdf <- data.frame(coename = c("b:(Intercept)", "c:(Intercept)", "d:(Intercept)","e:(Intercept)","f:(Intercept)"), parameter = c("Slope", "Lower Limit", "Upper Limit", "ED50","f") )
 	coedf <- data.frame(coename = names(model$coefficients), val = unname(model$coefficients)) %>% left_join(parameterdf, by = "coename") %>% dplyr::select(one_of("parameter","val"))
 
-	rSquared <- cor(model$predres[,1], model$data$response)^2
+	rSquared <- cor(model$predres[,1], model$data$expr)^2
 	#Pvalue <- noEffect(model)[3]
 	#Pvalue <- modelFit(model)$"p value"[2]
 	coedf <-  rbind(coedf, data.frame(parameter ="r2",val = rSquared)) %>% mutate_if(is.numeric, round, digits = 2)
@@ -73,12 +73,12 @@ plotfitting <- function(model, group, TimeDose="conc",  npcx="auto", npcy="auto"
 	newdata <- data.frame(DOSE = 0:max(xvalue), CURVE = rep(1,length(0:max(xvalue))))
 	predicted <- data.frame(x = c(0:max(xvalue)), predicted= predict(model,newdata))
 
-	p <- ggplot(fitDAT, aes(x=conc, y=response)) +
+	p <- ggplot(fitDAT, aes(x=conc, y=expr)) +
 	geom_point() +
-	ylim(0, max(fitDAT['response'])) +
+	ylim(0, max(fitDAT['expr'])) +
 	geom_line(color='red', data = predicted, aes(x=x, y=predicted)) +
 	#geom_hline(yintercept = 0.5, linetype="dashed",  color = "blue", size=1) +
-	ggtitle(group) +
+	ggtitle(treatment) +
 	theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 	theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0), legend.title = element_blank(), legend.position="bottom")
 
@@ -134,7 +134,9 @@ drc_ui <- function(id) {
 					)
 				),
 				conditionalPanel(ns = ns,"input.upper_tabset=='Fitting Curve' || input.upper_tabset=='Browsing'",
-					selectizeInput(ns("sel_treatment1"),	label="Treatment",	choices = NULL,	multiple=TRUE),
+					conditionalPanel(ns = ns, "input.FittingCurve_tabset!=='Model Selection'",
+						selectizeInput(ns("sel_treatment1"),	label="Treatment",	choices = NULL,	multiple=TRUE)
+					),
 					numericInput(ns("upper"), "Upper:", 1, min = 1, max = 100),
 					radioButtons(ns("npcx"), label="Label X Position", inline = TRUE, choices =  c("auto" = "auto", "left" = "left","middle"="middle","right"="right")),
 					radioButtons(ns("npcy"), label="Label Y Position", inline = TRUE, choices =  c("auto" = "auto", "top" = "top","center" = "center","bottom" = "bottom")),
@@ -217,12 +219,18 @@ drc_server <- function(id) {
 			observe({
 				req(length(working_project()) > 0)
 				data_long <- DataInSets[[working_project()]]$data_long
-				req("UniqueID" %in% colnames(data_long) & "group" %in% colnames(data_long))
+				req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				DataIngenes <-  data_long  %>% dplyr::pull(UniqueID) %>% unique() %>% as.character()
 				updateSelectizeInput(session,'sel_gene1', choices= DataIngenes, server=TRUE)
-				group <-  data_long %>% dplyr::pull(group) %>% unique() %>% as.character()
-				updateSelectizeInput(session,'sel_treatment1', choices= group,  selected=group)
-				updateSelectizeInput(session,'sel_treatment1b', choices= group,  selected=group[1])
+				treatment <-  data_long %>% dplyr::pull(treatment) %>% unique() %>% as.character()
+				updateSelectizeInput(session,'sel_treatment1', choices= treatment,  selected=treatment)
+				updateSelectizeInput(session,'sel_treatment1b', choices= treatment,  selected=treatment[1])
 				updateSelectizeInput(session,'sel_model', choices= modelnames,  selected="LL.4")
 				updateSelectizeInput(session,'sel_model2', choices= modelnames,  selected="LL.4")
 				modelnames2 <- c("Gauss-probit", "log-Gauss-probit", "Hill", "log-probit", "exponential", "linear")
@@ -259,6 +267,11 @@ drc_server <- function(id) {
 			DataExpReactive <- reactive({
 				req(length(working_project()) > 0)
 				data_long <- DataInSets[[working_project()]]$data_long
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				shiny::validate(need(input$sel_gene1 != "","Please select a gene."))
 				refreshrate <- as.numeric(input$refreshrate)
 				InputData <- InputReactive %>% debounce(refreshrate)
@@ -305,50 +318,49 @@ drc_server <- function(id) {
 				DataExpReactive_tmp <- DataExpReactive()
 				data_tmp <- DataExpReactive_tmp[["data_tmp"]]
 
-				sel_treatment = intersect(sel_treatment, unique(data_tmp[['group']]))
-				#sel_treatment = unique(data_tmp[['group']])
+				sel_treatment = intersect(sel_treatment, unique(data_tmp[['treatment']]))
+				#sel_treatment = unique(data_tmp[['treatment']])
 				out <- list()
 				plist <- list()
 				#models <- list()
 				fitDATlist <- list()
 				predictedlist <- list()
 
-				for (onegroup in sel_treatment) {
-					dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(group == onegroup)
-					model <- try(drm(response~conc, data = dfgene1, fct = fctList[[sel_model]]), silent = TRUE)
+				for (onetreatment in sel_treatment) {
+					dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(treatment == onetreatment)
+					model <- try(drm(expr~conc, data = dfgene1, fct = fctList[[sel_model]]), silent = TRUE)
 					df.summary <- dfgene1 %>%
-					group_by(conc, group) %>%
+					group_by(conc, treatment) %>%
 					summarise(
-						sd = sd(response),
-						response = mean(response), .groups = "drop"
+						sd = sd(expr),
+						expr = mean(expr), .groups = "drop"
 					)
 					if (class(model) == "drc") {
-						#models[[onegroup]] <- model
-						fitDATlist[[onegroup]] = model$origData
+						#models[[onetreatment]] <- model
+						fitDATlist[[onetreatment]] = model$origData
 						xvalue <- model$dataList$dose
 						newdata <- data.frame(DOSE = 0:max(xvalue), CURVE = rep(1,length(0:max(xvalue))))
 						predicted <- data.frame(x = c(0:max(xvalue)), predicted= predict(model,newdata))
 						######
 						#predslm = predict(model, newdata, interval = "confidence")
 						#######
-						predictedlist[[onegroup]] <- predicted
-						fitting_PR <- plotfitting(model,group=onegroup, TimeDose="conc", label = "ED50", npcx, npcy, xlabel, ylabel, basefontsize, logbase)
+						predictedlist[[onetreatment]] <- predicted
+						fitting_PR <- plotfitting(model, treatment=onetreatment, TimeDose="conc", label = "ED50", npcx, npcy, xlabel, ylabel, basefontsize, logbase)
 						p <- fitting_PR$plot
 						result <- fitting_PR$result
-						#rownames(result) <- paste(sel_gene, group,sep="_")
-						out[[onegroup]] <- result
+						out[[onetreatment]] <- result
 					}	else {
-						p <- ggplot(dfgene1, aes(x=conc, y=response)) +
+						p <- ggplot(dfgene1, aes(x=conc, y=expr)) +
 						geom_point() +
-						ylim(0, max(dfgene1['response'])) +
-						ggtitle(onegroup) +
+						ylim(0, max(dfgene1['expr'])) +
+						ggtitle(onetreatment) +
 						theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 						theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
 						if (logbase != 1){
 							p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
 						}
 					}
-					plist[[onegroup]]  <- p
+					plist[[onetreatment]]  <- p
 				}
 				outdf <- do.call(rbind, out)
 
@@ -364,23 +376,19 @@ drc_server <- function(id) {
 						ml <- marrangeGrob(plist, nrow=nrow, ncol=3, top = sel_gene)
 					}
 				} else {
-					predicteddf <- cbind(group=rep(names(predictedlist), sapply(predictedlist,nrow)),do.call(rbind,predictedlist))
+					predicteddf <- cbind(treatment=rep(names(predictedlist), sapply(predictedlist,nrow)),do.call(rbind,predictedlist))
 					fitDATdf <- do.call(rbind, fitDATlist)
 
-					p <- ggplot(fitDATdf, aes(x=conc, y=response, color=group)) +
+					p <- ggplot(fitDATdf, aes(x=conc, y=expr, color=treatment)) +
 					#geom_point() +
-					geom_jitter(aes(color = group),position = position_jitter(0.2)) +
-					ylim(0, max(fitDATdf['response']))
+					geom_jitter(aes(color = treatment),position = position_jitter(0.2)) +
+					ylim(0, max(fitDATdf['expr']))
 
 
 					p <- p +
-					geom_line(data = predicteddf, aes(x=x, y=predicted, color=group))
+					geom_line(data = predicteddf, aes(x=x, y=predicted, color=treatment))
 
 					p <- p +
-
-					#geom_ribbon(data = predicteddf)+
-					#ggtitle(group) +
-
 					theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 					theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0), legend.title = element_blank(), legend.position="bottom")
 					if (logbase != 1) {
@@ -416,52 +424,76 @@ drc_server <- function(id) {
 				logbase = as.numeric(input$logbase)
 				xlabel = input$xlabel
 				ylabel = input$ylabel
-				topn = input$sel_topn
-				upperlimit = input$upper
+				topn = as.numeric(input$sel_topn)
+				upperlimit = as.numeric(input$upper)
 
 				DataExpReactive_tmp <- DataExpReactive()
 				data_tmp <- DataExpReactive_tmp[["data_tmp"]]
 
-				if (is.null(data_tmp$group)) {
-					dfgene1 <- data_tmp
+				if (is.null(data_tmp$treatment)) {
+					dfgene <- data_tmp %>%
+					dplyr::select(expr, conc) %>%
+					as.data.frame()
 				} else {
-					sel_treatment2 = intersect(sel_treatment2, unique(data_tmp[['group']]))
-					dfgene1 <- data_tmp %>% dplyr::filter(group == sel_treatment2)
+					sel_treatment2 = intersect(sel_treatment2, unique(data_tmp[['treatment']]))
+					dfgene <- data_tmp %>% dplyr::filter(treatment == sel_treatment2) %>%
+					dplyr::select(expr, conc) %>%
+					as.data.frame()
 				}
 
-				model <- try(drm(response~conc, data = dfgene1, fct = LL.4()), silent = TRUE)
+				modelLL4 <- try(drm(expr~conc, data = dfgene, fct = LL.4()), silent = TRUE)
 
-				if (!inherits(model, "try-error")){
+				if (upperlimit != 1) {
+					fctList <- list(LL.2(upper = upperlimit), LL.3(), LL.3u(upper = upperlimit), LL.4(), LL.5(),
+						W1.2(upper = upperlimit), W1.3(), W1.4(), W2.2(), W2.3(), W2.4()
+					)
+
+					names(fctList) <- c("LL.2:Log-logistic(lower=0; upper=1)"="LL.2",
+						"LL.3:Log-logistic(lower=0)"="LL.3",
+						"LL.3u:Log-logistic(upper=1)"="LL.3u",
+						"LL.4:Log-logistic"="LL.4",
+						"LL.5:Generalized log-logistic"="LL.5",
+						"W1.2:Weibull(type 1; lower=0; upper=1)"="W1.2",
+						"W1.3:Weibull(type 1; lower=0)"="W1.3",
+						"W1.4:Weibull(type 1)"="W1.4",
+						"W2.2:Weibull(type 2; lower=0; upper=1"="W2.2",
+						"W2.3:Weibull(type 2; lower=0)"="W2.3",
+						"W2.4:Weibull(type 2)"="W2.4"
+					)
+				}
+
+
+				if (!inherits(modelLL4, "try-error")){
 					if (npcy == "auto")
 					npcy = "top"
 
 					if (npcx == "auto") {
-						if (model$coefficients["b:(Intercept)"] > 0)
+						if (modelLL4$coefficients["b:(Intercept)"] > 0)
 						npcx = "right"
 						else
 						npcx = "left"
 					}
 
+					fctList2 <- fctList
 					fctList2[['LL.4']] <- NULL
 
-					sel <- try(drc::mselect(model, fctList2, sorted = "IC", linreg = FALSE), silent = TRUE)
+					sel <- try(drc::mselect(modelLL4, fctList2, sorted = "IC", linreg = FALSE), silent = TRUE)
 					sel <- sel %>% as.data.frame() %>% top_n(., -topn, IC) %>% mutate_if(is.numeric, round, digits = 6)
-
-					fitDAT = model$origData
-					xvalue <- model$dataList$dose
+					fitDAT = modelLL4$origData
+					xvalue <- modelLL4$dataList$dose
 					randomdose <- 0:max(xvalue)
 					newdata <- data.frame(DOSE = randomdose, CURVE = rep(1,length(randomdose)))
 					predictedlist <- list()
 					for (modelname in dimnames(sel)[[1]]){
-						model <- try(drm(response~conc, data = dfgene1, fct = fctList[[modelname]]), silent = TRUE)
+						model <- try(drm(expr~conc, data = dfgene, fct = fctList[[modelname]]), silent = TRUE)
 						if (!inherits(model, "try-error")) {
-							predicted <- data.frame(modelname=rep(modelname,length(randomdose)), x = randomdose, predicted= predict(model,newdata))
+							predicted <- data.frame(modelname=rep(modelname,length(randomdose)), x = randomdose, predicted= predict(model, newdata))
 							predictedlist[[modelname]] <- predicted
 						}
 					}
 					predicteddf <- do.call(rbind, predictedlist)
 
-					p <- ggplot(fitDAT, aes(x=conc, y=response)) +
+					p <- ggplot(fitDAT, aes(x=conc, y=expr)) +
 					geom_point() +
 					ylim(0, max(predicteddf['predicted'])) +
 					geom_line(data = predicteddf, aes(x=x, y=predicted, group=modelname, colour=modelname))+
@@ -480,9 +512,9 @@ drc_server <- function(id) {
 					p <- p + npc_table
 					return(list(plot=p, result=sel))
 				}	else {
-					p <- ggplot(dfgene1, aes(x=conc, y=response)) +
+					p <- ggplot(dfgene, aes(x=conc, y=expr)) +
 					geom_point() +
-					ylim(0, max(dfgene1['response'])) +
+					ylim(0, max(dfgene['expr'])) +
 					#ggtitle("") +
 					theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 					theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
@@ -547,6 +579,12 @@ drc_server <- function(id) {
 					UniqueIDnum <- nrow(tmpdat)
 				} else {
 					data_long <- DataInSets[[working_project()]]$data_long
+					req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+					if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+						data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+						dplyr::rename("expr" = "response")
+					}
+
 					UniqueIDnum <- length(unique(data_long$UniqueID))
 				}
 				output$filteredgene1 =	 renderText({paste("<font color=\'red\'><b>Total Genes: ", UniqueIDnum, "</b></font>",sep="")})
@@ -556,11 +594,11 @@ drc_server <- function(id) {
 
 			DRCFitOneS <- function(x,sel_model) {
 				data_tmp <- x %>% arrange(conc)
-				model <- try(drm(response~conc, data = data_tmp, fct = fctList[[sel_model]]), silent = TRUE)
+				model <- try(drm(expr~conc, data = data_tmp, fct = fctList[[sel_model]]), silent = TRUE)
 				if (class(model) == "drc") {
 					parameterdf <- data.frame(coename = c("b:(Intercept)", "c:(Intercept)", "d:(Intercept)","e:(Intercept)","f:(Intercept)"), parameter = c("Slope", "Lower Limit", "Upper Limit", "ED50","f") )
 					coedf <- data.frame(coename = names(model$coefficients), val = unname(model$coefficients)) %>% left_join(parameterdf, by = "coename") %>% dplyr::select(one_of("parameter","val"))
-					rSquared <- cor(model$predres[,1], model$data$response)^2
+					rSquared <- cor(model$predres[,1], model$data$expr)^2
 					Pvalue <- noEffect(model)[3]
 					#Pvalue <- modelFit(model)$"p value"[2]
 					coedf <-  rbind(coedf, data.frame(parameter = "r.squared", val = rSquared))
@@ -568,8 +606,8 @@ drc_server <- function(id) {
 					coedft <- setNames(data.frame(t(coedf[,-1])), coedf[,1])
 					coedft <- coedft %>%
 					dplyr::mutate(UniqueID = unique(data_tmp$UniqueID)) %>%
-					dplyr::mutate(group = unique(data_tmp$group)) %>%
-					dplyr::relocate(c(UniqueID, group), .before = Slope)
+					dplyr::mutate(treatment = unique(data_tmp$treatment)) %>%
+					dplyr::relocate(c(UniqueID, treatment), .before = Slope)
 					return(coedft)
 				} #else {
 				#coedft <- data.frame("Slope" = NA, "Lower.Limit" = NA, "Upper.Limit" = NA, "ED50" = NA, "r.squared" = NA, "p_value"= NA)
@@ -605,6 +643,11 @@ drc_server <- function(id) {
 				sel_model <- input$sel_model2
 
 				data_long <- DataInSets[[working_project()]]$data_long
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				if (!("UniqueID" %in% colnames(data_long))) {
 					results = data.frame("no ID" ="no result")
 				} else {
@@ -616,10 +659,10 @@ drc_server <- function(id) {
 							filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
 						}
 
-						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
-						dataS <- named_group_split(data_long_sub,UniqueID,group)
+						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","treatment"))
+						dataS <- named_group_split(data_long_sub, UniqueID, treatment)
 					} else {
-						dataS <- named_group_split(data_long,UniqueID,group)
+						dataS <- named_group_split(data_long, UniqueID, treatment)
 					}
 
 					upperlimit2 = input$upper
@@ -701,6 +744,11 @@ drc_server <- function(id) {
 				results_drc <- DataInSets[[working_project()]]$results_drc
 				data_long <- DataInSets[[working_project()]]$data_long
 
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				sel_treatment <- input$sel_treatment1
 				sel_model <- input$sel_model
 				logbase = as.numeric(input$logbase)
@@ -753,20 +801,20 @@ drc_server <- function(id) {
 				}
 
 				data_long_tmp  <- dplyr::filter(data_long, UniqueID %in% sel_gene) %>%
-				dplyr::filter(group %in% sel_treatment) %>% as.data.frame()
+				dplyr::filter(treatment %in% sel_treatment) %>% as.data.frame()
 				data_long_tmp$labelgeneid = data_long_tmp[, match(genelabel,colnames(data_long_tmp))]
-				data_long_tmp$group = factor(data_long_tmp$group, levels = sel_treatment)
+				data_long_tmp$treatment = factor(data_long_tmp$treatment, levels = sel_treatment)
 
 				data_long_tmp  <- data_long_tmp %>%
-				dplyr::select(labelgeneid, group, conc, response) %>%
+				dplyr::select(labelgeneid, treatment, conc, expr) %>%
 				as.data.frame()
 
 				df.summary <- data_long_tmp %>%
-				group_by(labelgeneid, conc, group) %>%
-				dplyr::summarise(sd = sd(response), response = mean(response),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+				group_by(labelgeneid, conc, treatment) %>%
+				dplyr::summarise(sd = sd(expr), expr = mean(expr),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
 				dplyr::select(-n)
 
-				sel_treatment = intersect(sel_treatment, unique(data_long_tmp[['group']]))
+				sel_treatment = intersect(sel_treatment, unique(data_long_tmp[['treatment']]))
 				coedftlist1 <- list()
 				predictedlist1 <- list()
 				for (gene in unique(data_long_tmp[['labelgeneid']])) {
@@ -774,28 +822,28 @@ drc_server <- function(id) {
 
 					predictedlist2 <- list()
 					coedftlist2 <- list()
-					for (onegroup in unique(dfgene1$group)) {
-						df <- dfgene1  %>% as.data.frame() %>% dplyr::filter(group == onegroup)
-						model <- try(drm(response~conc, data = df, fct = fctList[[sel_model]]), silent = TRUE)
+					for (onetreatment in unique(dfgene1$treatment)) {
+						df <- dfgene1  %>% as.data.frame() %>% dplyr::filter(treatment == onetreatment)
+						model <- try(drm(expr~conc, data = df, fct = fctList[[sel_model]]), silent = TRUE)
 						if (class(model) == "drc") {
 							predicted <- modelr::add_predictions(data.frame(Dose = seq(0,max(df$conc))), model)
-							predictedlist2[[onegroup]] <- predicted  %>%
+							predictedlist2[[onetreatment]] <- predicted  %>%
 							dplyr::mutate(labelgeneid = gene) %>%
-							dplyr::mutate(group = onegroup)
+							dplyr::mutate(treatment = onetreatment)
 
 							parameterdf <- data.frame(coename = c("b:(Intercept)", "c:(Intercept)", "d:(Intercept)","e:(Intercept)","f:(Intercept)"), parameter = c("Slope", "Lower Limit", "Upper Limit", "ED50","f") )
 							coedf <- data.frame(coename = names(model$coefficients), val = unname(model$coefficients)) %>% left_join(parameterdf, by = "coename") %>% dplyr::select(one_of("parameter","val"))
-							rSquared <- cor(model$predres[,1], model$data$response)^2
+							rSquared <- cor(model$predres[,1], model$data$expr)^2
 							Pvalue <- noEffect(model)[3]
 
 							coedf <-  rbind(coedf, data.frame(parameter = "r.squared", val = rSquared))
 							coedf <-  rbind(coedf, data.frame(parameter = "p_value", val = Pvalue))
 							coedft <- setNames(data.frame(t(coedf[,-1])), coedf[,1])
 
-							coedftlist2[[onegroup]]  <- coedft %>%
+							coedftlist2[[onetreatment]]  <- coedft %>%
 							dplyr::mutate(labelgeneid = gene) %>%
-							dplyr::mutate(group = onegroup) %>%
-							dplyr::relocate(c(labelgeneid, group), .before = Slope)
+							dplyr::mutate(treatment = onetreatment) %>%
+							dplyr::relocate(c(labelgeneid, treatment), .before = Slope)
 
 						}
 					}
@@ -808,15 +856,15 @@ drc_server <- function(id) {
 				results  <- do.call(rbind,coedftlist1)
 
 				predicteddf1 <- do.call(rbind, predictedlist1) %>%
-				dplyr::select(c(labelgeneid, group, Dose, pred)) %>%
+				dplyr::select(c(labelgeneid, treatment, Dose, pred)) %>%
 				tibble::remove_rownames()  %>%
-				dplyr::rename(conc = Dose,  response = pred)
+				dplyr::rename(conc = Dose,  expr = pred)
 
 
 				gg.df <- rbind(cbind(geom="pt", data_long_tmp), cbind(geom="ln", predicteddf1))%>%
-				dplyr::rename(GroupName = group)
+				dplyr::rename(GroupName = treatment)
 
-				p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
+				p <- ggplot(gg.df, aes(x=conc, y=expr, color=GroupName)) +
 				facet_wrap(~ labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
 
 				p <- p +
@@ -824,10 +872,14 @@ drc_server <- function(id) {
 				geom_line(data=gg.df[gg.df$geom=="ln",])
 
 				p <- p +
-				geom_errorbar(aes(ymin = response-sd, ymax = response+sd, color = group), data = df.summary, width = 0.2) +
+				geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 				theme_bw(base_size = basefontsize) +
 				xlab(xlabel) +  ylab(ylabel) +
-				theme(plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), plot.title = element_text(size=labelfontsize), legend.position="bottom")
+				theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"),
+					axis.text.x = element_text(angle = 0),
+					legend.title = element_blank(),
+					strip.text.x = element_text(size=input$labelfontsize),
+				legend.position="bottom")
 
 				if (logbase != 1){
 					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
