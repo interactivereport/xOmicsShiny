@@ -123,19 +123,26 @@ monotonic_server <- function(id) {
 				)
 
 				data_long <- DataInSets[[working_project()]]$data_long
-				req("UniqueID" %in% colnames(data_long) & "group" %in% colnames(data_long))
+				req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
 
 				DataIngenes <-  data_long  %>% dplyr::pull(UniqueID) %>% unique() %>% as.character()
 				updateSelectizeInput(session,'sel_gene3', choices= DataIngenes, server=TRUE)
 
-				group <-  data_long %>% dplyr::pull(group) %>% unique() %>% as.character()
-				updateSelectizeInput(session,'sel_treatment', choices= group,  selected=group)
-				})
+				treatment <-  data_long %>% dplyr::pull(treatment) %>% unique() %>% as.character()
+				updateSelectizeInput(session,'sel_treatment', choices= treatment,  selected=treatment)
+			})
 
 			DataExpReactive3 <- reactive({
 				req(length(working_project()) > 0)
 				data_long <- DataInSets[[working_project()]]$data_long
-
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
 				shiny::validate(need(input$sel_gene3 != "","Please select a gene."))
 				sel_gene = input$sel_gene3
 				data_tmp = dplyr::filter(data_long, UniqueID == sel_gene)
@@ -156,9 +163,9 @@ monotonic_server <- function(id) {
 
 				DataExpReactive_tmp <- DataExpReactive3()
 				data_tmp <- DataExpReactive_tmp[["data_tmp"]] %>%
-				dplyr::filter(group %in% sel_treatment)
+				dplyr::filter(treatment %in% sel_treatment)
 
-				dataStmp <- named_group_split(data_tmp,UniqueID, group)
+				dataStmp <- named_group_split(data_tmp, UniqueID, treatment)
 				Res <- lapply(dataStmp, LinFitOne)
 				results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
 				dplyr::filter(!is.na(direction))
@@ -166,41 +173,40 @@ monotonic_server <- function(id) {
 				Linearformula <- y ~ x
 
 				if (input$separateplot3 == "Yes") {
-					sel_treatment = intersect(sel_treatment, unique(data_tmp[['group']]))
+					sel_treatment = intersect(sel_treatment, unique(data_tmp[['treatment']]))
 					plist <- list()
-					for (onegroup in sel_treatment) {
-						dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(group == onegroup)
+					for (onetreatment in sel_treatment) {
+						dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(treatment == onetreatment)
 
 						df.summary <- dfgene1 %>%
-						group_by(conc, group) %>%
+						group_by(conc, treatment) %>%
 						summarise(
-							sd = sd(response),
-							response = mean(response),
+							sd = sd(expr),
+							expr = mean(expr),
 							.groups = "drop"
 						)
 
-						p <- ggplot(data = dfgene1, aes(x = conc, y = response,  group = group)) +
-						#geom_smooth(method = "lm", se=FALSE, color="black", formula = Linearformula) +
-						#stat_poly_eq(formula = Linearformula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), parse = TRUE) +
-						#geom_point() +
-						#geom_jitter( aes(color = group),position = position_jitter(0.2)) +
-						#geom_line(aes(group = group, color = group), data = df.summary) +
-						geom_jitter(aes(color = group),position = position_jitter(0.2))
+						p <- ggplot(data = dfgene1, aes(x = conc, y = expr,  group = treatment)) +
+						geom_jitter(aes(color = treatment),position = position_jitter(0.2))
 						if (input$dotline == "Connecting Dot") {
 							p <- p +
-							geom_line(aes(group = group, color = group), data = df.summary)
+							geom_line(aes(group = treatment, color = treatment), data = df.summary)
 						} else { #"Regression"
 							p <- p +
 							geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
 							stat_poly_eq(formula = Linearformula,   aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE)
 						}
 						p <- p +
-						geom_errorbar(aes(ymin = response-sd, ymax = response+sd, color = group), data = df.summary, width = 0.2) +
-						ggtitle(onegroup) +
+						geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
+						ggtitle(onetreatment) +
 						theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
-						theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
-
-						plist[[onegroup]]  <- p
+										theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), 
+					axis.text.x = element_text(angle = 0),
+					legend.title = element_blank(), 
+					strip.text.x = element_text(size=input$labelfontsize),
+					legend.position="bottom")
+			
+						plist[[onetreatment]]  <- p
 					}
 
 					if (length(plist) == 1)
@@ -214,33 +220,28 @@ monotonic_server <- function(id) {
 						ml <- marrangeGrob(plist, nrow=nrow, ncol=3, top = sel_gene)
 					}
 				} else {
-					sel_treatment = intersect(sel_treatment, unique(data_tmp[['group']]))
+					sel_treatment = intersect(sel_treatment, unique(data_tmp[['treatment']]))
 					dfgene1 <- data_tmp %>% as.data.frame() %>%
-					dplyr::filter(group %in% sel_treatment)
+					dplyr::filter(treatment %in% sel_treatment)
 					df.summary <- dfgene1 %>%
-					group_by(conc, group) %>%
+					group_by(conc, treatment) %>%
 					summarise(
-						sd = sd(response),
-						response = mean(response), .groups = "drop"
+						sd = sd(expr),
+						expr = mean(expr), .groups = "drop"
 					)
 
-					p <- ggplot(dfgene1, aes(x=conc, y=response, color=group)) +
-					#geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
-					#stat_poly_eq(formula = Linearformula,   aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE) +
-					#geom_point() +
-					#  geom_jitter( aes(color = group),position = position_jitter(0.2)) +
-					#  geom_line(aes(group = group, color = group), data = df.summary) +
-					geom_jitter(aes(color = group),position = position_jitter(0.2))
+					p <- ggplot(dfgene1, aes(x=conc, y=expr, color=treatment)) +
+					geom_jitter(aes(color = treatment),position = position_jitter(0.2))
 					if (input$dotline == "Connecting Dot") {
 						p <- p +
-						geom_line(aes(group = group, color = group), data = df.summary)
+						geom_line(aes(group = treatment, color = treatment), data = df.summary)
 					} else { #"Regression"
 						p <- p +
 						geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
 						stat_poly_eq(formula = Linearformula,   aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE)
 					}
 					p <- p +
-					geom_errorbar(aes(ymin = response-sd, ymax = response+sd, color = group), data = df.summary, width = 0.2) +
+					geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 					theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 					theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
 
@@ -287,6 +288,11 @@ monotonic_server <- function(id) {
 					UniqueIDnum <- nrow(tmpdat3)
 				} else {
 					data_long <- DataInSets[[working_project()]]$data_long
+					req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+					if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+						data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+						dplyr::rename("expr" = "response")
+					}
 					UniqueIDnum <- length(unique(data_long$UniqueID))
 				}
 				output$filteredgene3 =	 renderText({paste("<font color=\'red\'><b>Total Genes: ", UniqueIDnum, "</b></font>",sep="")})
@@ -299,7 +305,7 @@ monotonic_server <- function(id) {
 			LinFitOne <- function(x) {
 				datatmp <- x %>% dplyr::arrange(conc)
 				x <- datatmp$conc
-				y <-  datatmp$response
+				y <-  datatmp$expr
 
 				if (length(unique(x)) > 3) {
 					lmfitres <- lm(y~x)
@@ -307,7 +313,6 @@ monotonic_server <- function(id) {
 					b <- lmfitsummary[['coefficients']][2,'Estimate']
 					direction <- if (b <= 0) "d" else "u"
 					angle <- atan(b) * (180 / pi)
-					#adj.r.squared <- lmfitsummary[['adj.r.squared']]
 					r.squared <- lmfitsummary[['r.squared']]
 					p_value <- lmfitsummary[['coefficients']][2,'Pr(>|t|)']
 					coedf <- data.frame(direction = direction, slope = b, angle = angle, p_value = p_value,  r.squared = r.squared)
@@ -316,8 +321,8 @@ monotonic_server <- function(id) {
 				}
 				coedf <- coedf  %>%
 				dplyr::mutate(UniqueID = unique(datatmp$UniqueID)) %>%
-				dplyr::mutate(group = unique(datatmp$group)) %>%
-				dplyr::relocate(c(UniqueID,group), .before = direction)
+				dplyr::mutate(treatment = unique(datatmp$treatment)) %>%
+				dplyr::relocate(c(UniqueID,treatment), .before = direction)
 
 				return(coedf)
 			}
@@ -348,7 +353,10 @@ monotonic_server <- function(id) {
 				corenum <- input$core
 
 				data_long <- DataInSets[[working_project()]]$data_long
-
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
 				if (!("UniqueID" %in% colnames(data_long))) {
 					results = data.frame("no ID" ="no result")
 				} else {
@@ -360,10 +368,10 @@ monotonic_server <- function(id) {
 							filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
 						}
 
-						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
-						dataS <- named_group_split(data_long_sub, UniqueID, group)
+						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","treatment"))
+						dataS <- named_group_split(data_long_sub, UniqueID, treatment)
 					} else {
-						dataS <- named_group_split(data_long,UniqueID,group)
+						dataS <- named_group_split(data_long,UniqueID,treatment)
 					}
 					if (parallel == "yes")  {
 						dataS_ChunkByCore <-  split(dataS, cut(seq_along(dataS), corenum, labels = FALSE))
@@ -424,7 +432,10 @@ monotonic_server <- function(id) {
 
 				results_lin <- DataInSets[[working_project()]]$results_lin
 				data_long <- DataInSets[[working_project()]]$data_long
-
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
 				labelfontsize <- as.numeric(input$labelfontsize)
 				basefontsize <- as.numeric(input$basefontsize)
 				xlabel <- input$xlabel
@@ -494,38 +505,38 @@ monotonic_server <- function(id) {
 				}
 
 				data_long_tmp  <- dplyr::filter(data_long, UniqueID %in% sel_gene) %>%
-				dplyr::filter(group %in% sel_treatment) %>% as.data.frame()
+				dplyr::filter(treatment %in% sel_treatment) %>% as.data.frame()
 				data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
-				data_long_tmp$group = factor(data_long_tmp$group, levels = sel_treatment)
+				data_long_tmp$treatment = factor(data_long_tmp$treatment, levels = sel_treatment)
 
 				df.summary <- data_long_tmp %>%
-				group_by(labelgeneid, conc, group) %>%
-				dplyr::summarise(sd = sd(response), response = mean(response),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+				group_by(labelgeneid, conc, treatment) %>%
+				dplyr::summarise(sd = sd(expr), expr = mean(expr),  n = n(), se = sd / sqrt(n), .groups = "drop") %>%
 				dplyr::select(-n)
 
-				dataStmp <- named_group_split(data_long_tmp, labelgeneid, group)
+				dataStmp <- named_group_split(data_long_tmp, labelgeneid, treatment)
 
 				Res <- lapply(dataStmp, LinFitOne)
 				results  <- purrr::map_df(Res, ~as.data.frame(.x), .id="id") %>%
 				dplyr::filter(!is.na(direction))
 
 				Linearformula <- y ~ x
-				colorpal <- UserColorPlalette(colpalette = "Dark2", items = unique(data_long_tmp$group))
+				colorpal <- UserColorPlalette(colpalette = "Dark2", items = unique(data_long_tmp$treatment))
 
-				p <- ggplot(data_long_tmp, aes(x=conc, y=response, color=group)) +
+				p <- ggplot(data_long_tmp, aes(x=conc, y=expr, color=treatment)) +
 				facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol) +
-				geom_jitter(aes(color = group), position = position_jitter(0.2))
+				geom_jitter(aes(color = treatment), position = position_jitter(0.2))
 				if (input$dotline == "Connecting Dot") {
 					p <- p +
-					geom_line(aes(group = group, color = group), data = df.summary)
+					geom_line(aes(group = treatment, color = treatment), data = df.summary)
 				} else { #"Regression"
 					p <- p +
 					geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
 					stat_poly_eq(formula = Linearformula, aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE)
 				}
-			
+
 				p <- p +
-				geom_errorbar(aes(ymin = response-sd, ymax = response+sd, color = group), data = df.summary, width = 0.2) +
+				geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 				scale_fill_manual(values = colorpal) +
 				scale_colour_manual(values = colorpal) +
 				theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
