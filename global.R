@@ -18,8 +18,8 @@ suppressPackageStartupMessages({
 	library(shinythemes)
 	library(shinyalert)
 	library(shinyjqui)
-        library(shinyjs)
-        library(tidyverse)
+  library(shinyjs)
+  library(tidyverse)
 	#library(dplyr)
 	#library(purrr)
 	#library(tidyr)
@@ -33,7 +33,7 @@ suppressPackageStartupMessages({
 	library(stringr)
 	library(ggrastr)
 	library(ggpmisc)
-        library(rclipboard)
+  library(rclipboard)
 })
 
 resultfilter <- function(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label) {
@@ -254,7 +254,8 @@ server_dir=NULL
 test_dir=NULL
 gmt_file_info=NULL
 if (file.exists("config.csv")) { #load optional configuration file
-	config=read_csv("config.csv")
+	#config=read_csv("config.csv")
+	config=read.csv("config.csv") # change to utils from readr  
 	N=match("server_dir", config$category)
 	if (!is.na(N)) {server_dir=config$value[N]}
 	N=match("test_dir", config$category)
