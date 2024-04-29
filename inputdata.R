@@ -363,7 +363,6 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("results_drc")) {
-
 			returnlist[["results_drc"]] = results_drc %>% dplyr::rename(any_of(lookup))
 		}
 
