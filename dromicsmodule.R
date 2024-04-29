@@ -51,7 +51,7 @@ dromics_ui <- function(id) {
 					radioButtons(ns("logbase"), label="Log tansform", inline = TRUE,  choices=c("Non"= 1, "10"= 10), selected=1),
 					fluidRow(
 						column(width=6,textInput(ns("xlabel"), "xlabel", value = "Time")),
-						column(width=6,textInput(ns("ylabel"), "ylabel", value = "Response"))
+						column(width=6,textInput(ns("ylabel"), "ylabel", value = "expr"))
 					),
 					fluidRow(
 						column(width=6,sliderInput(ns("labelfontsize"), "Label Font Size:", min = 10, max = 24, step = 2, value = 14)),
@@ -118,17 +118,27 @@ dromics_server <- function(id) {
 				req(length(working_project()) > 0)
 				req(DataInSets[[working_project()]]$data_long)
 				data_long <- DataInSets[[working_project()]]$data_long
-				req("UniqueID" %in% colnames(data_long) & "group" %in% colnames(data_long))
+				req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+				
 				DataIngenes <-  data_long  %>% dplyr::pull(UniqueID) %>% unique() %>% as.character()
 				updateSelectizeInput(session,'sel_gene2', choices= DataIngenes, server=TRUE)
-				group <-  data_long %>% dplyr::pull(group) %>% unique() %>% as.character()
-				updateSelectizeInput(session,'sel_treatment2', choices= group,  selected=group[1])
-				updateSelectizeInput(session,'sel_treatment2b', choices= group,  selected=group)
+				treatment <-  data_long %>% dplyr::pull(treatment) %>% unique() %>% as.character()
+				updateSelectizeInput(session,'sel_treatment2', choices= treatment,  selected=treatment[1])
+				updateSelectizeInput(session,'sel_treatment2b', choices= treatment,  selected=treatment)
 			})
 
 			DataExpReactive2 <- reactive({
 				req(length(working_project()) > 0)
 				data_long <- DataInSets[[working_project()]]$data_long
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				shiny::validate(need(input$sel_gene2 != "","Please select a gene"))
 				sel_gene = input$sel_gene2
 				data_tmp = dplyr::filter(data_long, UniqueID ==sel_gene)
@@ -148,24 +158,24 @@ dromics_server <- function(id) {
 
 				data_tmp <- DataExpReactive2()
 
-				sel_treatment3 = intersect(sel_treatment3, unique(data_tmp[['group']]))
-				dfgene1 <- data_tmp %>% dplyr::filter(group == sel_treatment3)
+				sel_treatment3 = intersect(sel_treatment3, unique(data_tmp[['treatment']]))
+				dfgene1 <- data_tmp %>% dplyr::filter(treatment == sel_treatment3)
 
 				data_tmp <- dfgene1 %>% arrange(conc)
 
 				dose <- data_tmp$conc
 				doseranks <- as.numeric(as.factor(dose))
-				signal <- data_tmp$response
+				signal <- data_tmp$expr
 
 				signalm <- data_tmp %>%
 				group_by(conc) %>%
-				dplyr::summarize(Mean = mean(response, na.rm=TRUE)) %>%
+				dplyr::summarize(Mean = mean(expr, na.rm=TRUE)) %>%
 				arrange(conc)  %>%
 				pull(Mean)
 
 				doseu <-  data_tmp %>%
 				group_by(conc) %>%
-				dplyr::summarize(Mean = mean(response, na.rm=TRUE)) %>%
+				dplyr::summarize(Mean = mean(expr, na.rm=TRUE)) %>%
 				arrange(conc)  %>%
 				pull(conc)
 
@@ -597,9 +607,9 @@ dromics_server <- function(id) {
 				dplyr::mutate_if(is.numeric, round, digits = 4)
 
 
-				fitDAT <- data.frame(conc = dose, response = signal)
+				fitDAT <- data.frame(conc = dose, expr = signal)
 
-				p <- ggplot(fitDAT, aes(x=conc, y=response)) +
+				p <- ggplot(fitDAT, aes(x=conc, y=expr)) +
 				geom_point() +
 				ylim(min(predicteddf['predicted']), max(predicteddf['predicted'])) +
 				geom_line(data = predicteddf, aes(x=x, y=predicted, group=modelname, colour=modelname))+
@@ -664,6 +674,12 @@ dromics_server <- function(id) {
 					UniqueIDnum <- nrow(tmpdat)
 				} else {
 					data_long <- DataInSets[[working_project()]]$data_long
+					req("UniqueID" %in% colnames(data_long) & "conc" %in% colnames(data_long))
+					if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+						data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+						dplyr::rename("expr" = "response")
+					}
+
 					UniqueIDnum <- length(unique(data_long$UniqueID))
 				}
 
@@ -676,17 +692,17 @@ dromics_server <- function(id) {
 				data_tmp <- x %>% arrange(conc)
 				dose <- data_tmp$conc
 				doseranks <- as.numeric(as.factor(dose))
-				signal <- data_tmp$response
+				signal <- data_tmp$expr
 
 				signalm <- data_tmp %>%
 				group_by(conc) %>%
-				dplyr::summarize(Mean = mean(response, na.rm=TRUE)) %>%
+				dplyr::summarize(Mean = mean(expr, na.rm=TRUE)) %>%
 				arrange(conc)  %>%
 				pull(Mean)
 
 				doseu <-  data_tmp %>%
 				group_by(conc) %>%
-				dplyr::summarize(Mean = mean(response, na.rm=TRUE)) %>%
+				dplyr::summarize(Mean = mean(expr, na.rm=TRUE)) %>%
 				arrange(conc)  %>%
 				pull(conc)
 
@@ -1093,8 +1109,8 @@ dromics_server <- function(id) {
 				dplyr::filter(row_number()==1) %>%
 				dplyr::mutate_if(is.numeric, round, digits = 4) %>%
 				dplyr::mutate(UniqueID = unique(data_tmp$UniqueID)) %>%
-				dplyr::mutate(group = unique(data_tmp$group)) %>%
-				dplyr::relocate(c(UniqueID,group), .before = model)
+				dplyr::mutate(treatment = unique(data_tmp$treatment)) %>%
+				dplyr::relocate(c(UniqueID,treatment), .before = model)
 
 				return(resultdf)
 			}
@@ -1126,6 +1142,11 @@ dromics_server <- function(id) {
 				logbase = as.numeric(input$logbaseb)
 
 				data_long <- DataInSets[[working_project()]]$data_long
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
+
 				if (!("UniqueID" %in% colnames(data_long))) {
 					results = data.frame("no ID" ="no result")
 				} else {
@@ -1137,10 +1158,10 @@ dromics_server <- function(id) {
 							filterdata =DataInSets[[working_project()]]$statresult %>% dplyr::filter(padjust < pcutoff & n >= datapoint)
 						}
 
-						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","group"))
-						dataS <- named_group_split(data_long_sub,UniqueID,group)
+						data_long_sub <- dplyr::semi_join(x=data_long, y=filterdata, by=c("UniqueID","treatment"))
+						dataS <- named_group_split(data_long_sub, UniqueID, treatment)
 					} else {
-						dataS <- named_group_split(data_long, UniqueID, group)
+						dataS <- named_group_split(data_long, UniqueID, treatment)
 					}
 
 					if (parallel == "yes")  {
@@ -1195,13 +1216,13 @@ dromics_server <- function(id) {
 				dplyr::filter(typology != "NA") %>%
 				dplyr::filter(group %in% sel_treatment) %>%
 				dplyr::pull(typology) %>% unique()
-				
+
 				trend <- DataInSets[[working_project()]]$results_omics %>%
 				dplyr::filter(!is.na(trend)) %>%
 				dplyr::filter(trend != "NA") %>%
 				dplyr::filter(group %in% sel_treatment) %>%
 				dplyr::pull(trend) %>% unique()
-				
+
 				updateSelectInput(session,'typology', choices=typology,selected=typology)
 				updateSelectInput(session,'trend', choices=trend,selected=trend)
 			})
@@ -1224,6 +1245,10 @@ dromics_server <- function(id) {
 
 				results_omics <- DataInSets[[working_project()]]$results_omics
 				data_long <- DataInSets[[working_project()]]$data_long
+				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
+					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
+					dplyr::rename("expr" = "response")
+				}
 
 				sel_treatment <- input$sel_treatment2b
 				labelfontsize <- as.numeric(input$labelfontsize)
@@ -1254,7 +1279,7 @@ dromics_server <- function(id) {
 				tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-")
 
 				data_long_tmp  <- data_long %>% as.data.frame() %>%
-				tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-") %>%
+				tidyr::unite(id, c("UniqueID","treatment"), remove = FALSE, sep = "-") %>%
 				dplyr::filter(id %in% sliced_df$id)
 
 				###################
@@ -1274,7 +1299,7 @@ dromics_server <- function(id) {
 
 					modelname <- sliced_df[row, "model"]
 					UniqueID <- sliced_df[row, "UniqueID"]
-					group <- sliced_df[row, "group"]
+					treatment <- sliced_df[row, "group"]
 
 					c <- sliced_df[row, "c"]
 					d <- sliced_df[row, "d"]
@@ -1303,28 +1328,29 @@ dromics_server <- function(id) {
 					if(modelname == "constant")
 					datapred <- rep(mean(dset$signal), length(xplot))
 
-					predicteddf <- data.frame(UniqueID = UniqueID, group = group,  x = xplot, predicted = datapred)
+					predicteddf <- data.frame(UniqueID = UniqueID, treatment = treatment,  x = xplot, predicted = datapred)
 					predictedlist[[row]]  = predicteddf
 				}
 
 				predicteddf2 <- do.call(rbind,predictedlist)
 
 				data_long_tmp <- data_long_tmp %>%
-				dplyr::select(UniqueID, group, conc, response)%>% as.data.frame()
+				dplyr::select(UniqueID, treatment, conc, expr)%>% as.data.frame()
 				colnames(predicteddf2) <- colnames(data_long_tmp)
 
-				#data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
-				#data_long_tmp$group = factor(data_long_tmp$group, levels = sel_group)
-
 				gg.df <- rbind(cbind(geom="pt", data_long_tmp), cbind(geom="ln",predicteddf2)) %>%
-				dplyr::rename(GroupName = group)
+				dplyr::rename(GroupName = treatment)
 
-				p <- ggplot(gg.df, aes(x=conc, y=response, color=GroupName)) +
+				p <- ggplot(gg.df, aes(x=conc, y=expr, color=GroupName)) +
 				geom_point(data=gg.df[gg.df$geom=="pt",], shape=4) +
 				geom_line(data=gg.df[gg.df$geom=="ln",]) +
 				facet_wrap(~ UniqueID, scales = "free", nrow = nrow, ncol = ncol) +
 				theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
-				theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), plot.title = element_text(size=labelfontsize), legend.position="bottom")
+				theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), 
+					axis.text.x = element_text(angle = 0),
+					legend.title = element_blank(), 
+					strip.text.x = element_text(size=input$labelfontsize),
+					legend.position="bottom")
 
 				if (logbase != 1){
 					p <- p +  scale_x_continuous(trans=scales::pseudo_log_trans(base = logbase))
