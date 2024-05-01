@@ -1214,13 +1214,13 @@ dromics_server <- function(id) {
 				typology <- DataInSets[[working_project()]]$results_omics %>%
 				dplyr::filter(!is.na(typology)) %>%
 				dplyr::filter(typology != "NA") %>%
-				dplyr::filter(group %in% sel_treatment) %>%
+				dplyr::filter(treatment %in% sel_treatment) %>%
 				dplyr::pull(typology) %>% unique()
 
 				trend <- DataInSets[[working_project()]]$results_omics %>%
 				dplyr::filter(!is.na(trend)) %>%
 				dplyr::filter(trend != "NA") %>%
-				dplyr::filter(group %in% sel_treatment) %>%
+				dplyr::filter(treatment %in% sel_treatment) %>%
 				dplyr::pull(trend) %>% unique()
 
 				updateSelectInput(session,'typology', choices=typology,selected=typology)
