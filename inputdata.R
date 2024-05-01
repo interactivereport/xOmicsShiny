@@ -353,9 +353,9 @@ DataReactiveRData <- reactive({
 
 			returnlist[["sel_comp"]]=sel_comp
 		}
-
+    lookup2 <- c("UniqueID" = "uniqueID", "treatment" = "Group", "treatment" = "group")
 		if (exists("results_stat")) {
-			returnlist[["statresult"]] = results_stat %>% dplyr::rename(any_of(lookup))
+			returnlist[["statresult"]] = results_stat %>% dplyr::rename(any_of(lookup2))
 			pcutoffdf  <- rbind(data.frame("Type" = "Pvalue", "LessThan0.05" = sum(results_stat$pvalue < 0.05,na.rm = TRUE), "LessThan0.01" = sum(results_stat$pvalue < 0.01,na.rm = TRUE), "LessThan0.001" = sum(results_stat$pvalue < 0.001,na.rm = TRUE)),
 				data.frame("Type" = "Padjust", "LessThan0.05" = sum(results_stat$padjust < 0.05,na.rm = TRUE), "LessThan0.01" = sum(results_stat$padjust < 0.01,na.rm = TRUE), "LessThan0.001" = sum(results_stat$padjust < 0.001,na.rm = TRUE))
 			)
@@ -363,17 +363,17 @@ DataReactiveRData <- reactive({
 		}
 
 		if (exists("results_drc")) {
-			returnlist[["results_drc"]] = results_drc %>% dplyr::rename(any_of(lookup))
+			returnlist[["results_drc"]] = results_drc %>% dplyr::rename(any_of(lookup2))
 		}
 
 		if (exists("results_omics")) {
-			results_omics <- results_omics %>% dplyr::filter(model!="NA") %>% dplyr::rename(any_of(lookup))
+			results_omics <- results_omics %>% dplyr::filter(model!="NA") %>% dplyr::rename(any_of(lookup2))
 			returnlist[["results_omics"]] = results_omics
 		}
 
 
 		if (exists("results_lin")) {
-			returnlist[["results_lin"]] = results_lin %>% dplyr::rename(any_of(lookup))
+			returnlist[["results_lin"]] = results_lin %>% dplyr::rename(any_of(lookup2))
 		}
 		return(returnlist)
 	})
