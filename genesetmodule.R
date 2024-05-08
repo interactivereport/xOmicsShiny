@@ -363,7 +363,7 @@ geneset_server <- function(id) {
                         
                         observe({
                           if (!is.null(gmt_file_info)) {  #update gmt file choices
-                            gmt_info=read.csv(gmt_file_info)
+                            gmt_info <- read.csv(gmt_file_info, fileEncoding="UTF-8-BOM")
                             gmt_use<-gmt_info%>%filter(Show=="YES")%>%mutate(label=str_c(Short_name, " ", label_name, " (", N_sets, ")"))
                             gmt_choice=gmt_use$gmt_file_name
                             names(gmt_choice)=gmt_use$label
