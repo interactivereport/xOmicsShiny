@@ -185,19 +185,19 @@ wgcna_server <- function(id) {
   			  data_wide = DataInSets[[working_project()]]$data_wide
   			  ProteinGeneName  = DataInSets[[working_project()]]$ProteinGeneName
   			  
-  			  if (nrow(data_wide)>10000 ) {
-  			    data_wide <- data_wide %>% na.omit()
-  			    dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
-  			    dataM=rowMeans(data_wide)
-  			    diff=dataSD/(dataM+median(dataM))
-  			    data_wide=data_wide[order(diff, decreasing=TRUE)[1:10000], ] 
-  			    dataExpr <- data_wide
+  			  
+			    data_wide <- data_wide %>% na.omit()
+			    dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
+			    dataM=rowMeans(data_wide)
+			    diff=dataSD/(dataM+median(dataM))
+			    data_wide=data_wide[order(diff, decreasing=TRUE), ]
+			    if (nrow(data_wide)>10000 ) {
+  			    data_wide=data_wide[1:10000, ] 
   			    cat("reduce gene size to 10K for project ", ProjectID, "\n")
-  			  } else {
-  			    dataExpr <- data_wide %>%
-  			      na.omit()
-  			  }
-  			  print(paste0("**** dim of dataExpr after-preprocssin is ****", dim(dataExpr)))
+			    } 
+			    dataExpr <- data_wide
+			   
+  			  print(paste0("**** dim of dataExpr after-preprocssing is ****", dim(dataExpr)))
   			  
   			  # Note: if launching app from the server, the path for `load_`  files should be
   			  # paste0("/mnt/depts/dept04/compbio/projects/xOmicsShiny/data/wgcna_data/TOM
@@ -220,10 +220,9 @@ wgcna_server <- function(id) {
   			    # WGCNA::allowWGCNAThreads()
   			    # ALLOW_WGCNA_THREADS=8L
   			    # enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
-  			    enableWGCNAThreads(nThreads = 12)
+  			   # enableWGCNAThreads(nThreads = 12)
   			    
-  			    cor <- WGCNA::cor
-  			    
+  			    t3 <- Sys.time()
   			    temp_cor <- cor
   			    cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
   			    netwk <- blockwiseModules(dataExpr,                # <= input here
@@ -256,6 +255,8 @@ wgcna_server <- function(id) {
   			                              # == Output Options
   			                              numericLabels = T,
   			                              verbose = 3L)
+  			    t4 <- Sys.time()
+  			    cat(paste0("scenario 1 run WGCNA: ", round(difftime(t4, t3, units='mins'),2), " min\n"))
   			    cor <- temp_cor
   			    
   			  } else if (file.exists(load_wgcna_file) & (default_n_gene - input$WGCNAtopNum)/default_n_gene < 0.1) {
@@ -273,10 +274,10 @@ wgcna_server <- function(id) {
   			    # WGCNA::allowWGCNAThreads()
   			    # ALLOW_WGCNA_THREADS=8L
   			    # enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
-  			    enableWGCNAThreads(nThreads = 12)
+  			   # enableWGCNAThreads(nThreads = 12)
   			    
   			    cor <- WGCNA::cor
-  			    
+  			    t3 <- Sys.time()
   			    temp_cor <- cor
   			    cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
   			    netwk <- blockwiseModules(dataExpr,                # <= input here
@@ -309,6 +310,8 @@ wgcna_server <- function(id) {
   			                              # == Output Options
   			                              numericLabels = T,
   			                              verbose = 3L)
+  			    t4 <- Sys.time()
+  			    cat(paste0("scenario 2 run WGCNA: ", round(difftime(t4, t3, units='mins'),2), " min\n"))
   			    cor <- temp_cor
 
   			  } else {
@@ -350,12 +353,12 @@ wgcna_server <- function(id) {
   			    #WGCNA::allowWGCNAThreads()
   			    #ALLOW_WGCNA_THREADS=8L
   			    #enableWGCNAThreads() # this causes much longer time if app launch from local machine, but not so from server
-  			    enableWGCNAThreads(nThreads = 12)
+  			    #enableWGCNAThreads(nThreads = 12)
   			    
   			    # Choose a set of soft-thresholding powers
   			    powers <- c(c(1L:10L), seq(from = 12L, to = 20L, by = 2L))
   			    #r2_cutoff <- input$wgcna_rcut
-  			    
+  			    t2 <- Sys.time()
   			    cor <- WGCNA::cor
   			    sft <- WGCNA::pickSoftThreshold(dataExpr, dataIsExpr = TRUE, powerVector = powers,	corFnc = cor, corOptions = list(use = 'p'),	networkType = "signed")
   			    
@@ -426,6 +429,8 @@ wgcna_server <- function(id) {
   			    ## heatmap <- d3heatmap(nba_players, scale = "column", color = "YlOrRd")
   			    ## heat <- heatmap(diss1)
   			    #
+  			    t3 <- Sys.time()
+  			    cat(paste0("scenario 3 computing softpower: ", round(difftime(t3, t2, units='mins'),2), " min\n"))
   			    
   			    temp_cor <- cor
   			    cor <- WGCNA::cor         # Force it to use WGCNA cor function (fix a namespace conflict issue)
@@ -455,6 +460,8 @@ wgcna_server <- function(id) {
   			                              # == Output Options
   			                              numericLabels = T,
   			                              verbose = 3L)
+  			    t4 <- Sys.time()
+  			    cat(paste0("scenario 3 run WGCNA: ", round(difftime(t4, t3, units='mins'),2), " min\n"))
   			    cor <- temp_cor
   			  }
   			  netwk
