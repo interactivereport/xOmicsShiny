@@ -1007,7 +1007,8 @@ geneset_server <- function(id) {
                           
                           cat(comp_sel, wiki_ID, length(FCdata), "\n")
                           p1 <- wpplot(wiki_ID)
-                          p2 <- p1 |> wp_bgfill(FCdata, low='darkgreen', high='firebrick', legend_x = .9, legend_y = .95)
+                          #p2 <- p1 |> wp_bgfill(FCdata, low='darkgreen', high='firebrick', legend_x = .9, legend_y = .95) #|> is the base R "pipe" operator. It was new in version 4.1.0.
+                          p2 <- wp_bgfill(p1, FCdata, low='darkgreen', high='firebrick', legend_x = .9, legend_y = .95)
                           svgPanZoom(paste(p2$svg, collapse="\n"),  controlIconsEnabled = T)  
                         } )
                         })
