@@ -79,17 +79,18 @@ wgcna_server <- function(id) {
 			  
 			  data_wide <- DataInSets[[working_project()]]$data_wide
 			  
+			  
+			  data_wide <- data_wide %>% na.omit()
+			  dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
+			  dataM=rowMeans(data_wide)
+			  diff=dataSD/(dataM+median(dataM))
+			  data_wide=data_wide[order(diff, decreasing=TRUE), ] 
+			  
 			  if (nrow(data_wide)>10000 ) {
-			    data_wide <- data_wide %>% na.omit()
-			    dataSD=apply(data_wide, 1, function(x) sd(x,na.rm=T))
-			    dataM=rowMeans(data_wide)
-			    diff=dataSD/(dataM+median(dataM))
-			    data_wide=data_wide[order(diff, decreasing=TRUE)[1:10000], ] 
-			    dataExpr <- data_wide
-			  } else {
-			    dataExpr <- data_wide %>%
-			      na.omit()
-			  }
+			    data_wide=data_wide[1:10000, ] 
+			  } 
+			    
+			  dataExpr <- data_wide
 			  
 			  default_n_gene <- min(10000, nrow(dataExpr))
 			  
@@ -165,7 +166,7 @@ wgcna_server <- function(id) {
   			  })
 			  } else {
 			    print("no pre-computed wgcna file available and cannot load wgcna results")
-			    showNotification("Cannot find pre-calculated wgcna file and unable to load results", duration = NULL, type = "warning")
+			    showNotification("Cannot find pre-calculated wgcna file and unable to load results", duration = 20, type = "warning")
 			  }
 			})
 			
