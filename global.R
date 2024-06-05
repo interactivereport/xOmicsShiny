@@ -265,6 +265,8 @@ if (file.exists("config.csv")) { #load optional configuration file
 	#browser() #debug
 }
 
+if (file.exists("db/MariaDB_configure.rds")) {MariaDB_configure=readRDS("db/MariaDB_configure.rds") }
+
 footer_text = '
 <hr>
 <div align="center" style="font-size:11px">xOmicsShiny Version 1.0</div>

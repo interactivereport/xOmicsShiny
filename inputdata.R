@@ -21,7 +21,7 @@ observe({
 	req(input$select_dataset %in% c('Saved Projects in Database', 'Saved Projects in CSV file', 'Public Data(DiseaseLand)'))
   if (!file.exists("db/MariaDB_configure.rds")) {
     updateRadioButtons(session, "select_dataset", choices=c("Saved Projects in CSV file",  "Upload RData File", "Upload Data Files (csv)"), inline = F, selected="Saved Projects in CSV file")
-  } else { MariaDB_configure=readRDS("db/MariaDB_configure.rds") }
+  }
 	projects = NULL
 	if (input$select_dataset=='Saved Projects in Database') {
 		library(DBI)

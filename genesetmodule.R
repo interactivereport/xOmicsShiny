@@ -32,7 +32,7 @@ if (file.exists("db/human/metabase_maps_genesymbols.gmt")) {
   #Now launch metabaser and connect to database
   if (!metabase.alive()){
     library(metabaser) 
-    load("metabase_config.RData") 
+    load("db/metabase_config.RData") 
     metabase.connect(dbname, uid, pwd, host=host, port=port, type=type, driver=driver) 
   }
   MetabaseOutput <- function(outputId, width = "100%", height = "1200px") {
