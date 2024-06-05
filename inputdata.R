@@ -19,11 +19,15 @@ saved_table <- reactiveValues()
 
 observe({
 	req(input$select_dataset %in% c('Saved Projects in Database', 'Saved Projects in CSV file', 'Public Data(DiseaseLand)'))
+  if (!file.exists("db/MariaDB_configure.rds")) {
+    updateRadioButtons(session, "select_dataset", choices=c("Saved Projects in CSV file",  "Upload RData File", "Upload Data Files (csv)"), inline = F, selected="Saved Projects in CSV file")
+  } else { MariaDB_configure=readRDS("db/MariaDB_configure.rds") }
 	projects = NULL
 	if (input$select_dataset=='Saved Projects in Database') {
 		library(DBI)
 		library(pool)
-		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host='10.9.68.75', port=3306, user='bgao',	password='sqladmin')
+		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host=MariaDB_configure$host, port=MariaDB_configure$port, 
+		               user=MariaDB_configure$user,	password=MariaDB_configure$password)
 		statement = "SELECT `Project.Title` FROM `projects` ORDER BY `Project.ID` DESC"
 		query <- sqlInterpolate(pool, statement)
 		projects <- dbGetQuery(pool, query) %>% dplyr::pull(Project.Title)
@@ -42,7 +46,8 @@ observe({
 	if (input$select_dataset=='Public Data(DiseaseLand)') {
 		library(DBI)
 		library(pool)
-		pool <- dbPool(RMariaDB::MariaDB(),	dbname='diseaseland',	host='10.9.68.75',	port=3306,	user='bgao', password='sqladmin')
+		pool <- dbPool(RMariaDB::MariaDB(),	dbname='diseaseland',	host=MariaDB_configure$host, port=MariaDB_configure$port, 
+		               user=MariaDB_configure$user,	password=MariaDB_configure$password)
 		statement = "SELECT ProjectID from projects"
 		query <- sqlInterpolate(pool, statement)
 		projects <- dbGetQuery(pool, query) %>% dplyr::pull(ProjectID)
@@ -59,7 +64,8 @@ SavedProjectReactive <- reactive({
 	if (input$select_dataset=='Saved Projects in Database') {
 		library(DBI)
 		library(pool)
-		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host='10.9.68.75',	port=3306,	user='bgao', password='sqladmin', idleTimeout = 600000)
+		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host=MariaDB_configure$host, port=MariaDB_configure$port, 
+		               user=MariaDB_configure$user,	password=MariaDB_configure$password, idleTimeout = 600000)
 
 		saved_projects = dbReadTable(pool, "projects")
 		saved_projects <- saved_projects %>%
@@ -79,7 +85,8 @@ SavedProjectReactive <- reactive({
 	if (!is.null(query[['project']])) {
 		library(DBI)
 		library(pool)
-		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host='10.9.68.75',	port=3306,	user='bgao', password='sqladmin', idleTimeout = 600000)
+		pool <- dbPool(RMariaDB::MariaDB(),	dbname='rshiny', host=MariaDB_configure$host, port=MariaDB_configure$port, 
+		               user=MariaDB_configure$user,	password=MariaDB_configure$password, idleTimeout = 600000)
 
 		saved_projects = dbReadTable(pool, "projects")
 		saved_projects_db <- saved_projects %>%
@@ -398,7 +405,8 @@ DataReactiveDB <- reactive({
 		ProjectID <- input$sel_project
 		library(DBI)
 		library(pool)
-		pool <- dbPool(RMariaDB::MariaDB(),	dbname='diseaseland',	host='10.9.68.75',	port=3306,	user='bgao', password='sqladmin', idleTimeout = 600000)
+		pool <- dbPool(RMariaDB::MariaDB(),	dbname='diseaseland',host=MariaDB_configure$host, port=MariaDB_configure$port, 
+		               user=MariaDB_configure$user,	password=MariaDB_configure$password, idleTimeout = 600000)
 
 		#geneannotation
 		statement = "SELECT GeneIndex, GeneID, GeneName FROM `geneannotation`"
