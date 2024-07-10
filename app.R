@@ -49,23 +49,9 @@ ui <- fluidPage(
 										#uiOutput("loaddata")
 									),
 									conditionalPanel("input.select_dataset=='Upload Data Files (csv)'",
-										uiOutput('upload.files.ui')#,
-										#uiOutput("loaddata")
-									)#,
-									#	conditionalPanel(condition = "input.select_dataset == 'Wide Format'",
-									#	fileInput('datafile_meta', '1st Step: Input meta file', accept = c('.csv', '.txt')),
-									#	fileInput('datafile_wide', '2nd Step: Input data file', accept = c('.csv', '.txt')
-									#		)
-									#),
-									#conditionalPanel(condition = "input.select_dataset == 'Long Format'",
-									#	fileInput('datafile_long', 'Input data file', accept = c('.csv', '.txt')),
-									#	textOutput('selcolumns'),
-									#	uiOutput('uniqueID'),
-									#	uiOutput('group'),
-									#	uiOutput('conc'),
-									#	uiOutput('response'),
-									#	uiOutput('actionbutton')
-									#)
+										uiOutput('upload.files.ui'),
+										tags$br(),
+										textOutput('upload.message') )
 								),
 								column(4,
 									htmlOutput("summary"),
@@ -166,8 +152,8 @@ server <- function(input, output, session) {
 					tags$p("The Gene/Protein Name csv file must have four columns: id (sequential numbers), UniqueID (match with the IDs in the expression and comparison data file), Gene.Name (official gene symbols), Protein.ID (UniProt protein IDs, or enter empty values for RNA-Seq data). Additional columns (e.g. gene biotype) can be added."),
 					fileInput("F_annot", "Gene/Protein Name File")
 				),
-				radioButtons("savetoserver", label="Save to Server", choices=c("YES","NO"), inline = T, selected="NO"),
-				radioButtons("folder_name", label="Folder Name", choices=c("unlisted", "data"), inline = T, selected="unlisted"),
+				#radioButtons("savetoserver", label="Save to Server", choices=c("YES","NO"), inline = T, selected="NO"),
+				#radioButtons("folder_name", label="Folder Name", choices=c("unlisted", "data"), inline = T, selected="unlisted"),
 				tags$hr(),
 				actionButton("uploadData", "Submit Data")
 			)

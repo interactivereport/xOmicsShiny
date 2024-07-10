@@ -15,6 +15,8 @@ DataInSets <- reactiveValues()
 DS_names<- reactiveVal() #track loaded projects (not NULL) in DataInSets
 saved_plots <- reactiveValues()
 saved_table <- reactiveValues()
+upload_message <- reactiveVal()
+DataReactiveTxt<-reactiveVal()
 ##################
 
 observe({
@@ -118,7 +120,6 @@ names(returnlist) <- c("ProjectID", "Name", "Species", "ShortName", "Path", "fil
 
 DataReactiveRData <- reactive({
 	withProgress(message = 'Fetching data.',  detail = 'This may take a while...', value = 0, {
-		#browser()
 		query <- parseQueryString(isolate(session$clientData$url_search))
 		req((!is.null(query[['project']]) & !(query[["project"]] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1))) #by bgao 0212204
 
@@ -138,9 +139,9 @@ DataReactiveRData <- reactive({
 				file2= paste("networkdata/", ProjectID, ".RData", sep = "") #Correlation results
 				ProjectPath="data/"
 				if (is.null(file1) || !file.exists(file1)){
-					shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error") #by bgao 0212204
+					shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error") #by bgao 0212204
 				}
-				validate(need(file.exists(file1), message = "File does NOT exit.")) #by bgao 0212204
+				validate(need(file.exists(file1), message = "File does NOT exist.")) #by bgao 0212204
 				load(file1)
 			}
 		}
@@ -155,9 +156,9 @@ DataReactiveRData <- reactive({
 			file2= paste("networkdata/", ProjectID, ".RData", sep = "") #Correlation results
 			ProjectPath="data/"
 			if (is.null(file1) || !file.exists(file1)){
-				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
 			}
-			validate(need(file.exists(file1), message = "File does NOT exit."))
+			validate(need(file.exists(file1), message = "File does NOT exist."))
 			load(file1)
 		}
 
@@ -178,9 +179,9 @@ DataReactiveRData <- reactive({
 				}
 			}
 			if (is.null(file1) || !file.exists(file1)){
-				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
 			}
-			validate(need(file.exists(file1), message = "File does NOT exit."))
+			validate(need(file.exists(file1), message = "File does NOT exist."))
 			load(file1)
 
 		}
@@ -201,9 +202,9 @@ DataReactiveRData <- reactive({
 				exp_unit= unlisted_project$ExpressionUnit[1]
 			}
 			if (is.null(file1) || !file.exists(file1)){
-				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
 			}
-			validate(need(file.exists(file1), message = "File does NOT exit."))
+			validate(need(file.exists(file1), message = "File does NOT exist."))
 			load(file1)
 		}
 
@@ -215,9 +216,9 @@ DataReactiveRData <- reactive({
 			file2 = input$file2$datapath
 			ProjectPath = NULL
 			if (is.null(file1) || !file.exists(file1)){
-				shinyalert("Oops!", "File does NOT exit.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
 			}
-			validate(need(file.exists(file1), message = "File does NOT exit."))
+			validate(need(file.exists(file1), message = "File does NOT exist."))
 			load(file1)
 		}
 
@@ -622,9 +623,25 @@ DataReactiveDB <- reactive({
 	})
 })
 
-DataReactiveTxt <- reactive({
-	withProgress(message = 'Fetching data.',  detail = 'This may take a while...', value = 0, {
+up_message1="The URL for the uploaded dataset will be displayed here once the files are processed."
+upload_message(up_message1) 
+output$upload.message <- renderText({upload_message()})
 
+observeEvent(input$uploadData, {  
+	withProgress(message = 'Process uploaded files.',  detail = 'This may take a while...', value = 0, {
+	  upload_message(up_message1) 
+	  URL_host <-(session$clientData$url_hostname)
+	  URL_port <- (session$clientData$url_port)
+	  URL_protocol<- (session$clientData$url_protocol)
+	  url_pathname<- (session$clientData$url_pathname)
+	  if (URL_port=="") {
+	    URL=str_c(URL_protocol,"//", URL_host) 
+	  } else {
+	    URL=str_c(URL_protocol,"//", URL_host, ":", URL_port)
+	  }
+	  if (url_pathname!="") {
+	    URL=str_c(URL, str_replace(url_pathname, "/$", "") ) 
+	  }
 		req(input$F_project_name!="" & ((!is.null(input$F_sample) & !is.null(input$F_exp)) | (!is.null(input$F_comp))))
 
 		cleanup_empty <- function(df) {
@@ -636,7 +653,7 @@ DataReactiveTxt <- reactive({
 
 		#create unique project ID
 		Project_name=input$F_project_name
-		ProjectID=str_c("PRJ_",  make.names(Project_name) )
+		ProjectID=make.names(Project_name) 
 		if (length(ProjectID>45)) {
 			ProjectID = substr(ProjectID, 1, 45)
 		}
@@ -679,7 +696,7 @@ DataReactiveTxt <- reactive({
 			data_wide=cleanup_empty(data_wide)
 
 			#data_long
-			data_long <- data.table::melt(as.matrix(data_wide))
+			data_long <- reshape2::melt(as.matrix(data_wide))
 			colnames(data_long) <- c("UniqueID","sampleid","expr")
 			data_long <- data_long %>% dplyr::mutate(sampleid=as.character(sampleid))
 			data_long <- data_long %>% dplyr::left_join(MetaData %>% dplyr::select(sampleid, group), by = join_by(sampleid))
@@ -708,6 +725,7 @@ DataReactiveTxt <- reactive({
 			IDall=IDall[!(IDall=="")]
 			tests = sort(unique(results_long$test))
 		}
+		
 
 		#ProteinGeneName
 		if (input$F_annot_auto==0) {
@@ -847,10 +865,10 @@ DataReactiveTxt <- reactive({
 			}
 		}
 
-		file1 = stringr::str_c(input$folder_name, "/", ProjectID, ".RData")
-		if (input$savetoserver == "YES"){
-			save(data_long,data_results,data_wide,MetaData,ProteinGeneName,results_long,file=file1)
-		}
+		file1 = stringr::str_c("unlisted/", ProjectID, ".RData")
+	#	if (input$savetoserver == "YES"){
+		save(data_long,data_results,data_wide,MetaData,ProteinGeneName,results_long,file=file1)
+	#	}
 
 
 		ProjectPath <- "unlisted/"
@@ -863,6 +881,10 @@ DataReactiveTxt <- reactive({
 		ProteinGeneNameHeader = colnames(ProteinGeneName)
 
 		results_long <- results_long %>% dplyr::mutate_if(is.factor, as.character)  %>% dplyr::inner_join(ProteinGeneName, ., by = "UniqueID")
+
+		cat("Finished processing data files for ", ProjectID, ".\n")
+		up_message2=str_c("The direct URL for the uploaded dataset is: ", URL, "/?unlisted=", ProjectID)
+		upload_message(up_message2) 
 
 		returnlist[["ProjectID"]] <- ProjectID
 		returnlist[["Name"]] <- Project_name
@@ -889,8 +911,8 @@ DataReactiveTxt <- reactive({
 		returnlist[["sample_order"]] = sample_order
 		returnlist[["tests"]] = tests
 		returnlist[["tests_order"]] = tests_order
-
-		return(returnlist)
+		
+		DataReactiveTxt(returnlist)
 	})
 })
 
@@ -913,8 +935,10 @@ observe({
 #load project in csv or database
 observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 	query <- parseQueryString(isolate(session$clientData$url_search))
-	req((!is.null(query[['project']]) & !(query[['project']] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1)))
-
+	
+	req((!is.null(query[['project']]) & !(query[['project']] %in% names(DataInSets)))|| input$sel_project!="" || 
+	      (input$select_dataset=='Upload RData File' & !is.null(input$file1)) ||
+	      input$select_dataset == 'Upload Data Files (csv)' & !is.null(DataReactiveTxt()))
 	if (input$select_dataset == 'Public Data(DiseaseLand)') {
 		DataIn <- DataReactiveDB()
 	}  else
@@ -931,6 +955,7 @@ observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
 	} else {
 		return()
 	}
+	req(!is.null(DataIn))
 
 	ProjectID <- DataIn$ProjectID
 	working_project(ProjectID)
