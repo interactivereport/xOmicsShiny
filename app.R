@@ -129,7 +129,7 @@ server <- function(input, output, session) {
 				tags$p("Comparison data should have five columns, UniqueID, test, Adj.P.Value, P.Value and logFC. The comparison names are listed in test column. Upload csv file, can be compressed as .gz or .zip file."),
 				fileInput("F_comp", "Comparison Data File"),
 				tags$hr(),
-				checkboxInput("F_annot_auto", "Create Gene/Protein Name File automatically (or uncheck to upload your own file)", TRUE, width="90%"),
+				checkboxInput("F_annot_auto", "Create Gene/Protein Name File automatically (use ID from data files)", FALSE, width="90%"),
 				#radioButtons("F_annot_auto", label="Create Gene/Protein Names automatically:", inline = TRUE, choices = c("Yes","No"), selected = "Yes"),
 				conditionalPanel(condition="input.F_annot_auto==1",
 					radioButtons("F_ID_type",label="Unique ID Type in the Data Files", choices=c("Ensembl Gene ID", "Gene Symbol", "NCBI GeneID","UniProtKB Protein ID", "UniProt Protein Name"), inline = T, selected="Ensembl Gene ID"),
