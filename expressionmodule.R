@@ -11,7 +11,7 @@
 ##########################################################################################################
 ## Gene/Protein Expression Plot
 ##########################################################################################################
-#pkgs: "ggprism", "DT","dplyr", "stringr", "tidyr", "scales", "ggExtra"
+#pkgs: "ggprism", "DT","dplyr", "stringr", "tidyr", "scales", "ggExtra", "png", "grid"
 
 library(ggprism)
 
@@ -22,11 +22,13 @@ expression_ui <- function(id) {
 			wellPanel(
 				uiOutput(ns('loadedprojects')),
 				uiOutput(ns("selectGroupSample")),
-				radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Select", "Browsing", "Upload Genes", "Geneset"), inline = TRUE, selected="Select"),
-				conditionalPanel(ns = ns, "input.subset=='Upload Genes'",
-					textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)
+				conditionalPanel(ns = ns, "input.tabset !='Laser Capture Microdissection'",
+					radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Select", "Browsing", "Upload Genes", "Geneset"), inline = TRUE, selected="Select"),
+					conditionalPanel(ns = ns, "input.subset=='Upload Genes'",
+						textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)
+					)
 				),
-				conditionalPanel(ns = ns, "input.subset=='Select'",
+				conditionalPanel(ns = ns, "input.subset=='Select' && input.tabset!='Laser Capture Microdissection'",
 					radioButtons(ns("label"),label="Search Gene or UniqueID", inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="UniqueID"),
 					selectizeInput(ns("sel_gene"),	label="Gene Name (Select 1 or more)",	choices = NULL,	multiple=TRUE, options = list(placeholder =	'Type to search'))
 				),
@@ -119,6 +121,21 @@ expression_ui <- function(id) {
 					sliderInput(ns("scurveXangle"), label= "X Angle", min = 0, max = 90, step = 15, value = 45),
 					radioButtons(ns("scurveright"), label="Density or histogram on Right:", inline = TRUE, choices = c("densigram" = "densigram", "density" = "density","histogram" = "histogram","boxplot" = "boxplot", "violin"= "violin"))
 				),
+				conditionalPanel(ns = ns, "input.tabset=='Laser Capture Microdissection'",
+					selectizeInput(ns("sel_image"), label="Select Images",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search')),
+					radioButtons(ns("label_lcm"), label="Search Gene or UniqueID", inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="UniqueID"),
+					selectizeInput(ns("sel_gene_lcm"),	label="Gene Name (Select 1)",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search')),
+					radioButtons(ns("lcm_format"), label="Plot Format", inline = TRUE, choices = c( "Expressoin (side by side)" = "exp_side","Group (side by side)" = "group_side", "Expression (overlay)"="exp_overlay",  "Group (overlay)" = "group_overlay"), selected = "exp_side"),
+					selectInput(ns("lcmcolpalette"), label= "Select Color Palette", choices=""),
+					fluidRow(
+						column(width=6, sliderInput(ns("LCM_alpha"), "Transparancy", min = 0, max = 1, step = 0.1, value = 0.5)),
+						column(width=6, sliderInput(ns("LCM_axisfontsize"), "Axis Font Size:", min = 12, max = 28, step = 4, value = 16))
+					),
+					fluidRow(
+						column(width=6, textInput(ns("LCMYlab"), "Y label", value="Row", width = "100%")),
+						column(width=6, textInput(ns("LCMXlab"), "X label", value="Column", width = "100%"))
+					)
+				),
 				conditionalPanel(ns = ns, "input.tabset=='Data Table' || input.tabset=='Result Table'",
 					h5("Enter some genes in Search Expression Data tab, then come here for data table.")
 				)
@@ -138,6 +155,10 @@ expression_ui <- function(id) {
 				tabPanel(title="Rank Abundance Curve", value ="Rank Abundance Curve",
 					actionButton(ns("AbundanceCurve"), "Save to output"),
 					plotOutput(ns("SCurve"), height=800)
+				),
+				tabPanel(title="Laser Capture Microdissection", value ="Laser Capture Microdissection",
+					actionButton(ns("LCM"), "Save to output"),
+					plotOutput(ns("LCM"), height=800)
 				),
 				tabPanel(title="Help", value ="Help", htmlOutput("help_expression")
 				)
@@ -204,6 +225,7 @@ expression_server <- function(id) {
 				label = sym(input$label)
 				DataIngenes <- ProteinGeneName %>% dplyr::pull(!!label)
 				updateSelectizeInput(session,'sel_gene', choices= DataIngenes, server=TRUE)
+
 				attributes=sort(setdiff(colnames(MetaData), c("sampleid", "Order", "ComparePairs") ))
 				updateSelectInput(session, "colorby", choices=attributes, selected="group")
 				updateSelectInput(session, "plotx", choices=attributes, selected="group")
@@ -286,6 +308,49 @@ expression_server <- function(id) {
 				geneset_genenames <- GetGenesFromGeneSet(sel_geneset)
 				updateTextAreaInput(session, "geneset_genes", value=paste(geneset_genenames, collapse=","))
 			})
+			
+			
+			observe({
+			  req(length(working_project()) > 0)
+			  MetaData = DataInSets[[working_project()]]$MetaData
+			  req(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")))
+			  
+			  req(DataInSets[[working_project()]]$ProteinGeneNameHeader)
+			  ProteinGeneNameHeader = DataInSets[[working_project()]]$ProteinGeneNameHeader
+			  updateRadioButtons(session,'sel_geneid_lcm', inline = TRUE, choices=ProteinGeneNameHeader, selected="UniqueID")
+			  
+			  req(DataInSets[[working_project()]]$ProteinGeneName)
+			  ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+			  
+			  req(input$label_lcm)
+			  label_lcm = sym(input$label_lcm)
+			  DataIngenes <- ProteinGeneName %>% dplyr::pull(!!label_lcm)
+			  updateSelectizeInput(session,'sel_gene_lcm', choices= DataIngenes, server=TRUE)
+
+			  
+			  image_ids <- MetaData %>%
+			    tidyr::separate(sampleid, into = c("Sample", "RowCol"), sep = "_") %>%
+			    pull(Sample) %>%
+			    unique()
+			  
+			  updateSelectizeInput(session,'sel_image',  choices=image_ids, selected=image_ids[1])
+			})
+			
+			observeEvent(input$lcm_format, {
+			  req(length(working_project()) > 0)
+			  req(input$lcm_format)
+			  lcm_format = input$lcm_format
+			  if (lcm_format == "exp_side")
+			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
+			  if (lcm_format == "group_side")
+			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
+			  if (lcm_format == "exp_overlay")
+			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
+			  if (lcm_format == "group_overlay") 
+			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
+			})
+			
+			
 			###############
 
 			DataExpReactive <- reactive({
@@ -326,7 +391,6 @@ expression_server <- function(id) {
 
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
 				}
-
 
 				if (input$subset == "Upload Genes" | input$subset == "Geneset") {
 					if (input$subset == "Upload Genes") {
@@ -428,7 +492,6 @@ expression_server <- function(id) {
 						}
 					}
 
-		
 					showPvalues = input$PvalueBar
 					value = sym("expr")
 					pval_sel = input$pval_sel
@@ -472,7 +535,7 @@ expression_server <- function(id) {
 						annotation_df = results_long_tmp %>%
 						dplyr::filter(!!psel < pv_thresh) %>%
 						as.data.frame()
-		
+
 						if (nrow(annotation_df) > 0)  {
 							annotation_df <- annotation_df %>%
 							tidyr::separate(test, c('start', 'end'),  sep = "vs") %>%
@@ -544,7 +607,7 @@ expression_server <- function(id) {
 								p <- p + geom_errorbar(aes(ymin = !!value-se, ymax = !!value+se), data = df.summary, width = 0.2, position = pd)
 							}
 						} else {
-							p <-	 ggplot(data_long_tmp, aes(x = !!plotx, y= !!value)) +
+							p <- ggplot(data_long_tmp, aes(x = !!plotx, y= !!value)) +
 							geom_line(data = df.summary, aes(x = !!plotx, y = !!value, color = labelgeneid, group = labelgeneid))
 
 							if (input$ShowErrorBar == "SD") {
@@ -657,7 +720,7 @@ expression_server <- function(id) {
 					return(p)
 				})
 			})
-			
+
 			output$plot.exp <- renderUI({
 				if (input$SeparateOnePlot == "Separate")  {
 					nrow = isolate(as.numeric(input$plot_nrow))
@@ -771,6 +834,86 @@ expression_server <- function(id) {
 			observeEvent(input$AbundanceCurve, {
 				saved_plots$AbundanceCurve <- Scurve_out()
 			})
+
+			###### Laser capture microdissection
+			LCM_out <- reactive({
+				req(length(working_project()) > 0)
+				data_long <- DataInSets[[working_project()]]$data_long
+				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+				MetaData = DataInSets[[working_project()]]$MetaData
+				validate(need(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")),"Only work for LCM format"))
+
+				req(input$sel_gene_lcm)
+				sel_gene = input$sel_gene_lcm
+				validate(need(length(input$sel_gene_lcm)>0,"Please select a gene."))
+				ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
+				UniqueID_sel  = ProteinGeneName_sel %>% as.data.frame() %>%	dplyr::pull(UniqueID)
+
+				library(png)
+				library(grid)
+				library(gridExtra)
+
+				LCM_alpha = as.numeric(input$LCM_alpha)
+				sel_image = input$sel_image
+
+				pngfile = paste("data/", sel_image, ".png", sep="")
+				if (file.exists(pngfile)) {
+					im <- readPNG(pngfile)
+				}
+
+				SingleProtein <- data_long %>%
+				as.data.frame() %>%
+				dplyr::filter(UniqueID == UniqueID_sel) %>%
+				tidyr::separate(sampleid, into = c("Sample", "RowCol"), sep = "_")%>%
+				tidyr::separate(RowCol, into = c("Row", "Col"), "(?<=[A-Za-z])(?=[0-9])") %>%
+				dplyr::mutate(Row = forcats::fct_rev(Row))
+
+				p1 <- ggplot(SingleProtein, aes(Col, y= Row, fill=expr)) +
+				geom_tile() +
+				scale_fill_distiller(palette = input$lcmcolpalette, direction = 1) +
+				coord_fixed(ratio = nrow(im)/ncol(im)) +
+				theme_bw(base_size = 14) +
+				ylab(input$LCMYlab) +
+				xlab(input$LCMXlab) +
+				theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize))
+
+				colorpal <- UserColorPlalette(colpalette = input$lcmcolpalette, items = unique(SingleProtein$group))
+				p2 <- ggplot(SingleProtein, aes(Col, y= Row, fill=group)) +
+				geom_tile() +
+				scale_fill_manual(values =  colorpal) +
+				coord_fixed(ratio = nrow(im)/ncol(im)) +
+				theme_bw(base_size = 14) +
+				ylab(input$LCMYlab) +
+				xlab(input$LCMXlab) +
+				theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize))
+
+				im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * 1), nrow=dim(im)[1])
+
+				lcm_format = input$lcm_format
+				if (lcm_format == "exp_side")
+				p =  grid.arrange(grid::rasterGrob(im2), p1, ncol=2)
+				if (lcm_format == "group_side")
+				p =  grid.arrange(grid::rasterGrob(im2), p2, ncol=2)
+				if (lcm_format == "exp_overlay"){
+					im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
+					p <- p1 +  annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
+				}
+				if (lcm_format == "group_overlay") {
+					im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
+					p <- p2 + annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
+				}
+
+				return(p)
+			})
+
+			output$LCM <- renderPlot({
+				LCM_out()
+			})
+
+			observeEvent(input$LCM, {
+				saved_plots$LCM <- LCM_out()
+			})
+
 		}
 	)
 }
