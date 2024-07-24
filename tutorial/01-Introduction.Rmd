@@ -1,5 +1,13 @@
 # Introduction
 
-xOmicsShiny is an R shiny application for cross-omics data analysis and pathway mapping.
+xOmicsShiny can be accessed via the link [https://xomicsshiny.bxgenomics.com/](https://xomicsshiny.bxgenomics.com/){target="_blank"}. It is an R shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples ([Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"}).
 
-a
+[![](`r pic_path`f1-1.png)](`r pic_path`f1-1.png)
+
+The main interface consists of two tabs: **Dataset** and **Setting**. The **Dataset** page features a multi-tab menu for various functionality modules. Before loading a dataset, the default tabs include Select Dataset, four tabs displaying dataset information, and a Help tab explaining the sub-tab functions. 
+
+[![](`r pic_path`f1-2.png)](`r pic_path`f1-2.png)
+
+The **Setting** page lists all available functional modules. Users can select or deselect individual modules by clicking on the module icon, which displays a text prompt on hover. Selected module names will be added as tabs in the multi-tab menu on the **Dataset** page.
+
+[![](`r pic_path`f1-3.png)](`r pic_path`f1-3.png)

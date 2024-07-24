@@ -1,0 +1,9 @@
+# Groups and Samples Module
+
+Sometimes users are interested in just some of the samples for analysis. The **Groups and Samples** module can be used for the sample inclusion or exclusion.  It provides a wide range of flexibility to select groups and samples by clicking and dragging them in a interactive manner. Users can select samples based on metadata, comparison, or manual list.  The selected samples are used globally for all plots.
+
+## Select gourps and samples
+
+Here, you can define your sample groups and modifying the samples to be included or excluded. It is also flexible to re-order the samples.
+
+[![](`r pic_path`f4-1.png)](`r pic_path`f4-1.png)

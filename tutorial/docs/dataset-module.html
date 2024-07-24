@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Chapter 3 Dataset Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="Chapter 3 Dataset Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta name="generator" content="bookdown 0.36 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Chapter 3 Dataset Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Chapter 3 Dataset Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  
+  
+  
+
+
+
+<meta name="date" content="2024-07-22" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="installation.html"/>
+<link rel="next" href="groups-and-samples-module.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">xOmicsShiny</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Preface</a></li>
+<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="installation.html"><a href="installation.html"><i class="fa fa-check"></i><b>2</b> Installation</a></li>
+<li class="chapter" data-level="3" data-path="dataset-module.html"><a href="dataset-module.html"><i class="fa fa-check"></i><b>3</b> Dataset Module</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="dataset-module.html"><a href="dataset-module.html#select-datasets"><i class="fa fa-check"></i><b>3.1</b> Select Datasets</a>
+<ul>
+<li class="chapter" data-level="3.1.1" data-path="dataset-module.html"><a href="dataset-module.html#saved-projects-in-csv-file"><i class="fa fa-check"></i><b>3.1.1</b> Saved Projects in CSV file</a></li>
+<li class="chapter" data-level="3.1.2" data-path="dataset-module.html"><a href="dataset-module.html#upload-data-files-csv-and-upload-rdata-file"><i class="fa fa-check"></i><b>3.1.2</b> Upload Data Files (csv) and Upload RData File</a></li>
+<li class="chapter" data-level="3.1.3" data-path="dataset-module.html"><a href="dataset-module.html#load-and-unload-datasets"><i class="fa fa-check"></i><b>3.1.3</b> Load and Unload datasets</a></li>
+</ul></li>
+<li class="chapter" data-level="3.2" data-path="dataset-module.html"><a href="dataset-module.html#sample-table"><i class="fa fa-check"></i><b>3.2</b> Sample Table</a></li>
+<li class="chapter" data-level="3.3" data-path="dataset-module.html"><a href="dataset-module.html#result-table"><i class="fa fa-check"></i><b>3.3</b> Result Table</a></li>
+<li class="chapter" data-level="3.4" data-path="dataset-module.html"><a href="dataset-module.html#data-table"><i class="fa fa-check"></i><b>3.4</b> Data Table</a></li>
+<li class="chapter" data-level="3.5" data-path="dataset-module.html"><a href="dataset-module.html#protein-gene-names"><i class="fa fa-check"></i><b>3.5</b> Protein Gene Names</a></li>
+<li class="chapter" data-level="3.6" data-path="dataset-module.html"><a href="dataset-module.html#help"><i class="fa fa-check"></i><b>3.6</b> Help</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="groups-and-samples-module.html"><a href="groups-and-samples-module.html"><i class="fa fa-check"></i><b>4</b> Groups and Samples Module</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="groups-and-samples-module.html"><a href="groups-and-samples-module.html#select-gourps-and-samples"><i class="fa fa-check"></i><b>4.1</b> Select gourps and samples</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="qc-plots-module.html"><a href="qc-plots-module.html"><i class="fa fa-check"></i><b>5</b> QC Plots Module</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="qc-plots-module.html"><a href="qc-plots-module.html#pca-plot"><i class="fa fa-check"></i><b>5.1</b> PCA Plot</a></li>
+<li class="chapter" data-level="5.2" data-path="qc-plots-module.html"><a href="qc-plots-module.html#eigenvalues"><i class="fa fa-check"></i><b>5.2</b> Eigenvalues</a></li>
+<li class="chapter" data-level="5.3" data-path="qc-plots-module.html"><a href="qc-plots-module.html#pca-loading-table"><i class="fa fa-check"></i><b>5.3</b> PCA Loading Table</a></li>
+<li class="chapter" data-level="5.4" data-path="qc-plots-module.html"><a href="qc-plots-module.html#covariates"><i class="fa fa-check"></i><b>5.4</b> Covariates</a></li>
+<li class="chapter" data-level="5.5" data-path="qc-plots-module.html"><a href="qc-plots-module.html#alignqc"><i class="fa fa-check"></i><b>5.5</b> AlignQC</a></li>
+<li class="chapter" data-level="5.6" data-path="qc-plots-module.html"><a href="qc-plots-module.html#pca-3d-plot"><i class="fa fa-check"></i><b>5.6</b> PCA 3D Plot</a></li>
+<li class="chapter" data-level="5.7" data-path="qc-plots-module.html"><a href="qc-plots-module.html#pca-3d-interactive"><i class="fa fa-check"></i><b>5.7</b> PCA 3D Interactive</a></li>
+<li class="chapter" data-level="5.8" data-path="qc-plots-module.html"><a href="qc-plots-module.html#sample-sample-distance"><i class="fa fa-check"></i><b>5.8</b> Sample-sample Distance</a></li>
+<li class="chapter" data-level="5.9" data-path="qc-plots-module.html"><a href="qc-plots-module.html#dendrograms"><i class="fa fa-check"></i><b>5.9</b> Dendrograms</a></li>
+<li class="chapter" data-level="5.10" data-path="qc-plots-module.html"><a href="qc-plots-module.html#box-plot"><i class="fa fa-check"></i><b>5.10</b> Box Plot</a></li>
+<li class="chapter" data-level="5.11" data-path="qc-plots-module.html"><a href="qc-plots-module.html#cv-distribution"><i class="fa fa-check"></i><b>5.11</b> CV Distribution</a></li>
+<li class="chapter" data-level="5.12" data-path="qc-plots-module.html"><a href="qc-plots-module.html#help-1"><i class="fa fa-check"></i><b>5.12</b> Help</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="dataset-module" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">Chapter 3</span> Dataset Module<a href="dataset-module.html#dataset-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="select-datasets" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> Select Datasets<a href="dataset-module.html#select-datasets" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This first module is for selecting dataset. Users can either select from pre-loaded example datasets or upload their own dataset in a pre-defined format as detailed in section 3.1.2.</p>
+<div id="saved-projects-in-csv-file" class="section level3 hasAnchor" number="3.1.1">
+<h3><span class="header-section-number">3.1.1</span> Saved Projects in CSV file<a href="dataset-module.html#saved-projects-in-csv-file" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We have pre-loaded 11 datasets from published studies that users can use for demonstrative purposes. These includes five studies:</p>
+<p><a href="Figures/f3-1.png"><img src="Figures/f3-1.png" /></a></p>
+<table>
+<colgroup>
+<col width="28%" />
+<col width="27%" />
+<col width="42%" />
+<col width="1%" />
+<col width="1%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Study</th>
+<th>DataSets</th>
+<th>References</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data</td>
+<td>Mouse Microglia RNA</td>
+<td><a href="https://www.life-science-alliance.org/content/2/6/e201900453" target="_blank">Gyoneva et al., 2019</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>LRRK2 Human Neuron Transcriptome and Proteome Data</td>
+<td>LRRK2 Neuron RNA and Proteome</td>
+<td><a href="https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub" target="_blank">Connor-Robson et al., 2019</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer</td>
+<td>ADPD_cortex_Maxquant, ADPD_ACG_Maxquant,ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Mouse AgingHFCD RNA, Proteomic and metabolomic Data</td>
+<td>AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics</td>
+<td><a href="https://doi.org/10.1016/j.cels.2021.09.005" target="_blank">Williams et al., 2022</a></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>StrokeBrain_TimeCourse Data</td>
+<td>StrokeBrain_TimeCourse</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><span style="font-size:2em; color:red"> <em>The table needs update to complete the reference information and proper layout</em> </span></p>
+</div>
+<div id="upload-data-files-csv-and-upload-rdata-file" class="section level3 hasAnchor" number="3.1.2">
+<h3><span class="header-section-number">3.1.2</span> Upload Data Files (csv) and Upload RData File<a href="dataset-module.html#upload-data-files-csv-and-upload-rdata-file" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The xOmicsShiny tool accept two methods of data uploading, which is exactly the same requirement as uploading the data set to our previously developed tool QuickOmics. Please check the <a href="https://interactivereport.github.io/Quickomics/tutorial/docs/dataset-module.html#upload-files">section 2.1 and 2.2</a> of the QuickOmics tutorial.</p>
+<p><span style="font-size:2em; color:red"> <em>insert a successfully uploaded data set ScreenShot when update is completed</em> </span>
+<a href="Figures/f3-2.png"><img src="Figures/f3-2.png" /></a></p>
+<p>When the dataset is uploaded successfully, an overview is shown of all samples in the project by providing a summary from the metadata. This includes information like which species was used, the different comparisons run and total number of samples in each group. It also helps identify how many groups were present in the dataset, like in this project there are 4 different groups that correspond to two age_groups in each of two treatment groups ( Young, Old; Control_diet, High_fat).</p>
+</div>
+<div id="load-and-unload-datasets" class="section level3 hasAnchor" number="3.1.3">
+<h3><span class="header-section-number">3.1.3</span> Load and Unload datasets<a href="dataset-module.html#load-and-unload-datasets" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p><a href="Figures/f3-3.png"><img src="Figures/f3-3.png" /></a></p>
+<p>Users can load multiple interested datasets. All loaded datasets are listed in the left menu. The selected dataset information is displayed in the right panel of the page. To edit the loaded dataset list, use the <strong>Add Another Dataset</strong> button in the middle of the page to load more datasets and use the <strong>Remove Current Working Dataset</strong> button at the bottom of the right panal to remove a dataset.</p>
+</div>
+</div>
+<div id="sample-table" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> Sample Table<a href="dataset-module.html#sample-table" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>A sample table with metadata/details appears upon completion of dataset loading. Here we have selected the “AgingHFCD RNAseq” dataset from the previously published paper (Williams et al., 2022) as an example to illustrate all the functionalities. This publication used multiomics data including RNAseq, Proteomic and Metabolomic data to profile the liver transcriptome, proteome, and metabolome in mouse across age (7 to 24 months) and diet (low or high fat) and link molecular variations to metabolic traits. Using xOmicsShiny, we can visualize the original results from the paper, as well as provide novel visualizations to support new results.</p>
+<p>The Sample Table contains detailed info of all study samples. A total of 291 samples that were sequenced in this project are listed in the table with attributes like sampleid, group, Age_Group and Treatment, shown in different columns.</p>
+<p><span style="font-size:2em; color:red"> <em>insert a ScreenShot when update is completed</em> </span>
+<a href="Figures/f3-4.png"><img src="Figures/f3-4.png" /></a></p>
+</div>
+<div id="result-table" class="section level2 hasAnchor" number="3.3">
+<h2><span class="header-section-number">3.3</span> Result Table<a href="dataset-module.html#result-table" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab contains statistical analysis results like UniqueID (Ensemble ID or Gene Symbol for RNAseq data, Accession ID for proteomics data, KEGG compound ID for metabolomic data), gene name, mRNA or protein abundance (count or intensity), mean and SD values for each group, log2 fold change, P value and adjusted P value for each comparison.</p>
+<p><a href="Figures/f3-5.png"><img src="Figures/f3-5.png" /></a></p>
+</div>
+<div id="data-table" class="section level2 hasAnchor" number="3.4">
+<h2><span class="header-section-number">3.4</span> Data Table<a href="dataset-module.html#data-table" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The Data table contains normalized expression values (TPM for RNAseq, intensity for label free proteomic quantification, or ratio for isobaric label proteomics quantification) per sample for each gene. In Quickomics version 2.0, we added “Download all” button for small tables, and enable “Save to output” button for large tables.</p>
+<p><a href="Figures/f3-6.png"><img src="Figures/f3-6.png" /></a></p>
+</div>
+<div id="protein-gene-names" class="section level2 hasAnchor" number="3.5">
+<h2><span class="header-section-number">3.5</span> Protein Gene Names<a href="dataset-module.html#protein-gene-names" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab contains all quantified gene or protein IDs and gene names. If it is a metabolomic dataset, the table lists the KEGG compounnd IDs.</p>
+<p><a href="Figures/f3-7.png"><img src="Figures/f3-7.png" /></a></p>
+</div>
+<div id="help" class="section level2 hasAnchor" number="3.6">
+<h2><span class="header-section-number">3.6</span> Help<a href="dataset-module.html#help" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Finally, the <strong>Help</strong> feature summarizes what data is being displayed in each tab under <strong>Select Dataset</strong>. The <strong>Help</strong> tab is available for all sections of the subsequent analysis.</p>
+<p><a href="Figures/f3-8.png"><img src="Figures/f3-8.png" /></a></p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="installation.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="groups-and-samples-module.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/03-DatasetModule.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/03-DatasetModule.Rmd",
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>

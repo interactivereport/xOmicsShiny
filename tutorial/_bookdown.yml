@@ -1,6 +1,7 @@
-book_filename: "bookdownproj"
+book_filename: "xOmicsShiny"
 output_dir: docs
 delete_merged_file: true
+before_chapter_script: ["global.R"]
 edit: https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/%s
 view: https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/%s
 language:

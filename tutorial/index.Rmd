@@ -9,13 +9,13 @@ author:
     affiliation: Biogen
   - name: Xinmin Zhang
     email: xinmin@bioinforx.com
-    affiliation: Biogen
+    affiliation: BioInfoRx
   - name: Tinchi Lin
     email: tinchi.lin@biogen.com
     affiliation: Biogen
   - name: Wei Li
     email: weili@bioinforx.com
-    affiliation: Biogen
+    affiliation: BioInfoRx
   - name: Romi Admanit
     email: romi.admanit@biogen.com
     affiliation: Biogen
