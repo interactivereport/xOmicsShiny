@@ -565,7 +565,7 @@ deg_server <- function(id) {
 				dplyr::mutate(logFC_ori = logFC)
 
 				if (Max_Pvalue > 0) {
-					if (psel == "Padj")
+					if (psel == "Adj.P.Value")
 					res <- res %>% dplyr::mutate(Adj.P.Value=pmax(Adj.P.Value, 10^(0-Max_Pvalue) ))
 					if (psel == "P.Value")
 					res <- res %>% dplyr::mutate(P.Value=pmax(P.Value, 10^(0-Max_Pvalue) ))
@@ -600,7 +600,7 @@ deg_server <- function(id) {
 				if (psel == "Padj")
 				psel = "Adj.P.Value"
 
-				if (psel == "Padj") {
+				if (psel == "Adj.P.Value") {
 					p <- ggplot(res, aes(x = logFC, y = -log10(Adj.P.Value), text = labelid))
 					ylab <- "-log10(Padj.Value)"
 
