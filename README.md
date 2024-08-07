@@ -4,3 +4,5 @@ Server site: https://xomicsshiny.bxgenomics.com/
 
 Tutorial: https://interactivereport.github.io/xOmicsShiny/tutorial/docs/index.html
 
+![xOmicsShiny](https://interactivereport.github.io/xOmicsShiny/images/Cover.png)
+
