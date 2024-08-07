@@ -6,7 +6,7 @@ Tutorial: https://interactivereport.github.io/xOmicsShiny/tutorial/docs/index.ht
 
 ![xOmicsShiny](https://interactivereport.github.io/xOmicsShiny/images/Cover.png)
 
-**Cover. Overview of the oOmicsShiny modules.** The Shiny application handles multi-omics data including transcriptomics, proteomics, metabolomics, and lipidomics data. The **Data Merging** (Grey) module integrates multi-omics data for downstream analysis. **Data exploration** modules (Blue) contain QC, DEGs, Heatmap, Expression, and Venn Diagram modules. **Geneset Enrichment** (Green) module performs GSEA and pathway analysis. **Network modules** (Bisque) include WGCNA, Correlation Network, and PCSF modules. **Pattern and trend analysis** (Orchid) consists of Pattern, Dose Response, Time Course, and Monotonic Trend modules.![image](https://github.com/user-attachments/assets/aeb63b6a-1d96-48ce-9ee8-13f04cb098f1)
+**Cover. Overview of the oOmicsShiny modules.** The Shiny application handles multi-omics data including transcriptomics, proteomics, metabolomics, and lipidomics data. The **Data Merging** (Grey) module integrates multi-omics data for downstream analysis. **Data exploration** modules (Blue) contain QC, DEGs, Heatmap, Expression, and Venn Diagram modules. **Geneset Enrichment** (Green) module performs GSEA and pathway analysis. **Network modules** (Bisque) include WGCNA, Correlation Network, and PCSF modules. **Pattern and trend analysis** (Orchid) consists of Pattern, Dose Response, Time Course, and Monotonic Trend modules.
 
 ## 1. Installation
 
@@ -28,8 +28,8 @@ Users can readily explore xOmicsShiny using our public server (https://xomicsshi
 | --- | --- | --- |
 | Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data | Mouse Microglia RNA | [Gyoneva et al., 2019](https://www.life-science-alliance.org/content/2/6/e201900453) |
 | LRRK2 Human Neuron Transcriptome and Proteome Data | LRRK2 Neuron RNA and Proteome | [Connor-Robson et al., 2019](https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub) |
-Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer	ADPD_cortex_Maxquant, ADPD_ACG_Maxquant,ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover			
-Mouse AgingHFCD RNA, Proteomic and metabolomic Data	AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics	Williams et al., 2022		
-StrokeBrain_TimeCourse Data	StrokeBrain_TimeCourse
+| Human Brain (Cortex/ACG) Proteome in AD and PD | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant, ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover	| 		
+| Aging Mice with High fat (HF) and Control Diet (CD) |	AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics | [Williams et al., 2022](https://www.sciencedirect.com/science/article/pii/S0969996119300968) |		
+| StrokeBrain_TimeCourse Data |	StrokeBrain_TimeCourse | |
 
 ## 4. Additional information
