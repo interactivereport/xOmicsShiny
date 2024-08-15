@@ -1,6 +1,8 @@
 # Introduction
 
-xOmicsShiny can be accessed via the link [https://xomicsshiny.bxgenomics.com/](https://xomicsshiny.bxgenomics.com/){target="_blank"}. It is an R shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples ([Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"}).
+xOmicsShiny demo version can be accessed via the link [https://xomicsshiny.bxgenomics.com/](https://xomicsshiny.bxgenomics.com/){target="_blank"}. 
+
+XOmicsShiny is an R shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples ([Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"}).
 
 [![](`r pic_path`f1-1.png)](`r pic_path`f1-1.png)
 
