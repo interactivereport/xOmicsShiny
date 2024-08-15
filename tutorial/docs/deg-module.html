@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
-  <meta name="description" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <title>Chapter 6 DEG Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="Chapter 6 DEG Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta property="og:title" content="Chapter 6 DEG Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta name="twitter:title" content="Chapter 6 DEG Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   
   
   
@@ -29,8 +29,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="index.html"/>
-<link rel="next" href="installation.html"/>
+<link rel="prev" href="qc-plots-module.html"/>
+
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -120,6 +120,14 @@
 <li class="chapter" data-level="5.7" data-path="qc-plots-module.html"><a href="qc-plots-module.html#cv-distribution"><i class="fa fa-check"></i><b>5.7</b> CV Distribution</a></li>
 <li class="chapter" data-level="5.8" data-path="qc-plots-module.html"><a href="qc-plots-module.html#help-1"><i class="fa fa-check"></i><b>5.8</b> Help</a></li>
 </ul></li>
+<li class="chapter" data-level="6" data-path="deg-module.html"><a href="deg-module.html"><i class="fa fa-check"></i><b>6</b> DEG Module</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="deg-module.html"><a href="deg-module.html#deg-counts"><i class="fa fa-check"></i><b>6.1</b> DEG Counts</a></li>
+<li class="chapter" data-level="6.2" data-path="deg-module.html"><a href="deg-module.html#volcano-plot-static"><i class="fa fa-check"></i><b>6.2</b> Volcano Plot (Static)</a></li>
+<li class="chapter" data-level="6.3" data-path="deg-module.html"><a href="deg-module.html#volcano-plot-interactive"><i class="fa fa-check"></i><b>6.3</b> Volcano Plot (Interactive)</a></li>
+<li class="chapter" data-level="6.4" data-path="deg-module.html"><a href="deg-module.html#degs-and-deps-in-two-comparisons"><i class="fa fa-check"></i><b>6.4</b> DEGs and DEPs in Two Comparisons</a></li>
+<li class="chapter" data-level="6.5" data-path="deg-module.html"><a href="deg-module.html#mulitple-volcano-plots"><i class="fa fa-check"></i><b>6.5</b> Mulitple Volcano Plots</a></li>
+</ul></li>
 <li class="divider"></li>
 <li><a href="https://github.com/rstudio/bookdown" target="blank">Published with bookdown</a></li>
 </ul>
@@ -139,24 +147,49 @@
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="introduction" class="section level1 hasAnchor" number="1">
-<h1><span class="header-section-number">Chapter 1</span> Introduction<a href="introduction.html#introduction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>xOmicsShiny demo version can be accessed via the link <a href="https://xomicsshiny.bxgenomics.com/" target="_blank">https://xomicsshiny.bxgenomics.com/</a>.</p>
-<p>XOmicsShiny is an R shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples (<a href="https://doi.org/10.1016/j.cels.2021.09.005" target="_blank">Williams et al., 2022</a>).</p>
-<p><a href="Figures/f1-1.png"><img src="Figures/f1-1.png" /></a></p>
-<p>The main interface consists of two tabs: <strong>Dataset</strong> and <strong>Setting</strong>. The <strong>Dataset</strong> page features a multi-tab menu for various functionality modules. Before loading a dataset, the default tabs include Select Dataset, four tabs displaying dataset information, and a Help tab explaining the sub-tab functions.</p>
-<p><a href="Figures/f1-2.png"><img src="Figures/f1-2.png" /></a></p>
-<p>The <strong>Setting</strong> page lists all available functional modules. Users can select or deselect individual modules by clicking on the module icon, which displays a text prompt on hover. Selected module names will be added as tabs in the multi-tab menu on the <strong>Dataset</strong> page.</p>
-<p><a href="Figures/f1-3.png"><img src="Figures/f1-3.png" /></a></p>
+<div id="deg-module" class="section level1 hasAnchor" number="6">
+<h1><span class="header-section-number">Chapter 6</span> DEG Module<a href="deg-module.html#deg-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>This section is designed to explore the differentially expressed genes (DEGs) and differentially expressed proteins (DEPs) in the selected dataset. The comparisons are defined by the User when they input the datasets. Please refer to our GitHub for more details on uploading datasets.</p>
+<p>The “Volcano Plot (Static)” described in Section 6.2 and “Volcano Plot (Interactive)” described in Section 6.3 are ways to visualize each pair-wise comparison one by one. “DEGs/DEPs in Two Comparisons” described in Section 6.4 is a novel way to visualize the similarities and differences in two comparisons. Finally, “Multi Volcano Plots” can plot comparisons across experiments for visual inspections.</p>
+<div id="deg-counts" class="section level2 hasAnchor" number="6.1">
+<h2><span class="header-section-number">6.1</span> DEG Counts<a href="deg-module.html#deg-counts" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>DEG Counts tab provides a summary of the number of significantly changed genes for each comparison, separating Up- and Down-regulated genes. Use the left menu to select which dataset to view DEG counts, and the log2FC and p-value/FDR cutoff to call DEGs.</p>
+<p><a href="Figures/f6-1.png"><img src="Figures/f6-1.png" /></a></p>
+</div>
+<div id="volcano-plot-static" class="section level2 hasAnchor" number="6.2">
+<h2><span class="header-section-number">6.2</span> Volcano Plot (Static)<a href="deg-module.html#volcano-plot-static" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This plot reveals the differentially expressed genes provided in the input data file. By default, the Fold change Cutoff is set to 1.2 and the P value Cutoff is set to 0.01. Users have the option to change any of these parameters. For more advanced display options, they can set the “Show More Options” to “Yes” to customize other settings.</p>
+<p>The red dots are indicative of all genes that pass the Fold Change and P value cutoff, while the green dots are indicative of genes that only pass the P value cutoff. Fifty random genes are labelled for both the up-regulated and down-regulated genes by default.</p>
+<p>If there are extreme values in the data such as very small p-values or very large fold changes, the volcano plot may not look nice. In such cases, you can adjust the max log2FC and Max -log10(Pvalue) to force the extreme values to fit into max values.</p>
+<p><a href="Figures/f6-2.png"><img src="Figures/f6-2.png" /></a></p>
+<p>Instead of DEGs, one can highlight selected genes in the volcano plot. For example, we selected KEGG pathtway hsa100 Steroid biosynthesis genes, and the plots shows that most of these genes are down-regulated.</p>
+<p><a href="Figures/f6-3.png"><img src="Figures/f6-3.png" /></a></p>
+</div>
+<div id="volcano-plot-interactive" class="section level2 hasAnchor" number="6.3">
+<h2><span class="header-section-number">6.3</span> Volcano Plot (Interactive)<a href="deg-module.html#volcano-plot-interactive" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This Volcano plot can also be shown as an interactive plot, which has the additional capability where users can hover over a particular dot/gene on the plot to see more details. Users can also zoom in to a specific region to view more details if needed.</p>
+<p><a href="Figures/f6-4.png"><img src="Figures/f6-4.png" /></a></p>
+</div>
+<div id="degs-and-deps-in-two-comparisons" class="section level2 hasAnchor" number="6.4">
+<h2><span class="header-section-number">6.4</span> DEGs and DEPs in Two Comparisons<a href="deg-module.html#degs-and-deps-in-two-comparisons" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This next tab helps with identifying DEGs/DEPs that follow a similar trend in two comparisons. xOmicsShiny allows using to perform this comparison across datasets. In the example below, we plotted change genes (from RNA-Seq) and proteins (from proteomics) in high fat vs. control diet in old mice. It can seen that protein and mRNA levels follow the same trend for most geness, and the correlation between the two Omics datasets is 0.438.</p>
+<p><a href="Figures/f6-5.png"><img src="Figures/f6-5.png" /></a></p>
+</div>
+<div id="mulitple-volcano-plots" class="section level2 hasAnchor" number="6.5">
+<h2><span class="header-section-number">6.5</span> Mulitple Volcano Plots<a href="deg-module.html#mulitple-volcano-plots" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab lets the users view the changed genes/proteins/metabolites in volcano plots across multiple comparisons. Here we show the RNA-Seq, proteomics and metabolite data for high fat vs. control diet comparison in old mice.</p>
+<p><a href="Figures/f6-6.png"><img src="Figures/f6-6.png" /></a></p>
 
+
+</div>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="installation.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="qc-plots-module.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -187,7 +220,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/01-Introduction.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/06-DEG_Module.Rmd",
 "text": "Edit"
 },
 "history": {
@@ -195,7 +228,7 @@ gitbook.start({
 "text": null
 },
 "view": {
-"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/01-Introduction.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/06-DEG_Module.Rmd",
 "text": null
 },
 "download": null,

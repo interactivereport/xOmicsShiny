@@ -26,3 +26,14 @@ box-plot
 cv-distribution
 help-1
 pca-plot-1
+set-up-r-environment
+metabase-users
+set-up-configure-files
+set-up-gene-sets
+deg-module
+deg-counts
+volcano-plot-static
+volcano-plot-interactive
+degs-and-deps-in-two-comparisons
+data-table-1
+mulitple-volcano-plots
