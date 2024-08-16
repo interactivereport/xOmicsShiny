@@ -5,7 +5,7 @@
 ##
 ##@file: network.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 05/23/2023
+##@Date : 08/14/2024
 ##@version 3.0
 
 ##########################################################################################################
@@ -18,41 +18,71 @@ library(networkD3)
 
 network_ui <- function(id) {
 	ns <- shiny::NS(id)
-		fluidRow(
-			column(3,
-				wellPanel(
-					 uiOutput(ns('loadedprojects')),
-					radioButtons(ns("label"),label="Select Gene Label",inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="Gene.Name"),
-					selectizeInput(ns("sel_net_gene"),	label="Gene Name (Select 1 or more)",	choices = NULL,	multiple=TRUE, options = list(placeholder =	'Type to search')),
-					sliderInput(ns("rcut"), label= "Choose r Cutoff",  min = 0.5, max = 1, value = 0.9, step=0.02),
-					selectInput(ns("pcut"), label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01),
-					textOutput(ns("networkstat")),
-					uiOutput(ns("myTabUI"))
-				)
+	fluidRow(
+		column(3,
+			wellPanel(
+				uiOutput(ns('loadedprojects')),
+				radioButtons(ns("label"),label="Select Gene by",inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="Gene.Name"),
+				selectizeInput(ns("sel_gene"),	label="Gene Name (Select 1 or more)",	choices = NULL,	multiple=TRUE, options = list(placeholder =	'Type to search')),
+				fluidRow(
+					column(width=8, sliderInput(ns("rcut"), label= "Choose r Cutoff",  min = 0.7, max = 1, value = 0.9, step=0.05)),
+					column(width=4, selectInput(ns("pcut"), label= "Choose P Value Cutoff", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05),selected=0.01))
+				),
+				textOutput(ns("networkstat")),
+				uiOutput(ns("myTabUI")),
+				tags$hr(style="border-color: black;"),
+				conditionalPanel(ns = ns, "input.tabset=='visNetwork'",
+					tags$h4("Node Options:"),
+					tags$h5("Label inside: ellipse, circle"),
+					tags$h5("Label outside: diamond, star, triangle, triangleDown, hexagon, square."),
+					fluidRow(
+						column(width=6, colourpicker::colourInput(ns("nodecolor"), "Node Color", "#1E90FF", palette = "limited")),
+						column(width=6, selectizeInput(ns("nodeshape"), label= "Node Shape", choices = c("ellipse"="ellipse","circle"="circle","diamond"="diamond","star"="star","triangle"="triangle","triangleDown"="triangleDown","hexagon"="hexagon","square"="square"),selected = "ellipse"))
+					),
+					sliderInput(ns("nodesize"), "Node Size", min = 10, max = 40, step = 5, value = 25),
+					tags$h4("Edge Options:"),
+					fluidRow(
+						column(width=6, colourpicker::colourInput(ns("poscolor"), "Positive corr", "#FF0000", palette = "limited")),
+						column(width=6, colourpicker::colourInput(ns("negcolor"), "Negative corr", "#1E90FF", palette = "limited"))
+					),
+					sliderInput(ns("edgewidth"), "Edge Width (relative to abs(r)):", min = 10, max = 50, step = 10, value = 20),
+					tags$h4("Label Options:"),
+					fluidRow(
+						column(width=4, colourpicker::colourInput(ns("labelcolor"), "Label Color", "#FF0000", palette = "limited")),
+						column(width=8, sliderInput(ns("fontsize"), "Label Font Size", min = 10, max = 30, step = 2, value = 16))
+					),
+					tags$h4("Format Options:"),
+					radioButtons(ns("layout"), label= "Layout", choices= c("Random"="Random", "Hierarchical"="Hierarchical"), inline = TRUE, selected = "Random"),
+					radioButtons(ns("highlighted"), label= "Highlighted Input", choices = c("no" = "no", "yes" = "yes"), inline = TRUE, selected = "no"),
+					radioButtons(ns("freeze"), label= "Plot Freeze", choices = c("no" = "no", "yes" = "yes"), inline = TRUE, selected = "no")
+				))
 			),
 			column(9,
-				tabsetPanel(id="Network_tabset",
-					tabPanel("visNetwork", visNetworkOutput(ns("visnetwork"), height="800px"), style = "background-color: #eeeeee;"),
-					tabPanel("networkD3", forceNetworkOutput(ns("networkD3"), height="800px"), style = "background-color: #eeeeee;"),
-					tabPanel(title="Data Table",	DT::dataTableOutput(ns("dat_network"))),
-					tabPanel(title="Help", htmlOutput("help_network"))
+				tabsetPanel(id=ns("tabset"),
+					tabPanel(title="visNetwork", value ="visNetwork",
+						actionButton(ns("plotvisnetwork"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+					visNetworkOutput(ns("visnetwork"), height="800px"), style = "background-color: #eeeeee;"),
+						tabPanel(title="networkD3", value ="networkD3",
+							actionButton(ns("plotnetworkD3"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+						forceNetworkOutput(ns("networkD3"), height="800px"), style = "background-color: #eeeeee;"),
+							tabPanel(title="Data Table", DT::dataTableOutput(ns("dat_network"))),
+							tabPanel(title="Help", htmlOutput("help_network"))
+						)
+					)
 				)
-			)
-		)
-}
-
+			}
 
 network_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- session$ns
 			output$loadedprojects <- renderUI({
-			  req(length(working_project()) > 0)
-			  radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+				req(length(working_project()) > 0)
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
 			})
-			
+
 			observeEvent(input$current_dataset, {
-			  working_project(input$current_dataset)
+				working_project(input$current_dataset)
 			})
 
 			DataNetworkReactive <- reactive({
@@ -84,7 +114,6 @@ network_server <- function(id) {
 					cor_res <- Hmisc::rcorr(as.matrix(t(data_wide)))
 					cormat <- cor_res$r
 					pmat <- cor_res$P
-				#	cormat <- coop::pcor(as.matrix(t(data_wide)))
 
 					ut <- upper.tri(cormat)
 					network <- tibble (
@@ -95,18 +124,15 @@ network_server <- function(id) {
 						direction = as.integer(sign(cormat[ut]))
 					)
 					network <- network %>% mutate_if(is.factor, as.character) %>%
-				dplyr::filter(!is.na(cor) & abs(cor) > 0.7 & p < 0.05)
-				#	dplyr::filter(!is.na(cor) & abs(cor) > 0.7)
+					dplyr::filter(!is.na(cor) & abs(cor) > 0.7 & p < 0.05)
 
 					if (nrow(network)>2e6) {
 						network <- network %>% mutate_if(is.factor, as.character) %>%
 						dplyr::filter(!is.na(cor) & abs(cor) > 0.8 & p < 0.005)
-						#dplyr::filter(!is.na(cor) & abs(cor) > 0.8)
 					}
 					if (nrow(network)>2e6) {
 						network <- network %>% mutate_if(is.factor, as.character) %>%
 						dplyr::filter(!is.na(cor) & abs(cor) > 0.85 & p < 0.005)
-						#dplyr::filter(!is.na(cor) & abs(cor) > 0.85)
 					}
 					save(network,
 					file =  paste("networkdata/", DataInSets[[working_project()]]$ProjectID, ".RData", sep = ""))
@@ -114,13 +140,12 @@ network_server <- function(id) {
 					})
 				}
 
-				sel_gene = input$sel_net_gene
+				sel_gene = input$sel_gene
 				tmpids = ProteinGeneName[unique(na.omit(c(apply(ProteinGeneName, 2, function(k) match(sel_gene, k))))), ]
 
-				edges.sel <- network %>% dplyr::filter((from %in% tmpids$UniqueID) |	(to %in% tmpids$UniqueID))
+				edges.sel <- network %>% dplyr::filter((from %in% tmpids$UniqueID) | (to %in% tmpids$UniqueID))
 				rcutoff <- as.numeric(input$rcut)
-				pvalcutoff <- as.numeric(as.character(input$pcut))
-				#edges <- dplyr::filter(edges.sel, abs(cor) > rcutoff & p < pvalcutoff)
+				pvalcutoff <- as.numeric(input$pcut)
 				edges <- dplyr::filter(edges.sel, abs(cor) > rcutoff)
 				networks_ids <-	unique(c(as.character(edges$from), as.character(edges$to)))
 				nodes <- ProteinGeneName %>%
@@ -138,15 +163,12 @@ network_server <- function(id) {
 				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
 				req(input$label)
 				if (input$label=="UniqueID") {
-					#DataIngenes <- ProteinGeneName %>% dplyr::select(UniqueID) %>% collect %>% .[["UniqueID"]] %>%	as.character()
-					DataIngenes <- ProteinGeneName %>% dplyr::pull(UniqueID) 
+					DataIngenes <- ProteinGeneName %>% dplyr::pull(UniqueID)
 				} else {
-					#DataIngenes <- ProteinGeneName %>% dplyr::select(Gene.Name) %>% collect %>% .[["Gene.Name"]] %>%	as.character()
-					DataIngenes <- ProteinGeneName %>% dplyr::pull(Gene.Name) 
+					DataIngenes <- ProteinGeneName %>% dplyr::pull(Gene.Name)
 				}
-				updateSelectizeInput(session,'sel_net_gene', choices= DataIngenes, server=TRUE)
+				updateSelectizeInput(session,'sel_gene', choices= DataIngenes, server=TRUE)
 			})
-
 
 			observe({
 				net <-	DataNetworkReactive()
@@ -154,70 +176,105 @@ network_server <- function(id) {
 					sprintf("\nNodes:%d  Edges:%d",	nrow(net$nodes), nrow(net$edges))
 				})
 
-				if (nrow(net$nodes) > 0 & nrow(net$nodes) < 200){
+				if (nrow(net$nodes) > 0 & nrow(net$nodes) < 500){
 					output$myTabUI <- renderUI({
-						actionButton(ns("gennet"),"Generate")
+						tags$h4("Generate plot by clicking plot/refersh button", style="color: green;")
 					})
 				} else if (nrow(net$nodes) == 0) {
 					output$myTabUI <- renderUI({
-						"Zero node. Try lower cutoffs or select other genes."
+						tags$h4("Zero node. Try lower cutoffs or select other genes.", style="color: red;")
 					})
 				} else {
 					output$myTabUI <- renderUI({
-						"Too many nodes. Try higher cutoffs or select fewer genes."
+						tags$h4("Too many nodes (limit to 500). Try higher cutoffs or select fewer genes.", style="color: red;")
 					})
 				}
 			})
 
-			observeEvent(input$gennet,{
+			observeEvent(input$plotvisnetwork,{
 				output$visnetwork <- renderVisNetwork({
 					withProgress(message = 'Making Network:', value = 0, {
 						isolate({
 							net <-	DataNetworkReactive()
-							visNetwork(net$nodes,net$edges,  height = "800px", width = "100%") %>%
-							visLayout(randomSeed = 123) %>%
-							visInteraction(navigationButtons = TRUE)
+							nodes <- net$nodes
+							edges <- net$edges
+							req(nrow(nodes)>0)
 
+							inputgenes = input$sel_gene
+							nodes <- nodes %>%
+							dplyr::mutate(sel = ifelse(label %in% inputgenes, "input gene", ""))
+
+							rcutoff <- as.numeric(input$rcut)
+							nodesize <- as.numeric(input$nodesize)
+							edgewidth <- as.numeric(input$edgewidth)
+							edges$width <- (abs(edges$cor) - rcutoff)*edgewidth
+							edges <- edges %>%
+							dplyr::mutate(color = ifelse(direction == 1,input$poscolor, input$negcolor))
+
+							pvis <- visNetwork(nodes, edges, height = "100%", width = "100%") %>%
+							visNodes(color = list(background = input$nodecolor, border = input$nodecolor, highlight = "yellow"),
+								shape = input$nodeshape, size =  nodesize,
+							font = list(color = input$labelcolor, size = input$fontsize)) %>% visInteraction(navigationButtons = TRUE)
+
+								if (input$layout == "Random"){
+									pvis <- pvis %>% visLayout(randomSeed = 123)
+								} else {
+									pvis <- pvis %>% visHierarchicalLayout()
+								}
+
+								if (input$highlighted == "yes") {
+									pvis <- pvis %>% visOptions(selectedBy = list(variable = "sel", selected = "input gene"))
+								} else {
+									pvis
+								}
+
+								if (input$freeze == "yes") {
+									pvis <- pvis %>% visInteraction(dragNodes = FALSE, dragView = FALSE, zoomView = FALSE)
+								} else {
+									pvis
+								}
+
+							})
 						})
 					})
 				})
-			})
 
-			observeEvent(input$gennet,{
-				output$networkD3 <- renderForceNetwork({
-					withProgress(message = 'Making Network:', value = 0, {
-						isolate({
-							net <-	DataNetworkReactive()
-							net$nodes$group = 1
-							net$nodes$size = 10
-							edgelist <- as.data.frame(net$edges)
-							nodes <- as.data.frame(net$nodes)
-							sources <- edgelist$from
-							targets <- edgelist$to
-							node_names <- factor(sort(unique(c(as.character(sources),  as.character(targets)))))
-							links <- data.frame(source = match(sources, node_names) - 1,target = match(targets, node_names) - 1, value = edgelist$cor)
-							nodes <- nodes[match(node_names, nodes$id),]
-							forceNetwork(Links = links, Nodes = nodes, Source = "source",
-								Target = "target", Value = "value", NodeID = "label",fontSize=7,
-							Group = "group", opacity = 0.9,zoom = TRUE, opacityNoHover = 1)
+				observeEvent(input$plotnetworkD3,{
+					output$networkD3 <- renderForceNetwork({
+						withProgress(message = 'Making Network:', value = 0, {
+							isolate({
+								net <-	DataNetworkReactive()
+								nodes <- net$nodes
+								edges <- net$edges
+								req(nrow(nodes)>0)
+								nodes$group = 1
+								nodes$size = 10
+								edgelist <- as.data.frame(edges)
+								nodes <- as.data.frame(nodes)
+								sources <- edgelist$from
+								targets <- edgelist$to
+								node_names <- factor(sort(unique(c(as.character(sources),  as.character(targets)))))
+								links <- data.frame(source = match(sources, node_names) - 1,target = match(targets, node_names) - 1, value = edgelist$cor)
+								nodes <- nodes[match(node_names, nodes$id),]
+								forceNetwork(Links = links, Nodes = nodes, Source = "source",
+									Target = "target", Value = "value", NodeID = "label",fontSize=7,
+								Group = "group", opacity = 0.9,zoom = TRUE, opacityNoHover = 1)
+							})
 						})
 					})
 				})
-			})
 
-
-			output$dat_network <- DT::renderDT(server=FALSE,{
-				DataIn <- DataReactive()
-				net <-	DataNetworkReactive()
-				results <- as.data.frame(net$edges)
-				results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
-				DT::datatable(results, extensions = 'Buttons', options = list(dom = 'lBfrtip', pageLength = 15,
-					buttons = list(
-						list(extend = "csv", text = "Download Page", filename = "Page_results",	exportOptions = list(modifier = list(page = "current"))),
-						list(extend = "csv", text = "Download All", filename = "All_Results",	exportOptions = list(modifier = list(page = "all")))
-					)
-				))
-			})
-		}
-	)
-}
+				output$dat_network <- DT::renderDT(server=FALSE,{
+					net <-	DataNetworkReactive()
+					results <- as.data.frame(net$edges)
+					results[,sapply(results,is.numeric)] <- signif(results[,sapply(results,is.numeric)],3)
+					DT::datatable(results, extensions = 'Buttons', options = list(dom = 'lBfrtip', pageLength = 15,
+						buttons = list(
+							list(extend = "csv", text = "Download Page", filename = "Page_results",	exportOptions = list(modifier = list(page = "current"))),
+							list(extend = "csv", text = "Download All", filename = "All_Results",	exportOptions = list(modifier = list(page = "all")))
+						)
+					))
+				})
+			}
+		)
+	}
