@@ -3,7 +3,7 @@
 ##
 ##@file: pcsfmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 05/23/2023
+##@Date : 08/19/2024
 ##@version 3.0
 ###########################################################################################################
 ## PCSF Network
@@ -14,19 +14,72 @@ library(PCSF)
 library(visNetwork)
 load("db/hgnc.RData")
 load("db/kegg.pathways.RData")
+data("STRING")
+
+ORAEnrichment <- function(deGenes,universe, gsets, logFC, Dir="Both"){
+	deGenes = deGenes[which(deGenes %in% universe)]
+	tmp = rep(NA, length(gsets))
+	ora.stats = data.frame(p.value=tmp, p.adj = tmp, DeGeneNum=tmp,DE_UpGene= tmp, DE_DownGene=tmp, SetNum = tmp, N_q=tmp, Fold_Enrich=tmp, SetNumAll=tmp, Total_DEG=tmp, Total_Gene=tmp,  DeGene_in_Set=tmp)
+
+	totalDE = length(deGenes)
+	if (Dir=="Up") {
+		totalDE = sum(logFC > 0)
+	} else if (Dir=="Down") {
+		totalDE = sum(logFC < 0)
+	}
+	n = length(universe) - totalDE
+
+	for (j in 1:length(gsets)){
+		gset = gsets[[j]]
+		DEinS = intersect(gset, deGenes)
+		logFCinS = logFC[DEinS]
+		totalDEinS = length(intersect(gset, deGenes))
+		totalSinUniverse = length(intersect(gset, universe))
+
+		N_q=totalDEinS- 0.5
+		if (Dir=="Up") {
+			N_q=length(logFCinS[logFCinS > 0])-0.5; DEinS<-names(logFCinS[logFCinS > 0])
+		} else if (Dir=="Down") {
+			N_q=length(logFCinS[logFCinS < 0])-0.5; DEinS<-names(logFCinS[logFCinS < 0])
+		}
+
+		ora.stats[j, "p.value"] = phyper(q = N_q, m=totalDE, n = n, k = totalSinUniverse, lower.tail = FALSE)
+		ora.stats[j, "DeGeneNum"] = totalDEinS
+		ora.stats[j, "SetNum"] = totalSinUniverse  #previous versions used length(gset)
+		ora.stats[j, "DE_UpGene"] = length(logFCinS[logFCinS > 0])
+		ora.stats[j, "DE_DownGene"] = length(logFCinS[logFCinS < 0])
+		ora.stats[j, "N_q"]=N_q
+		ora.stats[j, "SetNumAll"]=length(gset)
+		ora.stats[j, "Fold_Enrich"]= round( (totalDEinS/totalDE) / (totalSinUniverse/length(universe) )*100)/100
+		ora.stats[j, "Total_DEG"]=totalDE
+		ora.stats[j, "Total_Gene"]=length(universe)
+		ora.stats[j, "DeGene_in_Set"]=paste(DEinS, collapse = ",")
+
+	}
+	ora.stats[, "p.adj"] = p.adjust(ora.stats[, "p.value"], method = "BH")
+	ora.stats[, "DE_Direction"]=Dir
+	ora.stats<-ora.stats%>%mutate(GeneSet= names(gsets))%>%
+	arrange(p.value, dplyr::desc(N_q))%>% rownames_to_column('rank')%>%dplyr::select(-N_q)%>%relocate(GeneSet)
+
+	return(ora.stats)
+}
 
 pcsf_ui <- function(id) {
 	ns <- shiny::NS(id)
 	fluidRow(
 		column(3,
 			wellPanel(
-				selectInput(ns("test"), label="Select Test", choices=NULL),
-				column(width=6, selectInput(ns("fccut"), label= "Choose Fold Change Threshold", choices= c("all"=0,"1.2"=0.263,"1.5"=0.584,"2"=1,"3"=1.585,"4"=2), selected = 0.263)),
-				column(width=6, selectInput(ns("pvalcut"), label= "Choose P-value Threshold", choices= c("0.0001"=0.0001,"0.001"=0.001,"0.01"=0.01,"0.05"=0.05,"all"=1),selected=0.01)),
-				radioButtons(ns("psel"), label= "P value or P.adj Value?", choices= c("Pval"="Pval","Padj"="Padj"),inline = TRUE),
-				span(textOutput(ns("PCSFfilteredgene")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
-				#textOutput(ns("PCSFfilteredgene")),
-				#tags$head(tags$style("#PCSFfilteredgene{color: red;	font-size: 20px; font-style: italic;}")),
+				uiOutput(ns('loadedprojects')),
+				selectInput(ns("test"), label="Select Comparison Group", choices=NULL),
+
+				fluidRow(
+					column(width=6, numericInput(ns("FCcut"), label= "Fold Change Cutoff", value = 1.2, min=1, step=0.1)),
+					column(width=6, numericInput(ns("pvalcut"), label= "P Value Cutoff", value=0.01, min=0, step=0.001))
+				),
+				radioButtons(ns("psel"), label= "P value or P.adj Value?", choices= c("Pval"="Pval", "Padj"="Padj"), inline = TRUE),
+				span(textOutput(ns("filteredgene")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+				span(textOutput(ns("filteredgene2")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+				uiOutput(ns("myTabUI")),
 				radioButtons(ns("PCSFMSigDB"), label= "MSigDB Collections",
 					choices= c("KEGG Pathway" = "KEGG",
 						"c2.cgp (chemical and genetic perturbations)" = "c2.cgp.v6.1",
@@ -41,25 +94,36 @@ pcsf_ui <- function(id) {
 						"c6.all (oncogenic signatures)" = "c6.all.v6.1",
 						"c7.all (immunologic signatures)" = "c7.all.v6.1",
 					"h.all.v6.1 (hallmark gene sets)" = "h.all.v6.1"),
-				selected = "KEGG"),
-				uiOutput(ns("PCSFTabUI"))
+				selected = "KEGG")
 			)
 		),
 		column(9,
 			tabsetPanel(id="tabset",
-				tabPanel("PCSF network", visNetworkOutput(ns("PCSFnetwork"), height="800px"), style = "background-color: #eeeeee;"),
-				tabPanel("PCSF Function Cluster", visNetworkOutput(ns("PCSFCluster"), height="800px"), style = "background-color: #eeeeee;"),
-				tabPanel(title="Data Output",	DT::dataTableOutput(ns("dat_PCSFnetwork"))),
-				tabPanel(title="Help", htmlOutput("help_PCSFnetwork"))
-			)#tabsetPanel
-		)#column
-	)
-}
+				tabPanel(title="PCSF network", value ="PCSF network",
+					actionButton(ns("plotPCSF"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+				visNetworkOutput(ns("PCSFnetwork"), height="800px"), style = "background-color: #eeeeee;"),
+					tabPanel(title="PCSF Function Cluster", value ="PCSF Function Cluster",
+						actionButton(ns("plotPCSFCluster"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+					visNetworkOutput(ns("PCSFCluster"), height="800px"), style = "background-color: #eeeeee;"),
+						tabPanel(title="Help", htmlOutput("help_PCSFnetwork"))
+					)
+				)
+			)
+		}
 
 pcsf_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
 			ns <- session$ns
+
+			output$loadedprojects <- renderUI({
+				req(length(working_project()) > 0)
+				radioButtons(ns("current_dataset"), label = "Change Working Dataset", choices=DS_names(), inline = F, selected=working_project())
+			})
+
+			observeEvent(input$current_dataset, {
+				working_project(input$current_dataset)
+			})
 
 			observe({
 				req(length(working_project()) > 0)
@@ -68,121 +132,95 @@ pcsf_server <- function(id) {
 				updateSelectizeInput(session,'test',choices=tests, selected=tests[1])
 			})
 
-
 			observe({
 				req(length(working_project()) > 0)
 				req(DataInSets[[working_project()]]$results_long)
-				results_long = DataInSets[[working_project()]]$results_long
-				test = input$test
-				fccut = as.numeric(input$fccut)
-				pvalcut = as.numeric(input$pvalcut)
+				results_long <- DataInSets[[working_project()]]$results_long
 
 				req(input$psel)
-				if (input$psel == "Padj") {
-					filteredgene = results_long %>%
-					dplyr::filter(abs(logFC) > fccut & Adj.P.Value < pvalcut) %>%
-					dplyr::filter(test == test)
-				} else {
-					filteredgene = results_long %>%
-					dplyr::filter(abs(logFC) > fccut & P.Value < pvalcut) %>%
-					dplyr::filter(test == test)
-				}
+				p_sel   <- input$psel
+				test_sel <- input$test
+				FCcut <- log2(as.numeric(input$FCcut))
+				pvalcut <- as.numeric(input$pvalcut)
+				sel_label <- "UniqueID"
+				direction <- "UpDown"
+				tmpdat <- GeneFilter(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label)
+				output$filteredgene <- renderText({paste("Genes Pass Cutoff (DEGs):",nrow(tmpdat),sep="")})
+				output$filteredgene2 <- renderText({paste("Genes Up: ", sum(tmpdat$logFC>0), "; Genes Down: ", sum(tmpdat$logFC<0),sep="")})
 
-				output$PCSFfilteredgene <- renderText({paste("Selected Genes:",nrow(filteredgene),sep="")})
-
-				if (nrow(filteredgene) > 0 & 	nrow(filteredgene) < 500){
-					output$PCSFTabUI <- renderUI({
-						actionButton(ns("runPCSF"),"Generate PCSF")
+				if (nrow(tmpdat) < 5) {
+					output$myTabUI <- renderUI({
+						tags$h4("Minimal 5 nodes. Try lower cutoffs.", style="color: red;")
 					})
-
+				} else if (nrow(tmpdat) > 500) {
+					output$myTabUI <- renderUI({
+						tags$h4("Maximal 500 nodes. Try higher cutoffs", style="color: red;")
+					})
 				} else {
-					output$PCSFTabUI <- renderUI({
-						"too many genes or zero gene"
+					output$myTabUI <- renderUI({
+						tags$h4("Generate plot by clicking plot/refersh button", style="color: green;")
 					})
 				}
 
 			})
 
+			DataTerminalsReactive <- reactive({
 
-
-			DataPCSFReactive <- reactive({
-				#browser()
-				data("STRING")
-				ppi <- construct_interactome(STRING)
-
-				#sample_group <- DataInSets[[working_project()]]$sample_group
 				results_long <- DataInSets[[working_project()]]$results_long
+				results_long <- results_long %>% dplyr::mutate (Gene.Name = toupper(Gene.Name))
 				ProteinGeneName <- DataInSets[[working_project()]]$ProteinGeneName
-				test = input$test
-				FCcut = as.numeric(input$fccut)
+				ProteinGeneName <-ProteinGeneName %>%
+				dplyr::mutate (Gene.Name = toupper(Gene.Name))
+
+				req(input$psel)
+				p_sel   <- input$psel
+				test_sel <- input$test
+
+				FCcut = log2(as.numeric(input$FCcut))
 				pvalcut = as.numeric(input$pvalcut)
-			
-				if (input$psel == "Padj") {
-					terminals.df = results_long %>%
-					dplyr::filter(abs(logFC) > FCcut & Adj.P.Value < pvalcut)
-				} else {
-					terminals.df = results_long %>%
-					dplyr::filter(abs(logFC) > FCcut & P.Value < pvalcut)
-				}
+				sel_label <- "UniqueID"
+				direction <- "UpDown"
+
+				terminals.df <- GeneFilter(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label)
+				req(nrow(terminals.df) > 0 & nrow(terminals.df) < 500)
 
 				terminals.df <- terminals.df %>%
-				dplyr::filter(test == test) %>%
-				dplyr::filter(!is.na(`Gene.Name`)) %>%
-				dplyr::arrange(desc(abs(logFC))) %>%
-				distinct(.,Gene.Name,.keep_all = TRUE) %>%
-				as.data.frame()
-
-				terminals.df <- dplyr::inner_join(hgnc,terminals.df, by=c("symbol"="Gene.Name"))
-
+				dplyr::inner_join(hgnc, ., by=c("symbol"="Gene.Name"))
 
 				all_genes <- dplyr::filter(ProteinGeneName, !is.na(`Gene.Name`)) %>%
 				dplyr::select(one_of(c("Gene.Name"))) %>%
 				dplyr::inner_join(hgnc,., by=c("symbol"="Gene.Name")) %>%
-				#dplyr::select(one_of(c("entrez_id"))) %>% collect %>%	.[["entrez_id"]] %>% as.character() %>% unique()
 				dplyr::pull(entrez_id) %>% unique()
 
 				terminals <- as.numeric(as.data.frame(terminals.df)[,"logFC"])
 				terminals <- 2^abs(terminals)
 				names(terminals) <- as.data.frame(terminals.df)[,"symbol"]
 
+				return(list("terminals.df" = terminals.df, "terminals"= terminals, "all_genes"= all_genes))
+			})
+
+			DataPCSFReactive <- reactive({
+				if (!exists("ppi")) {
+					ppi <- construct_interactome(STRING)
+				}
+
+				terminaldata <- DataTerminalsReactive()
+				terminals.df <- terminaldata$terminals.df
+				terminals <- terminaldata$terminals
+				all_genes <- terminaldata$all_genes
 				set.seed(123)
-				subnet <- PCSF::PCSF_rand(ppi, terminals, n=10, r = 0.1, w = 2, b = 1, mu = 0.0005)
+				isolate({
+					subnet <- PCSF::PCSF_rand(ppi, terminals, n=10, r = 0.1, w = 2, b = 1, mu = 0.0005)
+				})
+
 				return(list("subnet" = subnet, "terminals.df" = terminals.df, "terminals"= terminals, "all_genes"= all_genes))
 			})
 
-
-			#library(RMySQL)
-			#mydb = dbConnect(MySQL(), user='bgao', password='sqladmin', host='camhpcprot01.biogen.com', dbname="msdata")
-			#
-			#statement = "SELECT PARTICIPANT_A, PARTICIPANT_B, INTERACTION_TYPE, INTERACTION_PUBMED_ID,INTERACTION_DATA_SOURCE FROM `pathwaycommonsv9` WHERE `INTERACTION_TYPE` IN ('controls-state-change-of', 'controls-phosphorylation-of', 'interacts-with','in-complex-with')"
-			#rs <- dbSendQuery(mydb, statement)
-			#sql.r = fetch(rs, n = -1)
-			#dbClearResult(rs)
-			#
-			#sql.cost <-
-			#dplyr::mutate(sql.r, cost = if_else (INTERACTION_TYPE %in% c('controls-state-change-of', 'controls-phosphorylation-of'), 0.6, 0.1)) %>%
-			#dplyr::mutate(PubmedN = str_count(INTERACTION_PUBMED_ID,';')) %>%
-			#dplyr::mutate(
-			#	cost2 = case_when(
-			#		PubmedN <= 1 ~ 0,
-			#		PubmedN == 2 ~ 0.1,
-			#		PubmedN == 3 ~ 0.2,
-			#		PubmedN == 4 ~ 0.3,
-			#		PubmedN > 4 ~ 0.4,
-			#	)
-			#) %>%
-			#dplyr::mutate(cost = cost + cost2) %>%
-			#dplyr::select(one_of("PARTICIPANT_A", "PARTICIPANT_B", "cost")) %>%
-			#dplyr::arrange(., desc(cost)) %>%
-			#dplyr::rename(from=PARTICIPANT_A, to=PARTICIPANT_B) %>%
-			#dplyr::distinct(from,to,.keep_all=TRUE)
-			#ppi <- construct_interactome(sql.cost)
-
-			observeEvent(input$runPCSF,{
+			observeEvent(input$plotPCSF,{
 				output$PCSFnetwork <- renderVisNetwork({
 					withProgress(message = 'Making Network:', value = 0, {
 						isolate({
-							PCSFData <-	DataPCSFReactive()
+							PCSFData <- DataPCSFReactive()
 							subnet <- PCSFData$subnet
 							plot.PCSF(subnet, style = 1, edge_width=5, node_size=40, node_label_cex = 40, Steiner_node_color = "lightblue", Terminal_node_color = "lightgreen")
 						})
@@ -190,8 +228,7 @@ pcsf_server <- function(id) {
 				})
 			})
 
-
-			observeEvent(input$runPCSF,{
+			observeEvent(input$plotPCSFCluster,{
 				output$PCSFCluster <- renderVisNetwork({
 					withProgress(message = 'Making Network:', value = 0, {
 						isolate({
@@ -213,16 +250,19 @@ pcsf_server <- function(id) {
 								if (input$PCSFMSigDB == "KEGG") {
 									gsets = kegg.pathways$human$kg.sets
 								} else {
+									if (!exists("gmtlist")) {
+										load("db/gmtlist.RData")
+									}
+
 									gsets <- gmtlist[[input$PCSFMSigDB]]
 								}
-								#gsa <- ORAEnrichment (deGenes=names(sig_genes), universe=all_genes, gsets, logFC =sig_genes)
-
-								gsa <- ORAEnrichment(deGenes=names(sig_genes), universe = all_genes, detected_genes = all_genes, gsets, logFC = sig_genes, Dir = "Both")
+								gsa <- ORAEnrichment(deGenes=names(sig_genes), universe = all_genes, gsets, logFC = sig_genes, Dir = "Both")
 
 								res <- 	gsa %>%
 								rownames_to_column(var="ID") %>%
 								dplyr::filter(p.value < 0.05) %>%
-								dplyr::slice(1:10)
+								dplyr::slice(1:10) %>%
+								dplyr::select(GeneSet, rank, p.value, p.adj, DeGeneNum, DE_UpGene, DE_DownGene, SetNum)
 
 								res[,sapply(res,is.numeric)] <- signif(res[,sapply(res,is.numeric)],3)
 
@@ -262,21 +302,6 @@ pcsf_server <- function(id) {
 					})
 				})
 			})
-			#termlist <- c()
-			#for ( i in 1:length(enrichment_result_complete)) {
-			#	cluster <- 	enrichment_result_complete[[i]]
-			#	colnames(cluster) <- make.names(colnames(cluster))
-			#	cluster <- dplyr::filter(cluster, p.value < 0.01) %>%
-			#	#dplyr::select(one_of("Term", "Overlap","p.value", "Genes","cluster")) %>%
-			#	dplyr::mutate(Adjusted.P.value =  round(as.numeric(p.value),6)) %>%
-			#	dplyr::arrange(Adjusted.P.value) %>%
-			#	dplyr::slice(1:10) %>%
-			#	dplyr::mutate(cluster = i) %>%
-			#	as.data.frame()
-			#	termlist <- rbind(termlist,cluster)
-			#}
-			#termlist
-			#
 		}
 	)
 }
