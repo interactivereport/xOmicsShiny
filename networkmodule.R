@@ -175,18 +175,18 @@ network_server <- function(id) {
 				output$networkstat <- renderText({
 					sprintf("\nNodes:%d  Edges:%d",	nrow(net$nodes), nrow(net$edges))
 				})
-
-				if (nrow(net$nodes) > 0 & nrow(net$nodes) < 500){
-					output$myTabUI <- renderUI({
-						tags$h4("Generate plot by clicking plot/refersh button", style="color: green;")
-					})
-				} else if (nrow(net$nodes) == 0) {
+				
+				if (nrow(net$nodes) == 0) {
 					output$myTabUI <- renderUI({
 						tags$h4("Zero node. Try lower cutoffs or select other genes.", style="color: red;")
 					})
-				} else {
+				} else if (nrow(net$nodes) > 500) {
 					output$myTabUI <- renderUI({
 						tags$h4("Too many nodes (limit to 500). Try higher cutoffs or select fewer genes.", style="color: red;")
+					})
+				} else {
+					output$myTabUI <- renderUI({
+						tags$h4("Generate plot by clicking plot/refersh button", style="color: green;")
 					})
 				}
 			})
