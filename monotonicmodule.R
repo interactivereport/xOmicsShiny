@@ -505,7 +505,8 @@ monotonic_server <- function(id) {
 				}
 
 				data_long_tmp  <- dplyr::filter(data_long, UniqueID %in% sel_gene) %>%
-				dplyr::filter(treatment %in% sel_treatment) %>% as.data.frame()
+				dplyr::filter(treatment %in% sel_treatment) %>% as.data.frame() %>%
+		    dplyr::arrange(Gene.Name)
 				data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
 				data_long_tmp$treatment = factor(data_long_tmp$treatment, levels = sel_treatment)
 
