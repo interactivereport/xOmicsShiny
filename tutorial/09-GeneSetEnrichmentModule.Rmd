@@ -24,7 +24,7 @@ The page looks a bit different for the ORA analysis result. It does not have the
 
 [![](`r pic_path`f9-4.png)](`r pic_path`f9-4.png)
 
-## Gene Set Heat Map
+## Gene Set Heatmap
 
 Like the “Gene Expression” tab, users have the ability to plot expression of the genes in the pathway term selected as a heatmap. The plot can use all the genes in the gene set or just the leading/DE genes.This visualization shows that almost all the Phagosome genes are enriched in the same direction. 
 

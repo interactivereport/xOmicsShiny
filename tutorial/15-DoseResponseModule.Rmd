@@ -42,3 +42,8 @@ Users can select their own gene list by using the "Upload Genes" option. Then th
 
 [![](`r pic_path`f15-7.png)](`r pic_path`f15-7.png)
 
+If user has done the model fitting to the filtered data in the Result Table (all) tab, then this page shows the plot for the filtered genes.
+
+[![](`r pic_path`f15-8.png)](`r pic_path`f15-8.png)
+
+

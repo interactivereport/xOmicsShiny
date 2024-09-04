@@ -104,3 +104,4 @@ dendrogram
 gene-clusters
 pcsf-network
 pcsf-function-cluster
+gene-set-heatmap
