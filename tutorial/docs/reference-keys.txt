@@ -100,3 +100,7 @@ intersection-output-1
 upsets-1
 upsets-table-1
 wgcna-module
+dendrogram
+gene-clusters
+pcsf-network
+pcsf-function-cluster

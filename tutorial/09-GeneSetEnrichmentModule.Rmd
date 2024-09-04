@@ -10,7 +10,7 @@ This first tab lets the users pick a particular comparison, select a species pat
 
 ## Over-Representation Analysis (ORA)
 
-This tab lets the users to test a gene list by either picking a particular comparison with the comparison cutoffs set or providing a customized gene list. Then select a species pathway database, set analysis statistical cutoff criteria and select select gene set database(s) from a list of different databases for over-represented analysis(ORA). 
+This tab lets the users to test a gene list by either picking a particular comparison with the comparison cutoffs set or providing a customized gene list. Then select a species pathway database, set analysis statistical cutoff criteria and select select gene set database(s) from a list of different databases for over-representation analysis(ORA). 
 
 [![](`r pic_path`f9-2.png)](`r pic_path`f9-2.png)
 

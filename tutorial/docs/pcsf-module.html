@@ -157,7 +157,11 @@
 <li class="chapter" data-level="10.2" data-path="pattern-clustering-module.html"><a href="pattern-clustering-module.html#optimal-number-of-clusters"><i class="fa fa-check"></i><b>10.2</b> Optimal Number of Clusters</a></li>
 <li class="chapter" data-level="10.3" data-path="pattern-clustering-module.html"><a href="pattern-clustering-module.html#data-table-2"><i class="fa fa-check"></i><b>10.3</b> Data Table</a></li>
 </ul></li>
-<li class="chapter" data-level="11" data-path="wgcna-module.html"><a href="wgcna-module.html"><i class="fa fa-check"></i><b>11</b> WGCNA Module</a></li>
+<li class="chapter" data-level="11" data-path="wgcna-module.html"><a href="wgcna-module.html"><i class="fa fa-check"></i><b>11</b> WGCNA Module</a>
+<ul>
+<li class="chapter" data-level="11.1" data-path="wgcna-module.html"><a href="wgcna-module.html#dendrogram"><i class="fa fa-check"></i><b>11.1</b> Dendrogram</a></li>
+<li class="chapter" data-level="11.2" data-path="wgcna-module.html"><a href="wgcna-module.html#gene-clusters"><i class="fa fa-check"></i><b>11.2</b> Gene Clusters</a></li>
+</ul></li>
 <li class="chapter" data-level="12" data-path="correlation-network-module.html"><a href="correlation-network-module.html"><i class="fa fa-check"></i><b>12</b> Correlation Network Module</a>
 <ul>
 <li class="chapter" data-level="12.1" data-path="correlation-network-module.html"><a href="correlation-network-module.html#visnetwork"><i class="fa fa-check"></i><b>12.1</b> visNetwork</a></li>
@@ -173,10 +177,8 @@
 </ul></li>
 <li class="chapter" data-level="14" data-path="pcsf-module.html"><a href="pcsf-module.html"><i class="fa fa-check"></i><b>14</b> PCSF Module</a>
 <ul>
-<li class="chapter" data-level="14.1" data-path="pcsf-module.html"><a href="pcsf-module.html#venn-diagram-1"><i class="fa fa-check"></i><b>14.1</b> Venn Diagram</a></li>
-<li class="chapter" data-level="14.2" data-path="pcsf-module.html"><a href="pcsf-module.html#intersection-output-1"><i class="fa fa-check"></i><b>14.2</b> Intersection Output</a></li>
-<li class="chapter" data-level="14.3" data-path="pcsf-module.html"><a href="pcsf-module.html#upsets-1"><i class="fa fa-check"></i><b>14.3</b> UpSets</a></li>
-<li class="chapter" data-level="14.4" data-path="pcsf-module.html"><a href="pcsf-module.html#upsets-table-1"><i class="fa fa-check"></i><b>14.4</b> UpSets Table</a></li>
+<li class="chapter" data-level="14.1" data-path="pcsf-module.html"><a href="pcsf-module.html#pcsf-network"><i class="fa fa-check"></i><b>14.1</b> PCSF network</a></li>
+<li class="chapter" data-level="14.2" data-path="pcsf-module.html"><a href="pcsf-module.html#pcsf-function-cluster"><i class="fa fa-check"></i><b>14.2</b> PCSF Function Cluster</a></li>
 </ul></li>
 <li class="chapter" data-level="15" data-path="dose-response-module.html"><a href="dose-response-module.html"><i class="fa fa-check"></i><b>15</b> Dose Response Module</a>
 <ul>
@@ -211,10 +213,8 @@
 </ul></li>
 <li class="chapter" data-level="18" data-path="merge-data-module.html"><a href="merge-data-module.html"><i class="fa fa-check"></i><b>18</b> Merge Data Module</a>
 <ul>
-<li class="chapter" data-level="18.1" data-path="merge-data-module.html"><a href="merge-data-module.html#merge-data"><i class="fa fa-check"></i><b>18.1</b> Merge Data</a>
-<ul>
-<li class="chapter" data-level="18.1.1" data-path="merge-data-module.html"><a href="merge-data-module.html#data-source"><i class="fa fa-check"></i><b>18.1.1</b> Data Source</a></li>
-</ul></li>
+<li class="chapter" data-level="18.1" data-path="merge-data-module.html"><a href="merge-data-module.html#merge-data"><i class="fa fa-check"></i><b>18.1</b> Merge Data</a></li>
+<li class="chapter" data-level="18.2" data-path="merge-data-module.html"><a href="merge-data-module.html#data-source"><i class="fa fa-check"></i><b>18.2</b> Data Source</a></li>
 </ul></li>
 <li class="chapter" data-level="19" data-path="output-module.html"><a href="output-module.html"><i class="fa fa-check"></i><b>19</b> Output Module</a></li>
 <li class="chapter" data-level="20" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>20</b> References</a></li>
@@ -239,26 +239,17 @@
             <section class="normal" id="section-">
 <div id="pcsf-module" class="section level1 hasAnchor" number="14">
 <h1><span class="header-section-number">Chapter 14</span> PCSF Module<a href="pcsf-module.html#pcsf-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This module in xOmicsShiny helps users identify DEGs/DEPs/DEMs that are common or unique to different comparisons within one project. Users have the option to either visualize these DEGs/DEPs/DEMs as a highly customizable Venn Diagram (5 or less groups) or UpSets plot, or download a table with the gene/protein/metabolites names/IDs.</p>
-<div id="venn-diagram-1" class="section level2 hasAnchor" number="14.1">
-<h2><span class="header-section-number">14.1</span> Venn Diagram<a href="pcsf-module.html#venn-diagram-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>To view the DEGs/DEPs/DEMs as a Venn Diagram, users have the option to see the intersection of DEGs/DEPs/DEMs for up to 5 different comparisons. Users can also use all DEGs/DEPs/DEMs or restrict it to the ones that are Up or Down regulated.</p>
-<p><a href="Figures/f13-1.png"><img src="Figures/f13-1.png" /></a></p>
+<p>The PCSF package performs fast and user-friendly network analysis using Prize-collecting Steiner Forest (PCSF) algorithm of high-throughput data by mapping the data onto a biological networks such as gene-gene, protein-protein interaction or any other correlation or coexpression based networks. Using the existing gene set or pathway database as a template, it determines high-confidence subnetworks relevant to the data, which potentially leads to predictions of enriched gene sets or pathways.</p>
+<p>This module has 2 functional tabs: PCSF network and PCSF Function Cluster.</p>
+<div id="pcsf-network" class="section level2 hasAnchor" number="14.1">
+<h2><span class="header-section-number">14.1</span> PCSF network<a href="pcsf-module.html#pcsf-network" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab shows the results of the computed high-confidence subnetwork relevant to the input data.</p>
+<p><a href="Figures/f14-1.png"><img src="Figures/f14-1.png" /></a></p>
 </div>
-<div id="intersection-output-1" class="section level2 hasAnchor" number="14.2">
-<h2><span class="header-section-number">14.2</span> Intersection Output<a href="pcsf-module.html#intersection-output-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This tab lets the User view the individual genes that were present in the Venn Diagram and the distribution of the genes in intersection regions.</p>
-<p><a href="Figures/f13-2.png"><img src="Figures/f13-2.png" /></a></p>
-</div>
-<div id="upsets-1" class="section level2 hasAnchor" number="14.3">
-<h2><span class="header-section-number">14.3</span> UpSets<a href="pcsf-module.html#upsets-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>When there are many comparisons, UpSets plot is often used to show the grouping combinations. The dots and dot connected lines indicates the group combination and the bar plot shows the numbers of each combination. There are 3 combination modes available to make the plot: intersect, distinct and union. The distinct mode produces the result that are equivalent to the numbers in the Venn Diagram.</p>
-<p><a href="Figures/f13-3.png"><img src="Figures/f13-3.png" /></a></p>
-</div>
-<div id="upsets-table-1" class="section level2 hasAnchor" number="14.4">
-<h2><span class="header-section-number">14.4</span> UpSets Table<a href="pcsf-module.html#upsets-table-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>Here it shows the table that listing all the combination groups with the number of count and all the DEGs/DEPs/DEMs in each combination group.</p>
-<p><a href="Figures/f13-4.png"><img src="Figures/f13-4.png" /></a></p>
+<div id="pcsf-function-cluster" class="section level2 hasAnchor" number="14.2">
+<h2><span class="header-section-number">14.2</span> PCSF Function Cluster<a href="pcsf-module.html#pcsf-function-cluster" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab shows the interactive version of the annotated subnetwork. The node sizes and edge widths are proportional to the amount of times that node or edge appeared in the computation process. Nodes are colored by the clusters. Users can use mouse to click on a node in a cluster to view the table listing the top 15 functional enrichment pathways for the cluster which was calculated by the over-representation analysis(ORA). Each cluster can be visualized separately by “Select by group” icon located at the upper-left corner of the figure.</p>
+<p><a href="Figures/f14-2.png"><img src="Figures/f14-2.png" /></a></p>
 
 </div>
 </div>

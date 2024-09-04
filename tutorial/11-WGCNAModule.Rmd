@@ -1,1 +1,15 @@
 # WGCNA Module
+
+This module is implemented by the WGCNA R package, which is a tool to build weighted gene correlation networks for expression data. The module contains two functional tabs: Dendrogram and Gene Clusters.
+
+## Dendrogram
+
+If the data set is a the saved projects in the CSV file, the precomputed results will be directly loaded based on up to 10,000 genes with default parameter values. For other data set or if the user want to re-run WGCNA on the saved project with a different parameter or number of genes, just click 'Re-run' and wait for a few minutes, the results will show up once the analysis is done.
+
+[![](`r pic_path`f11-1.png)](`r pic_path`f11-1.png)
+
+## Gene Clusters
+
+This tab shows a searchable table that listing all the genes for each cluster. User can use the copy button to get the complete gene list of cluster and check with other tools, for example, Heatmap.
+
+[![](`r pic_path`f11-2.png)](`r pic_path`f11-2.png)

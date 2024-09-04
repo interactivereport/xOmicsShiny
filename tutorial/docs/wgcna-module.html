@@ -157,7 +157,11 @@
 <li class="chapter" data-level="10.2" data-path="pattern-clustering-module.html"><a href="pattern-clustering-module.html#optimal-number-of-clusters"><i class="fa fa-check"></i><b>10.2</b> Optimal Number of Clusters</a></li>
 <li class="chapter" data-level="10.3" data-path="pattern-clustering-module.html"><a href="pattern-clustering-module.html#data-table-2"><i class="fa fa-check"></i><b>10.3</b> Data Table</a></li>
 </ul></li>
-<li class="chapter" data-level="11" data-path="wgcna-module.html"><a href="wgcna-module.html"><i class="fa fa-check"></i><b>11</b> WGCNA Module</a></li>
+<li class="chapter" data-level="11" data-path="wgcna-module.html"><a href="wgcna-module.html"><i class="fa fa-check"></i><b>11</b> WGCNA Module</a>
+<ul>
+<li class="chapter" data-level="11.1" data-path="wgcna-module.html"><a href="wgcna-module.html#dendrogram"><i class="fa fa-check"></i><b>11.1</b> Dendrogram</a></li>
+<li class="chapter" data-level="11.2" data-path="wgcna-module.html"><a href="wgcna-module.html#gene-clusters"><i class="fa fa-check"></i><b>11.2</b> Gene Clusters</a></li>
+</ul></li>
 <li class="chapter" data-level="12" data-path="correlation-network-module.html"><a href="correlation-network-module.html"><i class="fa fa-check"></i><b>12</b> Correlation Network Module</a>
 <ul>
 <li class="chapter" data-level="12.1" data-path="correlation-network-module.html"><a href="correlation-network-module.html#visnetwork"><i class="fa fa-check"></i><b>12.1</b> visNetwork</a></li>
@@ -211,10 +215,8 @@
 </ul></li>
 <li class="chapter" data-level="18" data-path="merge-data-module.html"><a href="merge-data-module.html"><i class="fa fa-check"></i><b>18</b> Merge Data Module</a>
 <ul>
-<li class="chapter" data-level="18.1" data-path="merge-data-module.html"><a href="merge-data-module.html#merge-data"><i class="fa fa-check"></i><b>18.1</b> Merge Data</a>
-<ul>
-<li class="chapter" data-level="18.1.1" data-path="merge-data-module.html"><a href="merge-data-module.html#data-source"><i class="fa fa-check"></i><b>18.1.1</b> Data Source</a></li>
-</ul></li>
+<li class="chapter" data-level="18.1" data-path="merge-data-module.html"><a href="merge-data-module.html#merge-data"><i class="fa fa-check"></i><b>18.1</b> Merge Data</a></li>
+<li class="chapter" data-level="18.2" data-path="merge-data-module.html"><a href="merge-data-module.html#data-source"><i class="fa fa-check"></i><b>18.2</b> Data Source</a></li>
 </ul></li>
 <li class="chapter" data-level="19" data-path="output-module.html"><a href="output-module.html"><i class="fa fa-check"></i><b>19</b> Output Module</a></li>
 <li class="chapter" data-level="20" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i><b>20</b> References</a></li>
@@ -239,7 +241,18 @@
             <section class="normal" id="section-">
 <div id="wgcna-module" class="section level1 hasAnchor" number="11">
 <h1><span class="header-section-number">Chapter 11</span> WGCNA Module<a href="wgcna-module.html#wgcna-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>This module is implemented by the WGCNA R package, which is a tool to build weighted gene correlation networks for expression data. The module contains two functional tabs: Dendrogram and Gene Clusters.</p>
+<div id="dendrogram" class="section level2 hasAnchor" number="11.1">
+<h2><span class="header-section-number">11.1</span> Dendrogram<a href="wgcna-module.html#dendrogram" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>If the data set is a the saved projects in the CSV file, the precomputed results will be directly loaded based on up to 10,000 genes with default parameter values. For other data set or if the user want to re-run WGCNA on the saved project with a different parameter or number of genes, just click ‘Re-run’ and wait for a few minutes, the results will show up once the analysis is done.</p>
+<p><a href="Figures/f11-1.png"><img src="Figures/f11-1.png" /></a></p>
+</div>
+<div id="gene-clusters" class="section level2 hasAnchor" number="11.2">
+<h2><span class="header-section-number">11.2</span> Gene Clusters<a href="wgcna-module.html#gene-clusters" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab shows a searchable table that listing all the genes for each cluster. User can use the copy button to get the complete gene list of cluster and check with other tools, for example, Heatmap.</p>
+<p><a href="Figures/f11-2.png"><img src="Figures/f11-2.png" /></a></p>
 
+</div>
 </div>
             </section>
 
