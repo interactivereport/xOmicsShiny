@@ -5,7 +5,7 @@
 ##
 ##@file: expressionmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 05/23/2023
+##@Date : 08/28/2024
 ##@version 3.0
 
 ##########################################################################################################
@@ -22,13 +22,13 @@ expression_ui <- function(id) {
 			wellPanel(
 				uiOutput(ns('loadedprojects')),
 				uiOutput(ns("selectGroupSample")),
-				conditionalPanel(ns = ns, "input.tabset !='Laser Capture Microdissection'",
+				conditionalPanel(ns = ns, "input.tabset !='Help'",
 					radioButtons(ns("subset"), label="Genes Used in Plot", choices=c("Select", "Browsing", "Upload Genes", "Geneset"), inline = TRUE, selected="Select"),
 					conditionalPanel(ns = ns, "input.subset=='Upload Genes'",
 						textAreaInput(ns("uploadlist"), "Enter Gene List", "", cols = 5, rows=6)
 					)
 				),
-				conditionalPanel(ns = ns, "input.subset=='Select' && input.tabset!='Laser Capture Microdissection'",
+				conditionalPanel(ns = ns, "input.subset=='Select'",
 					radioButtons(ns("label"),label="Search Gene or UniqueID", inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="UniqueID"),
 					selectizeInput(ns("sel_gene"),	label="Gene Name (Select 1 or more)",	choices = NULL,	multiple=TRUE, options = list(placeholder =	'Type to search'))
 				),
@@ -48,11 +48,12 @@ expression_ui <- function(id) {
 					),
 					radioButtons(ns("browsing_gene_order"), label="Order Genes by", inline = TRUE, choices = c("abs(Fold Change)","P value"))
 				),
+				radioButtons(ns("sel_geneid"), label="Select Gene Label", inline = TRUE, choices=""),
+				span(textOutput(ns("filteredgene")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+				span(textOutput(ns("filteredUniqueID")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
+				tags$hr(style="border-color: black;"),
 				conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
-					span(textOutput(ns("filteredgene")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
-					span(textOutput(ns("filteredUniqueID")), style = "color:red; font-size:15px; font-family:arial; font-style:italic"),
 					radioButtons(ns("SeparateOnePlot"), label="Separate or One Plot", inline = TRUE, choices = c("Separate Plot" = "Separate", "One Plot" = "OnePlot")),
-					radioButtons(ns("sel_geneid"), label="Select Gene Label", inline = TRUE, choices=""),
 					radioButtons(ns("plotformat"), label="Select Plot Format", inline = TRUE, choices = c("Box Plot" = "boxplot","Bar Plot" = "barplot", "Violin" = "violin","Line" = "line")),
 					radioButtons(ns("prismstyle"), label="Graphpad Prism Style", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
 					conditionalPanel(ns = ns, "input.prismstyle=='NO'",
@@ -64,12 +65,16 @@ expression_ui <- function(id) {
 							column(width=6,selectInput(ns("prismcolpalette"), label= "Select palette", choices="")),
 							column(width=6,selectInput(ns("prismfillpalette"), label= "Select palette", choices=""))
 						)
-					),
+					)
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Expression Plot' | input.tabset=='Laser Capture Microdissection'",
 					fluidRow(
 						column(width=4,sliderInput(ns("plot_ncol"), label= "Column Number", min = 1, max = 6, step = 1, value = 3)),
 						column(width=4,sliderInput(ns("plot_nrow"), label= "Row Number", min = 1, max = 6, step = 1, value = 3)),
 						column(width=4,selectInput(ns("sel_page"), label="Select Page",	choices = NULL,	selected=1))
-					),
+					)
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
 					radioButtons(ns("IndividualPoint"), label="Individual Point?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES"),
 					radioButtons(ns("ShowErrorBar"), label="Error Bar?(except box plot)", inline = TRUE, choices = c("SD" = "SD","SEM" = "SEM","NO" = "NO"), selected = "SD"),
 					radioButtons(ns("PvalueBar"), label="Show P-Values?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
@@ -119,25 +124,46 @@ expression_ui <- function(id) {
 						column(width=6, textInput(ns("scurveXlab"), "X label", value="Rank", width = "100%"))
 					),
 					sliderInput(ns("scurveXangle"), label= "X Angle", min = 0, max = 90, step = 15, value = 45),
-					radioButtons(ns("scurveright"), label="Density or histogram on Right:", inline = TRUE, choices = c("densigram" = "densigram", "density" = "density","histogram" = "histogram","boxplot" = "boxplot", "violin"= "violin"))
+					radioButtons(ns("scurveright"), label="Density or histogram on Right:", inline = TRUE, choices = c("densigram" = "densigram", "density" = "density","histogram" = "histogram","boxplot" = "boxplot", "violin"= "violin"), selected = "densigram")
+				),
+				conditionalPanel(ns = ns, "input.tabset=='Expression Correlation'",
+					conditionalPanel(ns = ns, condition = "input.sel_gene.length != 2",
+						tags$h4("Visualization of a correlation matrix options:"),
+						fluidRow(
+							column(width=6, sliderInput(ns("tlcex"), "Label Font Size:", min = 0.4, max = 2, step = 0.1, value = 0.6)),
+							column(width=6, numericInput(ns("siglevel"), label= "sig.level:", value= 0.05, min=0, max = 1, step=0.01))
+						),
+						radioButtons(ns("method"), label="Visualization Method:", inline = TRUE, choices = c("circle" = "circle", "square" = "square", "ellipse" = "ellipse", "number" = "number", "shade" = "shade", "pie" = "pie"), selected = "circle"),
+						radioButtons(ns("corrcol"), label="Color:", inline = TRUE, choices = c("RdBu" = "RdBu", "BrBG" = "BrBG", "PiYG" = "PiYG", "PRGn" = "PRGn", "PuOr" = "PuOr", "RdYlBu" = "RdYlBu"), selected = "RdBu"),
+						radioButtons(ns("type"),  label="Plot Type", inline = TRUE, choices = c("full"="full", "lower"="lower", "upper"="upper"), selected = "upper"),
+						radioButtons(ns("order"),  label="Order by", inline = TRUE, choices = c("original"="original", "Angular order of eigenvectors" = "AOE", "First principal component"="FPC", "Hierarchical clustering"="hclust", "alphabet"="alphabet"),selected = "AOE"),
+						radioButtons(ns("hclustmethod"), label="Cluster Method", inline = TRUE, choices = c("complete"="complete", "ward"="ward", "ward.D"="ward.D", "ward.D2"="ward.D2", "single"="single", "average"="average","mcquitty"="mcquitty", "median"="median", "centroid"="centroid"),selected = "complete"),
+						radioButtons(ns("diag"), label="Show Principal Diagonal", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES")
+					)
 				),
 				conditionalPanel(ns = ns, "input.tabset=='Laser Capture Microdissection'",
 					selectizeInput(ns("sel_image"), label="Select Images",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search')),
-					radioButtons(ns("label_lcm"), label="Search Gene or UniqueID", inline = TRUE, choices=c("UniqueID", "Gene.Name"), selected="UniqueID"),
-					selectizeInput(ns("sel_gene_lcm"),	label="Gene Name (Select 1)",	choices = NULL,	multiple=FALSE, options = list(placeholder =	'Type to search')),
-					radioButtons(ns("lcm_format"), label="Plot Format", inline = TRUE, choices = c( "Expressoin (side by side)" = "exp_side","Group (side by side)" = "group_side", "Expression (overlay)"="exp_overlay",  "Group (overlay)" = "group_overlay"), selected = "exp_side"),
-					selectInput(ns("lcmcolpalette"), label= "Select Color Palette", choices=""),
-					fluidRow(
-						column(width=6, sliderInput(ns("LCM_alpha"), "Transparancy", min = 0, max = 1, step = 0.1, value = 0.5)),
-						column(width=6, sliderInput(ns("LCM_axisfontsize"), "Axis Font Size:", min = 12, max = 28, step = 4, value = 16))
+					radioButtons(ns("convert2ratio"), label="Convert to Ratio to Average", inline = TRUE, choices=c("expr", "ratio"), selected="expr"),
+					conditionalPanel(ns = ns,"input.convert2ratio=='ratio'",
+						fluidRow(
+							column(width=6,numericInput(ns("LowLimit"), label= "Low Limit",  value = -5, step=1)),
+							column(width=6,numericInput(ns("HighLimit"), label= "High Limit",  value=5, step=1))
+						)
+					),
+					conditionalPanel(ns = ns,"input.convert2ratio=='expr'",
+						selectInput(ns("lcmcolpalette"), label= "Select Color Palette", choices="")
+					),
+					conditionalPanel(ns = ns, condition = "input.sel_gene.length == 1",
+						radioButtons(ns("lcm_format"), label="Plot Format", inline = TRUE, choices = c( "Expressoin (side by side)" = "exp_side","Group (side by side)" = "group_side", "Expression (overlay)"="exp_overlay",  "Group (overlay)" = "group_overlay"), selected = "exp_side"),
+						fluidRow(
+							column(width=6, sliderInput(ns("LCM_alpha"), "Transparancy", min = 0, max = 1, step = 0.1, value = 0.5)),
+							column(width=6, sliderInput(ns("LCM_axisfontsize"), "Axis Font Size:", min = 12, max = 28, step = 4, value = 16))
+						)
 					),
 					fluidRow(
 						column(width=6, textInput(ns("LCMYlab"), "Y label", value="Row", width = "100%")),
 						column(width=6, textInput(ns("LCMXlab"), "X label", value="Column", width = "100%"))
 					)
-				),
-				conditionalPanel(ns = ns, "input.tabset=='Data Table' || input.tabset=='Result Table'",
-					h5("Enter some genes in Search Expression Data tab, then come here for data table.")
 				)
 			)
 		),
@@ -148,17 +174,24 @@ expression_ui <- function(id) {
 					actionButton(ns("saveboxplot"), "Save to output"),
 					uiOutput(ns("plot.exp"))
 				),
-				tabPanel(title="Data Table", value ="Data Table",	DT::dataTableOutput(ns("dat_dotplot"))
-				),
-				tabPanel(title="Result Table", value ="Result Table",	DT::dataTableOutput(ns("res_dotplot"))
-				),
 				tabPanel(title="Rank Abundance Curve", value ="Rank Abundance Curve",
+					actionButton(ns("plot_SCurve"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
 					actionButton(ns("AbundanceCurve"), "Save to output"),
 					plotOutput(ns("SCurve"), height=800)
 				),
+				tabPanel(title="Expression Correlation", value ="Expression Correlation",
+					actionButton(ns("plot_ExprCorr"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+					#actionButton(ns("ExprCorr"), "Save to output"),#to do
+					plotOutput(ns("ExprCorr"), height=800)
+				),
 				tabPanel(title="Laser Capture Microdissection", value ="Laser Capture Microdissection",
-					actionButton(ns("LCM"), "Save to output"),
+					actionButton(ns("plot_LCM"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
+					#actionButton(ns("LCM"), "Save to output"), #to do
 					plotOutput(ns("LCM"), height=800)
+				),
+				tabPanel(title="Data Table", value ="Data Table",	DT::dataTableOutput(ns("dat_dotplot"))
+				),
+				tabPanel(title="Result Table", value ="Result Table",	DT::dataTableOutput(ns("res_dotplot"))
 				),
 				tabPanel(title="Help", value ="Help", htmlOutput("help_expression")
 				)
@@ -233,12 +266,15 @@ expression_server <- function(id) {
 				updateTextInput(session, "Xlab", value="group")
 			})
 
+			toListen <- reactive({
+				list(input$subset,input$sel_geneset)
+			})
+
 			observe({
 				req(length(working_project()) > 0)
 				req(DataInSets[[working_project()]]$results_long)
 				results_long = DataInSets[[working_project()]]$results_long
 				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
-
 				req(input$subset)
 				if (input$subset == "Select") {
 					req(input$sel_gene)
@@ -247,52 +283,54 @@ expression_server <- function(id) {
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
 				}
 
-				if (input$subset == "Browsing") {
-					req(input$sel_test)
-					sel_test = input$sel_test
-					FCcut =log2(as.numeric(input$fccut))
-					pvalcut = as.numeric(input$pvalcut)
-					psel = input$psel
-					direction = input$updown
-
-					tmpids <- results_long %>%
-					dplyr::mutate_if(is.factor, as.character) %>%
-					dplyr::filter(if (!is.na(sel_test)) {test == sel_test} else TRUE) %>%
-					dplyr::filter(if (psel=="Padj") {Adj.P.Value < pvalcut} else {P.Value < pvalcut}) %>%
-					dplyr::filter(if (direction=="Up") {logFC >= FCcut} else if (direction=="Down") {logFC <= -FCcut} else {abs(logFC) >= FCcut}) %>%
-					as.data.frame() %>%
-					dplyr::pull(UniqueID)
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
-				}
-
-				if (input$subset == "Upload Genes" | input$subset == "Geneset") {
-					if (input$subset == "Upload Genes"){
-						req(input$uploadlist)
-						gene_list <- input$uploadlist
-					}
-					if (input$subset == "Geneset") {
-						req(input$geneset_list_exp)
-						gene_list <- input$geneset_list_exp
-					}
+				if (input$subset == "Upload Genes"){
+					req(input$uploadlist)
+					gene_list <- input$uploadlist
 					gene_list <- ProcessUploadGeneList(gene_list)
-
 					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				}
+
+				if (input$subset == "Geneset" ) {
+					req(input$sel_geneset!="")
+					sel_geneset <- input$sel_geneset
+					gene_list <- GetGenesFromGeneSet(sel_geneset)
+					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				}
+
+				if (input$subset == "Browsing") {
+					req(input$sel_test)
+					req(input$psel)
+					p_sel   <- input$psel
+					test_sel <- input$sel_test
+					FCcut <- log2(as.numeric(input$fccut))
+					pvalcut <- as.numeric(input$pvalcut)
+					sel_label <- "UniqueID"
+					direction <- "UpDown"
+					tmpdat <- GeneFilter(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label)
+					tmpids <- tmpdat %>% as.data.frame() %>% dplyr::pull(UniqueID)
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
 				}
 
 				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
 				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
 
-				output$filteredgene <- renderText({paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")})
+				msg_filter1 <- paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")
+				if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique())  > 100)
+				msg_filter1 <- paste(msg_filter1, " Too many genes, try < 100 genes", sep="")
+				output$filteredgene <- renderText({msg_filter1})
+
 				msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
-				if (length(tmpids) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name)  %>% unique()))
+				if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique()) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()))
 				msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
 				output$filteredUniqueID <- renderText({msg_filter})
+
 				numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
 				updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
 			})
 
-			#################
+			###############
 			observeEvent(input$subset , {
 				req(length(working_project()) > 0)
 				req(input$subset == "Geneset")
@@ -308,56 +346,41 @@ expression_server <- function(id) {
 				geneset_genenames <- GetGenesFromGeneSet(sel_geneset)
 				updateTextAreaInput(session, "geneset_genes", value=paste(geneset_genenames, collapse=","))
 			})
-			
-			
+
 			observe({
-			  req(length(working_project()) > 0)
-			  MetaData = DataInSets[[working_project()]]$MetaData
-			  req(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")))
-			  
-			  req(DataInSets[[working_project()]]$ProteinGeneNameHeader)
-			  ProteinGeneNameHeader = DataInSets[[working_project()]]$ProteinGeneNameHeader
-			  updateRadioButtons(session,'sel_geneid_lcm', inline = TRUE, choices=ProteinGeneNameHeader, selected="UniqueID")
-			  
-			  req(DataInSets[[working_project()]]$ProteinGeneName)
-			  ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
-			  
-			  req(input$label_lcm)
-			  label_lcm = sym(input$label_lcm)
-			  DataIngenes <- ProteinGeneName %>% dplyr::pull(!!label_lcm)
-			  updateSelectizeInput(session,'sel_gene_lcm', choices= DataIngenes, server=TRUE)
+				req(length(working_project()) > 0)
+				MetaData = DataInSets[[working_project()]]$MetaData
+				req(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")))
 
-			  
-			  image_ids <- MetaData %>%
-			    tidyr::separate(sampleid, into = c("Sample", "RowCol"), sep = "_") %>%
-			    pull(Sample) %>%
-			    unique()
-			  
-			  updateSelectizeInput(session,'sel_image',  choices=image_ids, selected=image_ids[1])
+				image_ids <- MetaData %>%
+				tidyr::separate(sampleid, into = c("Sample", "RowCol"), sep = "_") %>%
+				pull(Sample) %>%
+				unique()
+
+				updateSelectizeInput(session,'sel_image',  choices=image_ids, selected=image_ids[1])
 			})
-			
+
 			observeEvent(input$lcm_format, {
-			  req(length(working_project()) > 0)
-			  req(input$lcm_format)
-			  lcm_format = input$lcm_format
-			  if (lcm_format == "exp_side")
-			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
-			  if (lcm_format == "group_side")
-			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
-			  if (lcm_format == "exp_overlay")
-			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
-			  if (lcm_format == "group_overlay") 
-			    updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
+				req(length(working_project()) > 0)
+				req(input$lcm_format)
+				lcm_format = input$lcm_format
+				if (lcm_format == "exp_side")
+				updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
+				if (lcm_format == "group_side")
+				updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
+				if (lcm_format == "exp_overlay")
+				updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="OrRd")
+				if (lcm_format == "group_overlay")
+				updateSelectizeInput(session,'lcmcolpalette', choices=rownames(brewer.pal.info), selected="Dark2")
 			})
-			
-			
-			###############
 
+			###############
 			DataExpReactive <- reactive({
 				req(length(working_project()) > 0)
 				validate(need(length(DataInSets[[working_project()]]$group_order)>0,"Please select group(s)."))
-
+				req(input$subset)
 				data_long = DataInSets[[working_project()]]$data_long
+				req(DataInSets[[working_project()]]$results_long)
 				results_long = DataInSets[[working_project()]]$results_long
 				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
 				sel_group = DataInSets[[working_project()]]$group_order
@@ -365,7 +388,6 @@ expression_server <- function(id) {
 
 				genelabel=input$sel_geneid
 
-				req(input$subset)
 				if (input$subset == "Select") {
 					req(input$sel_gene)
 					sel_gene = input$sel_gene
@@ -373,54 +395,51 @@ expression_server <- function(id) {
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
 				}
 
-				if (input$subset == "Browsing") {
-					req(input$sel_test)
-					sel_test = input$sel_test
-					FCcut =log2(as.numeric(input$fccut))
-					pvalcut = as.numeric(input$pvalcut)
-					psel = input$psel
-					direction = input$updown
-
-					tmpids <- results_long %>%
-					dplyr::mutate_if(is.factor, as.character) %>%
-					dplyr::filter(if (!is.na(sel_test)) {test == sel_test} else TRUE) %>%
-					dplyr::filter(if (psel=="Padj") {Adj.P.Value < pvalcut} else {P.Value < pvalcut}) %>%
-					dplyr::filter(if (direction=="Up") {logFC >= FCcut} else if (direction=="Down") {logFC <= -FCcut} else {abs(logFC) >= FCcut}) %>%
-					as.data.frame() %>%
-					dplyr::pull(UniqueID)
-
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
-				}
-
-				if (input$subset == "Upload Genes" | input$subset == "Geneset") {
-					if (input$subset == "Upload Genes") {
-						req(input$uploadlist)
-						gene_list <- input$uploadlist
-					}
-
-					if (input$subset == "Geneset") {
-						req(input$geneset_genes)
-						gene_list <- input$geneset_genes
-					}
-
+				if (input$subset == "Upload Genes"){
+					req(input$uploadlist)
+					gene_list <- input$uploadlist
 					gene_list <- ProcessUploadGeneList(gene_list)
 					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
 				}
 
+				if (input$subset == "Geneset" ) {
+					req(input$sel_geneset!="")
+					sel_geneset <- input$sel_geneset
+					gene_list <- GetGenesFromGeneSet(sel_geneset)
+					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				}
+
+				if (input$subset == "Browsing") {
+					req(input$sel_test)
+					req(input$psel)
+					p_sel   <- input$psel
+					test_sel <- input$sel_test
+					FCcut <- log2(as.numeric(input$fccut))
+					pvalcut <- as.numeric(input$pvalcut)
+					sel_label <- "UniqueID"
+					direction <- "UpDown"
+					tmpdat <- GeneFilter(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label)
+					tmpids <- tmpdat %>% as.data.frame() %>% dplyr::pull(UniqueID)
+					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
+				}
+
 				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
 				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
 
-				numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
-				updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+				if (!input$tabset %in% c("Expression Correlation","Rank Abundance Curve")) {
+					numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
+					updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
 
-				req(input$sel_page)
-				sel_page = as.numeric(input$sel_page) - 1
-				startslice = sel_page * numberpage  + 1
-				endslice = startslice + numberpage - 1
-				if (endslice > length(tmpids))
-				endslice <- length(tmpids)
-				tmpids <- tmpids[startslice: endslice]
+					req(input$sel_page)
+					sel_page = as.numeric(input$sel_page) - 1
+					startslice = sel_page * numberpage  + 1
+					endslice = startslice + numberpage - 1
+					if (endslice > length(tmpids))
+					endslice <- length(tmpids)
+					tmpids <- tmpids[startslice: endslice]
+				}
 
 				data_long_tmp = dplyr::filter(data_long, UniqueID %in% tmpids, group %in% sel_group, sampleid %in% sel_samples) %>%
 				dplyr::filter(!is.na(expr)) %>%
@@ -449,7 +468,7 @@ expression_server <- function(id) {
 				return(list("data_long_tmp" = data_long_tmp,"result_long_tmp"= result_long_tmp, "tmpids"=tmpids))
 			})
 
-			###############
+			############### boxplot
 			boxplot_out <-	eventReactive(input$plot_exp, {
 				withProgress(message = 'Making Plot. It may take a while...', value = 0, {
 					req(length(working_project()) > 0)
@@ -784,8 +803,8 @@ expression_server <- function(id) {
 				))
 			})
 
-			#######
-			Scurve_out <- reactive({
+			############### S curve
+			Scurve_out <- eventReactive(input$plot_SCurve, {
 				req(length(working_project()) > 0)
 				data_results <- DataInSets[[working_project()]]$data_results
 				gene_list <- DataExpReactive()$tmpids
@@ -794,10 +813,13 @@ expression_server <- function(id) {
 
 				scurve.data <- data_results %>%
 				dplyr::select(any_of(c("UniqueID","Gene.Name","Protein.ID","Intensity"))) %>%
-
 				dplyr::filter((!is.na(Intensity)) & Intensity > 0) %>%
 				dplyr::arrange(desc(Intensity)) %>%
 				dplyr::mutate(RANK = row_number())
+
+				genelabel=input$sel_geneid
+				scurve.data$labelgeneid = scurve.data[,match(genelabel,colnames(scurve.data))]
+				scurve.data$labelgeneid <- factor(scurve.data$labelgeneid, levels = unique(scurve.data$labelgeneid))
 
 				scurve.label <- scurve.data %>%
 				dplyr::filter((UniqueID %in% gene_list) | (Gene.Name %in% gene_list) | (Protein.ID %in% gene_list))
@@ -808,7 +830,7 @@ expression_server <- function(id) {
 					geom_point(data=scurve.label, aes(x = RANK, y = Intensity, colour='red')) +
 					scale_y_continuous(trans='log10')  +
 					geom_label_repel(
-						data = scurve.label,aes(x = RANK, y = Intensity,  label = Gene.Name),
+						data = scurve.label,aes(x = RANK, y = Intensity,  label = labelgeneid),
 						fontface = 'bold', color = 'red', size = input$scurve_labelfontsize,
 						box.padding = unit(0.35, "lines"),
 						point.padding = unit(0.5, "lines"),
@@ -835,19 +857,21 @@ expression_server <- function(id) {
 				saved_plots$AbundanceCurve <- Scurve_out()
 			})
 
-			###### Laser capture microdissection
-			LCM_out <- reactive({
+			############### Laser capture microdissection
+			LCM_out <- eventReactive(input$plot_LCM, {
 				req(length(working_project()) > 0)
-				data_long <- DataInSets[[working_project()]]$data_long
-				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+				sel_group = DataInSets[[working_project()]]$group_order
+				tests_order = DataInSets[[working_project()]]$tests_order
 				MetaData = DataInSets[[working_project()]]$MetaData
 				validate(need(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")),"Only work for LCM format"))
 
-				req(input$sel_gene_lcm)
-				sel_gene = input$sel_gene_lcm
-				validate(need(length(input$sel_gene_lcm)>0,"Please select a gene."))
-				ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
-				UniqueID_sel  = ProteinGeneName_sel %>% as.data.frame() %>%	dplyr::pull(UniqueID)
+				data_long_tmp <- DataExpReactive()$data_long_tmp %>%
+				dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
+				tmpids <- DataExpReactive()$tmpid
+
+				ncol = as.numeric(input$plot_ncol)
+				nrow = as.numeric(input$plot_nrow)
+				numberpage = ncol * nrow
 
 				library(png)
 				library(grid)
@@ -861,48 +885,74 @@ expression_server <- function(id) {
 					im <- readPNG(pngfile)
 				}
 
-				SingleProtein <- data_long %>%
-				as.data.frame() %>%
-				dplyr::filter(UniqueID == UniqueID_sel) %>%
+				data_long_tmp <-  data_long_tmp %>%
 				tidyr::separate(sampleid, into = c("Sample", "RowCol"), sep = "_")%>%
 				tidyr::separate(RowCol, into = c("Row", "Col"), "(?<=[A-Za-z])(?=[0-9])") %>%
-				dplyr::mutate(Row = forcats::fct_rev(Row))
+				dplyr::mutate(Row = forcats::fct_rev(Row)) %>%
+				dplyr::group_by(labelgeneid) %>%
+				dplyr::mutate(ratio = log2(expr/mean(expr))) %>%
+				dplyr::ungroup()
 
-				p1 <- ggplot(SingleProtein, aes(Col, y= Row, fill=expr)) +
-				geom_tile() +
-				scale_fill_distiller(palette = input$lcmcolpalette, direction = 1) +
-				coord_fixed(ratio = nrow(im)/ncol(im)) +
-				theme_bw(base_size = 14) +
-				ylab(input$LCMYlab) +
-				xlab(input$LCMXlab) +
-				theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize))
+				convert2ratio <- input$convert2ratio
 
-				colorpal <- UserColorPlalette(colpalette = input$lcmcolpalette, items = unique(SingleProtein$group))
-				p2 <- ggplot(SingleProtein, aes(Col, y= Row, fill=group)) +
-				geom_tile() +
-				scale_fill_manual(values =  colorpal) +
-				coord_fixed(ratio = nrow(im)/ncol(im)) +
-				theme_bw(base_size = 14) +
-				ylab(input$LCMYlab) +
-				xlab(input$LCMXlab) +
-				theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize))
+				if (length(tmpids) > 1) {
+					p1 <- ggplot(data_long_tmp, aes(Col, y= Row, fill=!!sym(convert2ratio))) +
+					geom_tile()
+					if (convert2ratio == "ratio")
+					p1 <- p1 + scale_fill_gradient2(midpoint = 0, low = "blue", mid = "white", high = "red", limits=c(input$LowLimit,input$HighLimit))
+					else
+					p1 <- p1 + scale_fill_distiller(palette = input$lcmcolpalette, direction = 1)
 
-				im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * 1), nrow=dim(im)[1])
+					p1 <- p1 +
+					theme_bw(base_size = 14) +
+					ylab(input$LCMYlab) +
+					xlab(input$LCMXlab) +
+					theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-				lcm_format = input$lcm_format
-				if (lcm_format == "exp_side")
-				p =  grid.arrange(grid::rasterGrob(im2), p1, ncol=2)
-				if (lcm_format == "group_side")
-				p =  grid.arrange(grid::rasterGrob(im2), p2, ncol=2)
-				if (lcm_format == "exp_overlay"){
-					im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
-					p <- p1 +  annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
+					p <- p1 + facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
+				}	else {
+					p1 <- ggplot(data_long_tmp, aes(Col, y= Row, fill=!!sym(convert2ratio))) +
+					geom_tile()
+
+					if (convert2ratio == "ratio")
+					p1 <- p1 + scale_fill_gradient2(midpoint = 0, low = "blue", mid = "white", high = "red", limits=c(input$LowLimit,input$HighLimit))
+					else
+					p1 <- p1 + scale_fill_distiller(palette = input$lcmcolpalette, direction = 1)
+
+					p1 <- p1 +
+					coord_fixed(ratio = nrow(im)/ncol(im)) +
+					theme_bw(base_size = 14) +
+					ylab(input$LCMYlab) +
+					xlab(input$LCMXlab) +
+					theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+					colorpal <- UserColorPlalette(colpalette = input$lcmcolpalette, items = unique(data_long_tmp$group))
+					p2 <- ggplot(data_long_tmp, aes(Col, y= Row, fill=group)) +
+					geom_tile() +
+					scale_fill_manual(values =  colorpal) +
+					coord_fixed(ratio = nrow(im)/ncol(im)) +
+					theme_bw(base_size = 14) +
+					ylab(input$LCMYlab) +
+					xlab(input$LCMXlab) +
+					theme(plot.margin = unit(c(1,1,1,1), "cm"), text = element_text(size=input$LCM_axisfontsize), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+
+					im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * 1), nrow=dim(im)[1])
+
+					lcm_format = input$lcm_format
+					if (lcm_format == "exp_side")
+					p =  grid.arrange(grid::rasterGrob(im2), p1, ncol=2)
+					if (lcm_format == "group_side")
+					p =  grid.arrange(grid::rasterGrob(im2), p2, ncol=2)
+					if (lcm_format == "exp_overlay"){
+						im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
+						p <- p1 +  annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
+					}
+					if (lcm_format == "group_overlay") {
+						im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
+						p <- p2 + annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
+					}
+
 				}
-				if (lcm_format == "group_overlay") {
-					im2 <- matrix(rgb(im[,,1],im[,,2],im[,,3],im[,,4] * LCM_alpha), nrow=dim(im)[1])
-					p <- p2 + annotation_custom(rasterGrob(im2,	width = unit(1,"npc"), height = unit(1,"npc")),	-Inf, Inf, -Inf, Inf)
-				}
-
 				return(p)
 			})
 
@@ -914,6 +964,73 @@ expression_server <- function(id) {
 				saved_plots$LCM <- LCM_out()
 			})
 
+			############### Expr Corr
+			ExprCorr_out <- eventReactive(input$plot_ExprCorr, {
+				req(length(working_project()) > 0)
+				sel_group = DataInSets[[working_project()]]$group_order
+				tests_order = DataInSets[[working_project()]]$tests_order
+				MetaData = DataInSets[[working_project()]]$MetaData
+
+				data_long_tmp <- DataExpReactive()$data_long_tmp %>%
+				dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
+				tmpids <- DataExpReactive()$tmpid
+				validate(need(length(tmpids) >= 2,"select > 2 Ids"))
+
+				library(corrplot)
+
+				if (length(tmpids) > 2) {
+					cor_matrix <-  data_long_tmp  %>% as.data.frame() %>%
+					dplyr::select(-c(group)) %>%
+					pivot_wider(names_from = labelgeneid, values_from = expr) %>%
+					dplyr::select(-c(sampleid)) %>% as.matrix() %>%
+					cor(.,use = "p")
+					testRes = cor.mtest(cor_matrix, conf.level = 0.95)
+
+					if(input$diag=="YES")
+					diag = TRUE
+					else
+					diag = FALSE
+					
+					p <- corrplot(cor_matrix,
+						method=input$method,
+						order=input$order,
+						tl.pos="lt",
+						type=input$type ,
+						tl.col="black",
+						tl.cex=input$tlcex,
+						tl.srt=45, addCoef.col="black", 
+						addCoefasPercent = FALSE,
+						hclust.method=input$hclustmethod,
+						plotCI="n",
+						p.mat = testRes$p,
+						sig.level=input$siglevel,
+						col = COL2(input$corrcol),
+						diag = diag,
+					insig = "blank")
+				}	else if (length(tmpids)  == 2){
+					wide_temp <-  data_long_tmp  %>% as.data.frame() %>%
+					dplyr::select(-c(group)) %>%
+					pivot_wider(names_from = labelgeneid, values_from = expr) %>%
+					dplyr::select(-c(sampleid)) #%>% as.matrix()
+
+					c.res <- cor(wide_temp[,1], wide_temp[,2], use = "complete.obs")
+					cor_string <- paste("Pearson corr:", format(c.res[1,1], digits=3), sep="")
+					p <- ggplot(data = wide_temp,	aes(x = eval(parse(text = colnames(wide_temp)[1])),	y =eval(parse(text = colnames(wide_temp)[2])))) +
+					geom_smooth(method=lm) +
+					geom_point(size = 2) +
+					labs(title=cor_string) +
+					xlab(colnames(wide_temp)[1]) + ylab(colnames(wide_temp)[2])
+				}
+				return(p)
+			})
+
+			output$ExprCorr<- renderPlot({
+				ExprCorr_out()
+			})
+
+			observeEvent(input$ExprCorr, {
+				saved_plots$ExprCorr <- ExprCorr_out()
+			})
 		}
 	)
 }
