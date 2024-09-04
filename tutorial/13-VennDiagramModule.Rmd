@@ -1,0 +1,27 @@
+# Venn Diagram Module
+
+This module in xOmicsShiny helps users identify DEGs/DEPs/DEMs that are common or unique to different comparisons within one project. Users have the option to either visualize these DEGs/DEPs/DEMs as a highly customizable Venn Diagram (5 or less groups) or UpSets plot, or download a table with the gene/protein/metabolites names/IDs.
+
+## Venn Diagram
+
+To view the DEGs/DEPs/DEMs as a Venn Diagram, users have the option to see the intersection of DEGs/DEPs/DEMs for up to 5 different comparisons. Users can also use all DEGs/DEPs/DEMs or restrict it to the ones that are Up or Down regulated.
+
+[![](`r pic_path`f13-1.png)](`r pic_path`f13-1.png)
+
+## Intersection Output
+
+This tab lets the User view the individual genes that were present in the Venn Diagram and the distribution of the genes in intersection regions.
+
+[![](`r pic_path`f13-2.png)](`r pic_path`f13-2.png)
+
+## UpSets
+
+When there are many comparisons, UpSets plot is often used to show the grouping combinations. The dots and dot connected lines indicates the group combination and the bar plot shows the numbers of each combination. There are 3 combination modes available to make the plot: intersect, distinct and union. The distinct mode produces the result that are equivalent to the numbers in the Venn Diagram.
+
+[![](`r pic_path`f13-3.png)](`r pic_path`f13-3.png)
+
+## UpSets Table
+
+Here it shows the table that listing all the combination groups with the number of count and all the DEGs/DEPs/DEMs in each combination group.
+
+[![](`r pic_path`f13-4.png)](`r pic_path`f13-4.png)

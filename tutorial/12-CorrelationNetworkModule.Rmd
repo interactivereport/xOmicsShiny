@@ -1,0 +1,21 @@
+# Correlation Network Module
+
+This module helps build co-expression networks based on gene-gene, protein-protein or metabolite-metablote correlations. This is especially useful during co-immunoprecipitation or pulldown proteomics experiments to identify protein partners. Users have the ability to enter 1 or more genes/proteins to identify if their expression is correlated.
+
+## visNetwork
+
+This functionality uses the R package visNetwork to visualize the expression of correlated genes/proteins/metablites. Users have the ability to choose the R and P value cutoff for selecting the correlated genes/proteins. In this example below, we probe 3 genes and identify the expression of other genes that are correlated with them. The following network plot was produced. Mup15 is part of a large network with multiple genes correlated with it. On the other hand, A1bg was correlated with 2 other genes, while Gpc1 was not correlated with any genes. Larger nodes (genes/proteins/metablites) indicate higher importance within the network. Thicker edges (lines connect the nodes) represent stronger connections between nodes.
+
+[![](`r pic_path`f12-1.png)](`r pic_path`f12-1.png)
+
+## networkD3
+
+This functionality uses the R package d3Network for creating D3 network graphs. Use the same setup, networkD3 show the following results.
+
+[![](`r pic_path`f12-2.png)](`r pic_path`f12-2.png)
+
+## Data Table
+
+The genes identified in the previous tab as part of the network plot are available as a table in this tab. Users can perform searches and sort based on correlation statistics.
+
+[![](`r pic_path`f12-3.png)](`r pic_path`f12-3.png)

@@ -1,0 +1,36 @@
+# Monotonic Trend Module
+
+This module enable users to check if the dose-response/time-course effect is monotonic or not. 
+
+## Fitting Curve
+
+This functionality showed dose-response/time-course plot with linear fitting for individual genes. It contains 3 sub-tabs.
+
+### Fitting Curve
+
+The "Fitting Curve" tab shows the dose response plots.The example below shows that all 3 plots has very low R-square value, which indicate bad fit. 
+
+[![](`r pic_path`f17-1.png)](`r pic_path`f17-1.png)
+
+It is very clear that the respone keeps up and down when we change to view "Connecting Dot".
+
+[![](`r pic_path`f17-2.png)](`r pic_path`f17-2.png)
+
+### Result Table and Data Table
+
+The "Result Table" shows the fitted results in a searchable table, which are shown as labels in the plots. And the "Data Table" shows the original data of the selected genes.
+
+[![](`r pic_path`f17-3.png)](`r pic_path`f17-3.png)
+
+## Result Table (all)
+
+This tab shows the fitted results in a searchable table for all the genes. User can apply filter condition to view the results for the filtered genes only.
+
+[![](`r pic_path`f17-4.png)](`r pic_path`f17-4.png)
+
+## Browsing
+
+This tab allow user to view the fitting plots from previous filtered gene list.
+
+[![](`r pic_path`f17-5.png)](`r pic_path`f17-5.png)
+

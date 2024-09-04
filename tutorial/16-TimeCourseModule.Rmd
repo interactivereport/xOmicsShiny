@@ -1,0 +1,36 @@
+# Time Course Module
+
+This module enable users to visualize the dose-response/time-course data. The method is derived from the DRomics R package. Gauss-probit, log-Gauss-probit, Hill, log-probit, exponential, linear regressions are checked during the fitting process.
+
+## Fitting Curve
+
+This functionality allows user to make dose-response/time-course plot for individual genes. It contains 3 sub-tabs.
+
+### Fitting Curve
+
+The "Fitting Curve" tab shows the dose response plots.
+
+[![](`r pic_path`f16-1.png)](`r pic_path`f16-1.png)
+
+### Result Table and Data Table
+
+The "Result Table" shows the fitted results in a searchable table, which are shown as labels in the plots. And the "Data Table" shows the original data of the selected genes.
+
+[![](`r pic_path`f16-2.png)](`r pic_path`f16-2.png)
+
+## Result Table (all)
+
+This tab shows the fitted results in a searchable table for all the genes. User can apply filter condition to view the results for the filtered genes only.
+
+[![](`r pic_path`f16-3.png)](`r pic_path`f16-3.png)
+
+## Browsing
+
+This tab allow user to view the fitting plots for multiple genes in a single page. By default the Plot tab shows the plot for the first 9 genes in alphabetical order. The Table tab shows the result data in the table format. 
+
+[![](`r pic_path`f16-4.png)](`r pic_path`f16-4.png)
+
+Users can select their own gene list by using the "Upload Genes" option. Then the Plot tab will show the plots for the uploaded gene list and the Table tab will show corresponding results.
+
+[![](`r pic_path`f16-5.png)](`r pic_path`f16-5.png)
+

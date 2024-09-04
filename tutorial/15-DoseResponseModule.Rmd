@@ -1,0 +1,44 @@
+# Dose Response Module
+
+This module, together with the following two modules: Time Course Module and Monotonic Trend Module, are designed to explore and visualize time-course dose response dataset. This module in xOmicsShiny helps users create dose response plots using drc R package. To demo this functionality, we use 2019_RG_StrokeBrain_TimeCourse dataset. In this dataset, UniqueID is the combination of the Gene.Name and Protein.ID. Other columns include treatment and dose response measurements.
+
+[![](`r pic_path`f15-1.png)](`r pic_path`f15-1.png)
+
+## Fitting Curve
+
+This functionality allows user to make dose response plot for individual genes. It contains 4 sub-tabs.
+
+### Fitting Curve
+
+The "Fitting Curve" tab shows the dose response plots.
+
+[![](`r pic_path`f15-2.png)](`r pic_path`f15-2.png)
+
+### Result Table and Data Table
+
+The "Result Table" shows the fitted results in a searchable table, which are shown as labels in the plots. And the "Data Table" shows the original data of the selected genes.
+
+[![](`r pic_path`f15-3.png)](`r pic_path`f15-3.png)
+
+### Model Selection
+
+The "Model Selection" tab shows the best fitted model(s).
+
+[![](`r pic_path`f15-4.png)](`r pic_path`f15-4.png)
+
+## Result Table (all)
+
+This tab shows the fitted results in a searchable table for all the genes. User can apply filter condition to view the results for the filtered genes only.
+
+[![](`r pic_path`f15-5.png)](`r pic_path`f15-5.png)
+
+## Browsing
+
+This tab allow user to view the fitting plots for multiple genes in a single page. By default the Plot tab shows the plot for the first 9 genes in alphabetical order. The Table tab shows the result data in the table format. 
+
+[![](`r pic_path`f15-6.png)](`r pic_path`f15-6.png)
+
+Users can select their own gene list by using the "Upload Genes" option. Then the Plot tab will show the plots for the uploaded gene list and the Table tab will show corresponding results. The example below shows the plots of the 4 filtered genes in the previous session Result Table (all).
+
+[![](`r pic_path`f15-7.png)](`r pic_path`f15-7.png)
+

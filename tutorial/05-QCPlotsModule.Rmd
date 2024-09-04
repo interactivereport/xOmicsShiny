@@ -81,34 +81,32 @@ The AlignQC tab contains several sub-tabs to visualize the QC metrics of the ali
 
 This tab helps identify pair-wise similarity between all samples. A distance matrix is generated for every sample pair and is plotted as a heatmap. The rows and columns are clustered based on similarity.
 
-Using the Mouse microglia RNA-Seq dataset, which was demoed in the QuickOmics tutorial,it showed clearly samples of the same Age have the smaller distances, that is, they have closer gene expression patterns. Here again, Users have the option to save to output.
+Here we use the Mouse microglia RNA-Seq dataset, which was demoed in the QuickOmics tutorial and showed clearly samples of the same **Age** have the smaller distances, that is, they have closer gene expression patterns. Here again, users have the option to save to output.
 
 [![](`r pic_path`f5-14.png)](`r pic_path`f5-14.png)
 
 ## Dendrograms
 
-Like the previous plot (4.7 Sample-sample Distance), the Dendrogram plot helps visualize hierarchical clustering relationships between samples. The Default plot is Circular and cut into four parts. Users have the option to visualize in two other ways (tree or horizontal) and cut the plot in multiple regions. Here again, Users can save the plot to output.
+Like the previous plot (5.4 Sample-sample Distance), the **Dendrogram** plot helps visualize hierarchical clustering relationships between samples. The Default plot is Circular and cut into four parts. Users have the option to visualize in two other ways (tree or horizontal) and cut the plot in multiple regions. Here again, users can save the plot to output.
 
-[![](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.8_1.png)](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.8_1.png)
+[![](`r pic_path`f5-15.png)](`r pic_path`f5-15.png)
 
 In the plot below, we have selected to visualize as a tree and cut into eight parts. This shows the relationship between the samples to help understand the hierarchal clustering. Overall, the samples are arranged by age, but there are some outliers that appear. It is also interesting how the 2mo samples cluster with the 1yr samples.
 
-[![](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.8_2.png)](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.8_2.png)
+[![](`r pic_path`f5-16.png)](`r pic_path`f5-16.png)
 
 ## Box Plot
 
 The Boxplot is a visualization to understand the distribution of the normalized expression levels in all samples. This identifies the minimum, first quartile, median, third quartile, and maximum values in the dataset. In this demo dataset, most of the samples have the same range of expression, indicating that there are no outliers.
 
-[![](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.9_1.png)](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.9_1.png)
+[![](`r pic_path`f5-17.png)](`r pic_path`f5-17.png)
 
 ## CV Distribution
 
-This plot shows the histogram of CVs (coefficient of variation) and a dotted line for each group indicates the median CV. In this dataset, the 2mon_KO samples have the highest CV while the 2yr_Het samples have the lowest variability, which corresponds to what is visually seen on the PCA plot for these samples in Section 4.1.
+This plot shows the histogram of CVs (coefficient of variation) and a dotted line for each group indicates the median CV. In this dataset, the 2mon_KO samples have the highest CV while the 2yr_Het samples have the lowest variability.
 
-[![](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.10_1.png)](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.10_1.png)
+[![](`r pic_path`f5-18.png)](`r pic_path`f5-18.png)
 
 ## Help
 
-The Help section describes each tab of the QC Plot and what is being visualized. For further help please visit the GitHub containing the source code for this tools ([https://github.com/interactivereport/Quickomics](https://github.com/interactivereport/Quickomics){target="_blank"}) or click on the link at the bottom of the page.
-
-[![](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.11_1.png)](https://interactivereport.github.io/Quickomics/tutorial/Figures/FigureS4.11_1.png)
+The Help section describes each tab of the QC Plot and what is being visualized. For further help please visit the GitHub containing the source code for this tools ([https://github.com/interactivereport/xOmicsShiny](https://github.com/interactivereport/xOmicsShiny){target="_blank"}).

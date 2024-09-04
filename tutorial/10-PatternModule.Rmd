@@ -1,0 +1,21 @@
+# Pattern Clustering Module
+
+This functional module in xOmicsShiny helps cluster genes/proteins/metabolites based on their expression/measurement profiles across different groups. Three different algorithms, soft (fuzzy) clustering, k-means and partitioning around medoids (PAM), are implemented.
+
+## Clustering of Centroid Profiles
+
+Users have the option to either select the DEGs/DEPs/DEMs as the list of genes/proteins/metabolites to cluster based off on or upload a custom gene list. DEGs/DEPs/DEMs are selected based off all the comparisons, and cutoffs can be applied to limit the number of genes. In this example below, we use the top DEGs/DEPs with a Fold Change cutoff of 1.2 and an adjusted p-value cutoff of 0.05 to identify 2 clusters of genes.
+
+[![](`r pic_path`f10-1.png)](`r pic_path`f10-1.png)
+
+## Optimal Number of Clusters
+
+This functionality helps users to determine the optimal number of clusters. Three different methods, silhouette, wss and gap_stat, are provided. For silhouette and gap_stat methods, the optimal number of clusters are the X-axis position of the vertical reference line. For wss method, users determines the optimal number of clusters by finding the least number of clusters that can explain most sum of squares of the data.
+
+[![](`r pic_path`f10-2.png)](`r pic_path`f10-2.png)
+
+## Data Table
+
+The data table contains genes/proteins/metabolites from the previous clusters, along with their expression/measurement values.
+
+[![](`r pic_path`f10-3.png)](`r pic_path`f10-3.png)

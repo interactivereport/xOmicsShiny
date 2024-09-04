@@ -1,0 +1,16 @@
+# Merge Data Module
+
+This module enable users to combine different datasets together if they have multiple datasets of the same or similar study and want to check them together. And then the functions that only support single datasets can be used by the merged data. 
+
+## Merge Data
+
+Pre-loaded data sets can be merged as shown below.
+
+[![](`r pic_path`f18-1.png)](`r pic_path`f18-1.png)
+
+## Data Source
+
+This tab shows a merged table of merged data set and original data sets.
+
+[![](`r pic_path`f18-2.png)](`r pic_path`f18-2.png)
+
