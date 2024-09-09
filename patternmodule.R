@@ -14,7 +14,6 @@
 #pkgs:  "Mfuzz","factoextra", "cluster", "shiny","DT", "dplyr","stringr", "tidyr"
 
 library(Mfuzz)
-#library(NbClust)
 library(factoextra)
 library(cluster)
 
@@ -59,6 +58,9 @@ pattern_ui <- function(id) {
 								column(width=6, numericInput(ns("plot_Ymax"), label= "Y Max",  value=5, step=0.1))
 							)
 						)
+					),
+					conditionalPanel(ns = ns,"input.ClusterMehtod=='mfuzz'",
+						sliderInput(ns("minmem"), "Genes with membership values below min.mem will not be displayed:", min = 0, max = 1, step = 0.1, value = 0.4)
 					)
 				),
 				conditionalPanel("input.Pattern_tabset=='Optimal Number of Clusters'",
@@ -93,7 +95,6 @@ pattern_ui <- function(id) {
 pattern_server <- function(id) {
 	shiny::moduleServer(id,
 		function(input, output, session) {
-
 			ns <- shiny::NS(id)
 			output$loadedprojects <- renderUI({
 				req(length(working_project()) > 0)
@@ -126,29 +127,6 @@ pattern_server <- function(id) {
 				updateSelectizeInput(session,'sel_test', choices=tests, selected=tests[1])
 			})
 
-			observe({
-				req(length(working_project()) > 0)
-				req(DataInSets[[working_project()]]$ProteinGeneName)
-				req(DataInSets[[working_project()]]$results_long)
-				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
-				results_long = DataInSets[[working_project()]]$results_long
-				fccut = log2(as.numeric(input$fccut))
-				pvalcut = as.numeric(input$pvalcut)
-
-				req(input$psel)
-				if (input$psel == "Padj") {
-					filteredgene1 = results_long %>%
-					dplyr::filter(abs(logFC) > fccut & Adj.P.Value < pvalcut) %>%
-					dplyr::pull(UniqueID)
-				} else {
-					filteredgene1 = results_long %>%
-					dplyr::filter(abs(logFC) > fccut & P.Value < pvalcut) %>%
-					dplyr::pull(UniqueID)
-				}
-				output$filteredgene <- renderText({paste("Selected Genes:",length(filteredgene1),sep="")})
-			})
-
-			#################
 			observeEvent(input$subset , {
 				req(length(working_project()) > 0)
 				req(input$subset == "Geneset")
@@ -164,7 +142,6 @@ pattern_server <- function(id) {
 				geneset_genenames <- GetGenesFromGeneSet(sel_geneset)
 				updateTextAreaInput(session, "geneset_genes", value=paste(geneset_genenames, collapse=","))
 			})
-			###############
 
 			DatapatternReactive <- reactive({
 				req(length(working_project()) > 0)
@@ -198,7 +175,6 @@ pattern_server <- function(id) {
 					}
 
 					gene_list <- ProcessUploadGeneList(gene_list)
-
 					validate(need(length(gene_list)>2, message = "input gene list"))
 					filteredgene <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))  %>%
 					dplyr::pull(UniqueID)
@@ -217,139 +193,145 @@ pattern_server <- function(id) {
 				return(list("subdatlong"= subdatlong,"subdatwide"= subdatwide, "filteredgene" = filteredgene))
 			})
 
-			out <- eventReactive(input$plot_pattern, {withProgress(message = 'Processing...', value = 0, {
-
+			output$filteredgene <- renderText({
+				req(length(working_project()) > 0)
 				Datapattern <- DatapatternReactive()
+				subdatwide <- Datapattern$subdatwide
+				paste("Selected Genes:",nrow(subdatwide),sep="")
+			})
+
+			out <- eventReactive(input$plot_pattern, {withProgress(message = 'Processing...', value = 0,
+				{
+					Datapattern <- DatapatternReactive()
+					subdatwide <- Datapattern$subdatwide
+					subdatlong <- Datapattern$subdatlong
+					sel_group <- DataInSets[[working_project()]]$group_order
+
+					k=input$k
+					set.seed(123)
+					if (input$ClusterMehtod == "kmeans") {
+						cl <- kmeans(subdatwide, k)
+						cluster<-cl$cluster
+						cluster.df <- data.frame(UniqueID=names(cluster), cluster=paste('Cluster',cluster,sep=' '), row.names=NULL)
+
+						subdatlong <- subdatlong %>%
+						left_join(., cluster.df, by="UniqueID")
+
+						subdatlong$group = factor(subdatlong$group,levels = sel_group)
+
+						p <- ggplot(subdatlong, aes(x=group, y=mean)) +
+						facet_wrap(~ cluster,scales = "free", ncol = input$ncol) +
+						geom_line(aes(group=UniqueID, color="UniqueID")) +
+						stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
+
+						if (input$plot_Y_scale=="Manual") {
+							p <- p + ylim(input$plot_Ymin, input$plot_Ymax)
+						}
+
+						p <- p +	theme_bw(base_size = input$font) + ylab("expr") + xlab(" ") +
+						theme (plot.margin = unit(c(1,1,1,1), "cm"), axis.text.x = element_text(angle = input$Xangle),legend.position="none")
+						p
+					} else if (input$ClusterMehtod == "pam") {
+						clpam <- cluster::pam(subdatwide, k)
+						cluster <- clpam$clustering
+
+						cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
+						subdatlong <- subdatlong  %>%
+						left_join(., cluster.df, by="UniqueID")
+						subdatlong$group = factor(subdatlong$group,levels = sel_group)
+
+						p <- ggplot(subdatlong, aes(x=group, y=mean)) +
+						facet_wrap(~ cluster,scales = "free", ncol = 3) +
+						geom_line(aes(group=UniqueID, color="UniqueID")) +
+						stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
+						p <- p + theme_bw(base_size = 14) + ylab("expr") + xlab(" ") +
+						theme (plot.margin = unit(c(1,1,1,1), "cm"), axis.text.x = element_text(angle = 45),legend.position="none")
+						return(p)
+
+					} else if (input$ClusterMehtod == "mfuzz") {
+						tmp_expr <- new('ExpressionSet', exprs = as.matrix(subdatwide))
+						m1 <- mestimate(tmp_expr)
+						cl <- mfuzz(tmp_expr, c = k, m = m1, iter.max = 200)
+						nrow <- ceiling(k/input$ncol)
+						minmem <- input$minmem
+						mfuzz.plot(tmp_expr, cl = cl, mfrow = c(nrow, input$ncol), min.mem=minmem, time.labels=colnames(subdatwide),new.window = FALSE)
+						p = recordPlot()
+						return(p)
+					}
+				})
+			})
+
+			output$pattern<- renderPlot({
+				if (input$ClusterMehtod == "kmeans") {
+					out()
+				} else if (input$ClusterMehtod == "pam") {
+					out()
+				} else if (input$ClusterMehtod == "mfuzz") {
+					replayPlot(out())
+				}
+			})
+
+			observeEvent(input$pattern, {
+				if (input$ClusterMehtod == "kmeans") {
+					saved_plots$patternkmeans <- out()
+				} else if (input$ClusterMehtod == "pam") {
+					saved_plots$patternpam <- out()
+				} else if (input$ClusterMehtod == "mfuzz") {
+					saved_plots$patternmfuzz <- out()
+				}
+			})
+
+			output$dat_pattern <- DT::renderDataTable({withProgress(message = 'Processing...', value = 0, {
+				set.seed(123)
+				Datapattern <- DatapatternReactive ()
 				subdatwide <- Datapattern$subdatwide
 				subdatlong <- Datapattern$subdatlong
 				sel_group <- DataInSets[[working_project()]]$group_order
-
 				k=input$k
-				set.seed(123)
 				if (input$ClusterMehtod == "kmeans") {
-
 					cl <- kmeans(subdatwide, k)
-					cluster<-cl$cluster
-
-					cluster.df <- data.frame(UniqueID=names(cluster), cluster=paste('Cluster',cluster,sep=' '), row.names=NULL)
-
-					subdatlong <- subdatlong  %>%
-					left_join(., cluster.df, by="UniqueID")
-
-					subdatlong$group = factor(subdatlong$group,levels = sel_group)
-
-					p <- ggplot(subdatlong, aes(x=group, y=mean)) +
-					facet_wrap(~ cluster,scales = "free", ncol = input$ncol) +
-					geom_line(aes(group=UniqueID, color="UniqueID")) +
-					stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
-
-					if (input$plot_Y_scale=="Manual") {
-						p <- p + ylim(input$plot_Ymin, input$plot_Ymax)
-					}
-
-					p <- p +	theme_bw(base_size = input$font) + ylab("expr") + xlab(" ") +
-					theme (plot.margin = unit(c(1,1,1,1), "cm"), axis.text.x = element_text(angle = input$Xangle),legend.position="none")
-					p
-				} else if (input$ClusterMehtod == "pam") {
-					clpam <- cluster::pam(subdatwide, k)
-					cluster <- clpam$clustering
-
+					cluster <- cl$cluster
 					cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
-					subdatlong <- subdatlong  %>%
-					left_join(., cluster.df, by="UniqueID")
-					subdatlong$group = factor(subdatlong$group,levels = sel_group)
-
-					p <- ggplot(subdatlong, aes(x=group, y=mean)) +
-					facet_wrap(~ cluster,scales = "free", ncol = 3) +
-					geom_line(aes(group=UniqueID, color="UniqueID")) +
-					stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
-					p <- p + theme_bw(base_size = 14) + ylab("expr") + xlab(" ") +
-					theme (plot.margin = unit(c(1,1,1,1), "cm"), axis.text.x = element_text(angle = 45),legend.position="none")
-					return(p)
-
+				} else if (input$ClusterMehtod == "pam") {
+					clpam <- pam(subdatwide, k)
+					cluster <- clpam$clustering
+					cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
 				} else if (input$ClusterMehtod == "mfuzz") {
 					tmp_expr <- new('ExpressionSet', exprs = as.matrix(subdatwide))
 					m1 <- mestimate(tmp_expr)
 					cl <- mfuzz(tmp_expr, c = k, m = m1, iter.max = 200)
-					nrow=ceiling(k/input$ncol)
-					mfuzz.plot(tmp_expr, cl = cl, mfrow = c(nrow, input$ncol), min.mem=0.4, time.labels=colnames(subdatwide),new.window = FALSE)
-					p = recordPlot()
-					return(p)
+					cluster <- cl$cluster
+					cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
 				}
+
+				if (input$DataFormat == "long") {
+					subdatlong[,sapply(subdatlong,is.numeric)] <- signif(subdatlong[,sapply(subdatlong,is.numeric)],3)
+					subdatlong <- subdatlong  %>%
+					left_join(., cluster.df, by="UniqueID")
+					DT::datatable(subdatlong)
+				} else if (input$DataFormat == "wide") {
+					subdatwide[,sapply(subdatwide,is.numeric)] <- signif(subdatwide[,sapply(subdatwide,is.numeric)],3)
+					subdatwide  <- subdatwide %>%
+					rownames_to_column(.,var="UniqueID") %>%
+					left_join(., cluster.df, by="UniqueID")%>%
+					separate(UniqueID, c("Gene", "ID"), sep = "_")
+
+					DT::datatable(subdatwide,	extensions = 'Buttons',
+						options = list(dom = "Blfrtip",	buttons = list("copy", list(extend = "collection",buttons = c("csv", "excel", "pdf"),	text = "Download")),
+						lengthMenu = list( c(10, 20, -1), c(10, 20, "All")), pageLength = 10),
+						filter = 'top')
+					}
+				})
 			})
-		})
 
-		output$pattern<- renderPlot({
-			if (input$ClusterMehtod == "kmeans") {
-				out()
-			} else if (input$ClusterMehtod == "pam") {
-				out()
-			} else if (input$ClusterMehtod == "mfuzz") {
-				replayPlot(out())
-			}
-		})
-
-		observeEvent(input$pattern, {
-			if (input$ClusterMehtod == "kmeans") {
-				saved_plots$patternkmeans <- out()
-			} else if (input$ClusterMehtod == "pam") {
-				saved_plots$patternpam <- out()
-			} else if (input$ClusterMehtod == "mfuzz") {
-				saved_plots$patternmfuzz <- out()
-			}
-		})
-
-
-		output$dat_pattern <- DT::renderDataTable({withProgress(message = 'Processing...', value = 0, {
-			set.seed(123)
-			Datapattern <- DatapatternReactive ()
-			subdatwide <- Datapattern$subdatwide
-			subdatlong <- Datapattern$subdatlong
-			sel_group <- DataInSets[[working_project()]]$group_order
-			k=input$k
-			if (input$ClusterMehtod == "kmeans") {
-				cl <- kmeans(subdatwide, k)
-				cluster <- cl$cluster
-				cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
-			} else if (input$ClusterMehtod == "pam") {
-				clpam <- pam(subdatwide, k)
-				cluster <- clpam$clustering
-				cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
-			} else if (input$ClusterMehtod == "mfuzz") {
-				tmp_expr <- new('ExpressionSet', exprs = as.matrix(subdatwide))
-				m1 <- mestimate(tmp_expr)
-				cl <- mfuzz(tmp_expr, c = k, m = m1, iter.max = 200)
-				cluster <- cl$cluster
-				cluster.df <- data.frame(UniqueID=names(cluster), cluster=cluster, row.names=NULL)
-			}
-
-			if (input$DataFormat == "long") {
-				subdatlong[,sapply(subdatlong,is.numeric)] <- signif(subdatlong[,sapply(subdatlong,is.numeric)],3)
-				subdatlong <- subdatlong  %>%
-				left_join(., cluster.df, by="UniqueID")
-				DT::datatable(subdatlong)
-			} else if (input$DataFormat == "wide") {
-				subdatwide[,sapply(subdatwide,is.numeric)] <- signif(subdatwide[,sapply(subdatwide,is.numeric)],3)
-				subdatwide  <- subdatwide %>%
-				rownames_to_column(.,var="UniqueID") %>%
-				left_join(., cluster.df, by="UniqueID")%>%
-				separate(UniqueID, c("Gene", "ID"), sep = "_")
-
-				DT::datatable(subdatwide,	extensions = 'Buttons',
-					options = list(dom = "Blfrtip",	buttons = list("copy", list(extend = "collection",buttons = c("csv", "excel", "pdf"),	text = "Download")),
-					lengthMenu = list( c(10, 20, -1), c(10, 20, "All")), pageLength = 10),
-					filter = 'top')
-				}
+			output$nbclust <- renderPlot({withProgress(message = 'Processing...', value = 0,
+				{
+					Datapattern <- DatapatternReactive()
+					subdatwide <- Datapattern$subdatwide
+					factoextra::fviz_nbclust(subdatwide, kmeans, method = input$nbclustMehtod, k.max = input$kmax, nboot=20) + theme_bw(base_size = 14)
+				})
 			})
-		})
-
-		output$nbclust <- renderPlot({withProgress(message = 'Processing...', value = 0, {
-			Datapattern <- DatapatternReactive()
-			subdatwide <- Datapattern$subdatwide
-			factoextra::fviz_nbclust(subdatwide, kmeans, method = input$nbclustMehtod, k.max = input$kmax, nboot=20) + theme_bw(base_size = 14)
-		})
-	})
-}
-)
+		}
+	)
 }
 
