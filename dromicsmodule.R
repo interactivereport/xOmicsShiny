@@ -5,7 +5,7 @@
 ##
 ##@file: dromicsmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 04/23/2024
+##@Date : 09/06/2024
 ##@version 3.0
 
 ## fitting functions are modified from DRomics R package (https://cran.r-project.org/web/packages/DRomics/)
@@ -1269,14 +1269,14 @@ dromics_server <- function(id) {
 				endslice = startslice + numberpage -1
 
 				sliced_id <- results_omics %>%
-				dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
+				dplyr::filter((treatment %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
 				dplyr::distinct(UniqueID) %>%
 				dplyr::slice(startslice:endslice)
 
 				sliced_df <- results_omics%>%
-				dplyr::filter((group %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
+				dplyr::filter((treatment %in% sel_treatment) & (typology %in% sel_typology) & (trend %in% sel_trend))  %>%
 				dplyr::filter(UniqueID %in% sliced_id$UniqueID) %>%
-				tidyr::unite(id, c("UniqueID","group"), remove = FALSE, sep = "-")
+				tidyr::unite(id, c("UniqueID","treatment"), remove = FALSE, sep = "-")
 
 				data_long_tmp  <- data_long %>% as.data.frame() %>%
 				tidyr::unite(id, c("UniqueID","treatment"), remove = FALSE, sep = "-") %>%
@@ -1296,10 +1296,9 @@ dromics_server <- function(id) {
 				predictedlist <- list()
 
 				for (row in 1:nrow(sliced_df)) {
-
 					modelname <- sliced_df[row, "model"]
 					UniqueID <- sliced_df[row, "UniqueID"]
-					treatment <- sliced_df[row, "group"]
+					treatment <- sliced_df[row, "treatment"]
 
 					c <- sliced_df[row, "c"]
 					d <- sliced_df[row, "d"]
