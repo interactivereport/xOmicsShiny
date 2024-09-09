@@ -222,14 +222,14 @@ DataReactiveRData <- reactive({
 			load(file1)
 		}
 
-		returnlist[["ProjectID"]] = ProjectID
-		returnlist[["Name"]] = ProjectName
-		returnlist[["Species"]] = Species
-		returnlist[["ShortName"]] = ShortName
-		returnlist[["Path"]] = ProjectPath
-		returnlist[["file1"]] = file1
-		returnlist[["file2"]] = file2
-		returnlist[["exp_unit"]] <- exp_unit
+		returnlist[["ProjectID"]] <- str_trim(ProjectID)
+		returnlist[["Name"]] <- str_trim(ProjectName)
+		returnlist[["Species"]] <- str_trim(Species)
+		returnlist[["ShortName"]] <- str_trim(ShortName)
+		returnlist[["Path"]] <- str_trim(ProjectPath)
+		returnlist[["file1"]] <- str_trim(file1)
+		returnlist[["file2"]] <- str_trim(file2)
+		returnlist[["exp_unit"]] <- str_trim(exp_unit)
 
 		#rename list
 		lookup <- c("UniqueID" = "uniqueID", "group" = "Group")
@@ -1178,7 +1178,8 @@ output$sample <-  DT::renderDT(server=FALSE, {
 	req(length(working_project()) > 0)
 	req(DataInSets[[working_project()]]$MetaData)
 
-	meta <- DataInSets[[working_project()]]$MetaData
+	meta <- DataInSets[[working_project()]]$MetaData %>% 
+	  dplyr::select(-any_of(c("Order", "ComparePairs")))
 	DT::datatable(meta,  extensions = 'Buttons',
 		options = list(dom = 'lBfrtip', pageLength = 15,
 			buttons = list(
