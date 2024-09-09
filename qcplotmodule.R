@@ -5,11 +5,12 @@
 ##
 ##@file: qcplotmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 1/6/2022
+##@Date :09/06/2024
 ##@version 3.0
 ###########################################################################################################
 # pkgs: "rgl","car","factoextra","ComplexHeatmap", "DT", "dplyr", "tibble", "ggpubr"
 # req data:MetaData, ProteinGeneNameHeader, exp_unit, data_long, data_wide, group_order, sample_order
+
 options(rgl.useNULL = TRUE)
 library(rgl)
 library(car)
@@ -34,7 +35,6 @@ qcplot_ui <- function(id) {
 						selectInput(ns("PCAshapeby"), label="Shape By", choices=NULL)
 					),
 					conditionalPanel(ns = ns, "input.PCA_tabset=='PCA Plot'",
-						#selectInput(ns("PCAsizeby"), label="Size By", choices=NULL),
 						selectizeInput(ns("pcnum"),label="Select Principal Components", choices=1:10, multiple=TRUE, selected=1:2, options = list(maxItems = 2)),
 						radioButtons(ns("ellipsoid"), label="Plot Ellipsoid (>3 per Group)", inline = TRUE, choices = c("No" = FALSE,"Yes" = TRUE)),
 						radioButtons(ns("mean_point"), label="Show Mean Point", inline = TRUE, choices = c("No" = FALSE, "Yes" = TRUE)),
@@ -129,7 +129,6 @@ qcplot_ui <- function(id) {
 				tabPanel(title="PCA Plot", value="PCA Plot",
 					tabsetPanel(id=ns("PCA_tabset"),
 						tabPanel(title="PCA Plot", value="PCA Plot",
-							#actionButton(ns("plot_PCA"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
 							actionButton(ns("pcaplot"), "Save to output"),
 							plotOutput(ns("pcaplot"),height = 800),
 						),
@@ -258,17 +257,16 @@ qcplot_server <- function(id) {
 				ProteinGeneNameHeader = DataInSets[[working_project()]]$ProteinGeneNameHeader
 				exp_unit <- DataInSets[[working_project()]]$exp_unit
 				updateSelectizeInput(session,'colpalette', choices=rownames(brewer.pal.info), selected="Dark2")
-				attributes=sort(setdiff(colnames(MetaData), c("sampleid", "Order", "ComparePairs") ))
+				attributes=sort(setdiff(colnames(MetaData), c("sampleid", "Order", "ComparePairs")))
 				updateSelectInput(session, "PCAcolorby", choices=attributes, selected="group")
 				updateSelectInput(session, "PCAshapeby", choices=c("none", attributes), selected="none")
-				#updateSelectInput(session, "PCAsizeby", choices=c("none", attributes), selected="none")
 				sampleIDs=sort(setdiff(colnames(MetaData), c("Order", "ComparePairs") ))
 				updateRadioButtons(session,'PCA_label', inline = TRUE, choices=sampleIDs, selected="sampleid")
 				updateSelectInput(session, "covar_variates", choices=attributes, selected=attributes)
 				updateRadioButtons(session,'genelabel', inline = TRUE, choices=ProteinGeneNameHeader, selected="Gene.Name")
 				updateTextInput(session, "Ylab", value=exp_unit)
 				if (!is.null(MetaData)) {
-					if (nrow(MetaData)>100) {updateRadioButtons(session,'PCA_subsample', selected="None")} #when there are too many samples, don't show  labels
+					if (nrow(MetaData)>100) {updateRadioButtons(session,'PCA_subsample', selected="None")} #when there are too many samples, don't show labels
 				}
 			})
 
@@ -331,10 +329,8 @@ qcplot_server <- function(id) {
 				maxPercent <- as.numeric(round(percentVar[[1]]))
 				MaxPCANum <- as.numeric(input$MaxPCANum)
 				p <- fviz_eig(pca, ncp = MaxPCANum, addlabels=TRUE,  linecolor ="red") +
-				#ylim(0, maxPercent + 5) +
 				labs(x = "Principal Components", y = "Percentage of variances") +
 				theme(axis.title = element_text(size = 18), axis.text = element_text(size = 18))
-				#print(get_eig(pca))
 				return(p)
 			})
 
@@ -349,7 +345,6 @@ qcplot_server <- function(id) {
 				plot_pca_control(plot_pca_control()+1)
 			})
 
-			#pcaplot_out <- eventReactive (plot_pca_control(), {
 			pcaplot_out <- reactive({
 				req(DataPCAReactive())
 				pcnum <- as.numeric(input$pcnum)
@@ -365,9 +360,6 @@ qcplot_server <- function(id) {
 
 				PC1 <- paste("PC",pcnum[1],sep="")
 				PC2 <- paste("PC",pcnum[2],sep="")
-
-				#n <- length(unique(as.character(unlist(scores[, colnames(scores)==input$PCAcolorby]))))
-				#colorpal = colorRampPalette(brewer.pal(8, input$colpalette))(n)
 
 				colorpal <- UserColorPlalette(colpalette = input$colpalette, items = as.character(unlist(scores[, colnames(scores)==input$PCAcolorby])))
 
@@ -393,12 +385,7 @@ qcplot_server <- function(id) {
 					shape_by=input$PCAshapeby
 				}
 
-				#if (input$PCAsizeby=="none") {
 				size_by=as.numeric(input$PCAdotsize)
-				#} else {
-				#	size_by= input$PCAsizeby
-				#}
-
 				colorby = input$PCAcolorby
 
 				if (is.numeric(scores[[input$PCAcolorby]])) {  #when colorby is numeric, don't use color palette
@@ -444,7 +431,6 @@ qcplot_server <- function(id) {
 					p <- p + geom_text_repel(data=datapc, aes(x=v1, y=v2, label=labelgeneid), size = 5, vjust=1, color="red") +
 					geom_segment(data=datapc, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,"cm")), alpha=0.75, color="black")
 				}
-				#	p <- ggpubr::ggpar(p, legend.title ="", xlab = xlabel, ylab = ylabel, legend = "bottom") #works only when use color by.
 				p <- p + guides(color = guide_legend(override.aes = list(label="")))
 
 				return(p)
@@ -464,14 +450,8 @@ qcplot_server <- function(id) {
 				PCAlist <- DataPCAReactive()
 				scores <- PCAlist$scores
 				PCAcolorby <- input$PCAcolorby
-				#colpalette <- input$colpalette
-
 				tmp_group = as.character(unlist(scores[, colnames(scores)==PCAcolorby]))
 				PCAcolorby = sym(PCAcolorby)
-
-				#n <- length(unique(tmp_group))
-				#colorpal = colorRampPalette(brewer.pal(8, colpalette))(n)
-
 				colorpal <- UserColorPlalette(colpalette = input$colpalette, items = tmp_group)
 
 				tmp_plot <- ggplot(scores, aes(x=PC1, y=PC2, color = !!PCAcolorby)) +
@@ -493,24 +473,16 @@ qcplot_server <- function(id) {
 				scores <- PCAlist$scores
 				percentVar <- PCAlist$percentVar
 				PCAcolorby <- input$PCAcolorby
-				#colpalette <- input$colpalette
 
 				xlabel <- paste("PC1(",round(percentVar[1]),"%)",sep="")
 				ylabel <- paste("PC2(",round(percentVar[2]),"%)",sep="")
 				zlabel <- paste("PC3(",round(percentVar[3]),"%)",sep="")
 
 				sampleid <- rownames(scores)
-
 				tmp_group = as.character(unlist(scores[, colnames(scores)==PCAcolorby]))
-				#n <- length(unique(tmp_group))
-				#colorpal = colorRampPalette(brewer.pal(8, colpalette))(n)
-
 				colorpal <- UserColorPlalette(colpalette = input$colpalette, items = tmp_group)
-
 				scores$tmp_group <- scores[, colnames(scores)==PCAcolorby]
 
-				#rgl.open(useNULL=T)
-				#options(rgl.useNULL=TRUE)
 				if (input$ellipsoid3d == "Yes") {
 					ellipsoid3d = TRUE
 				} else {
@@ -526,7 +498,7 @@ qcplot_server <- function(id) {
 					dotlabel=FALSE
 				}
 
-				car::scatter3d(PC3 ~ PC1 + PC2 | tmp_group, data= scores,
+				car::scatter3d(PC3 ~ PC1 + PC2 | as.factor(tmp_group), data= scores,
 					axis.col= c("black", "black", "black"),
 					xlab=xlabel, ylab=ylabel,  zlab=zlabel, labels = as.factor(sampleid), id=dotlabel, id.n=length(sampleid),
 					axis.scales=FALSE,
@@ -539,9 +511,6 @@ qcplot_server <- function(id) {
 					surface.col = colorpal,
 					point.col = colorpal
 				)
-				#legend3d("right", legend = levels(scores$tmp_group),  col = colorpal, pch = 12)
-				#text3d(x=1.1, y=c(.9,1,1.1), z=1.1, levels(scores$tmp_group), col = colorpal)
-				#points3d(x=1.2, y=c(.9,1,1.1), z=1.1, col = colorpal, size=5)
 				rglwidget(width = 800, height = 800)
 			})
 
@@ -558,9 +527,6 @@ qcplot_server <- function(id) {
 				zlabel <- paste("PC3(",round(percentVar[3]),"%)",sep="")
 
 				sampleid <- str_c(scores$sampleid, "\n", scores$group)
-				#n <- length(unique(as.character(unlist(scores[, colnames(scores)==input$PCAcolorby]))))
-				#colorpal = colorRampPalette(brewer.pal(8, input$colpalette))(n)
-
 				colorpal <- UserColorPlalette(colpalette = input$colpalette, items = unique(as.character(unlist(scores[, colnames(scores)==input$PCAcolorby]))))
 
 				if (input$PCAshapeby=="none"){
@@ -568,7 +534,6 @@ qcplot_server <- function(id) {
 					colors = colorpal,text = sampleid) %>%
 					add_markers() %>%
 					layout(scene = list(xaxis = list(title = xlabel), yaxis = list(title = ylabel),  zaxis = list(title = zlabel)))
-
 				} else{
 					p <- plot_ly(scores, x = ~PC1, y = ~PC2, z = ~PC3, color = as.formula(paste0("~", input$PCAcolorby)),
 						symbol=as.formula(paste0("~", input$PCAshapeby)),symbols=plot_symbols,
@@ -588,7 +553,6 @@ qcplot_server <- function(id) {
 				if (input$abs == "Yes") {
 					loading <- abs(loading)
 				}
-
 				return(loading)
 			})
 
@@ -602,7 +566,6 @@ qcplot_server <- function(id) {
 				)
 			})
 
-			# PCA Loading Download handler, conducts download function
 			output$loadingPCA_download_button <- downloadHandler(
 				filename = "PCA_Loading.csv",
 				content = function(file) {S
@@ -612,24 +575,13 @@ qcplot_server <- function(id) {
 
 			########## boxplot
 			QCboxplot_out <- reactive({
-				#QCboxplot_out <- eventReactive(input$tabset=="Box Plot", {
-
-				#withProgress(message = 'Making box plot', value = 0, {
 				DataQC <-  DataQCReactive()
 				tmp_sampleid <- DataQC$tmp_sampleid
-				tmp_data_long <- DataQC$tmp_data_long %>% dplyr::filter(expr !=0) %>% sample_n(1000)
+				set.seed(123)
+				tmp_data_long <- DataQC$tmp_data_long %>% dplyr::filter(expr !=0) %>% dplyr::sample_n(1000)
 				tmp_data_long$sampleid <- factor(tmp_data_long$sampleid, levels=DataInSets[[working_project()]]$sample_order)
 
 				tmp_group = DataQC$tmp_group
-				#colpalette <- input$colpalette
-
-				#n <- brewer.pal.info[input$colpalette,'maxcolors']
-				#if (length(unique(tmp_data_long$sampleid)) <=  n) {
-				#	user_color <- RColorBrewer::brewer.pal(length(unique(tmp_data_long$sampleid)), input$colpalette)
-				#} else {
-				#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(unique(tmp_data_long$sampleid)))
-				#}
-
 				colorpal <- UserColorPlalette(colpalette = input$colpalette, items = unique(tmp_data_long$sampleid))
 
 				p <- ggplot(tmp_data_long, aes(x=sampleid, y=expr)) +
@@ -648,7 +600,6 @@ qcplot_server <- function(id) {
 				) +
 				guides(col = guide_legend(ncol = 8))
 				return(p)
-				#})
 			})
 
 			output$QCboxplot <- renderPlot({
@@ -661,7 +612,6 @@ qcplot_server <- function(id) {
 
 			############heatmap
 			pheatmap_out <- reactive({
-				#pheatmap_out <- eventReactive(input$tabset=="Sample-sample Distance", {
 				DataQC <-  DataQCReactive()
 				tmp_sampleid <- DataQC$tmp_sampleid
 				tmp_data_wide <- DataQC$tmp_data_wide
@@ -675,7 +625,6 @@ qcplot_server <- function(id) {
 				dplyr::mutate(group = factor(group, levels=DataInSets[[working_project()]]$group_order))
 				sample_annot = HeatmapAnnotation(df = annotation)
 
-				#row_annot = rowAnnotation(df = annotation)
 				sampleDistMatrix <- as.matrix(dist(t(tmp_data_wide)))
 				rownames(sampleDistMatrix) <- tmp_sampleid
 				colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(32)
@@ -694,7 +643,6 @@ qcplot_server <- function(id) {
 
 			############Dendrograms
 			Dendrograms_out <- reactive({
-				#Dendrograms_out <- eventReactive(input$tabset=="Dendrograms", {
 				DataQC <-  DataQCReactive()
 				tmp_data_wide <- DataQC$tmp_data_wide
 				hc <- hclust(dist(t(tmp_data_wide)))
@@ -719,7 +667,6 @@ qcplot_server <- function(id) {
 
 			############histplot
 			histplot_out <- reactive({
-				#histplot_out <- eventReactive(input$tabset=="CV Distribution", {
 				withProgress(message = 'Calculating.',  detail = 'This may take a while...', value = 0, {
 					DataQC <-  DataQCReactive()
 					tmp_sampleid <- DataQC$tmp_sampleid
@@ -739,15 +686,7 @@ qcplot_server <- function(id) {
 					xlimmin <- interval[cut(min(mu$median), interval, include.lowest = TRUE, labels = FALSE)]
 					xlimmax <- interval[cut(max(mu$median), interval, include.lowest = TRUE, labels = FALSE) +1]
 
-					#n <- brewer.pal.info[input$colpalette,'maxcolors']
-					#if (length(unique(tmp_group)) <=  n) {
-					#	user_color <- RColorBrewer::brewer.pal(length(unique(tmp_group)), input$colpalette)
-					#} else {
-					#	user_color=colorRampPalette(RColorBrewer::brewer.pal(n, input$colpalette))(length(unique(tmp_group)))
-					#}
-					#
 					colorpal <- UserColorPlalette(colpalette = input$colpalette, items = unique(tmp_group))
-
 
 					p <- ggplot(CV.df, aes(x=CV, color = group)) +
 					scale_fill_manual(values = colorpal) +
@@ -849,7 +788,6 @@ qcplot_server <- function(id) {
 			output$N_pairs_N<-renderText({str_c("There are ", Npairs_cov()[2], " significant numeric covariate-PC pairs.")})
 			output$N_pairs<-renderText({str_c("There are ", Npairs_cov()[1]+Npairs_cov()[2], " significant covariate-PC pairs.")})
 
-
 			observeEvent(input$covar_cat, {
 				data=PC_covariates_out()$sel_dataC
 				saved_plots$covar_cat <- data$plot
@@ -859,7 +797,6 @@ qcplot_server <- function(id) {
 				data=PC_covariates_out()$sel_dataN
 				saved_plots$covar_num<- data$plot
 			})
-
 		}
 	)
 }
