@@ -133,12 +133,12 @@ expression_ui <- function(id) {
 							column(width=6, sliderInput(ns("tlcex"), "Label Font Size:", min = 0.4, max = 2, step = 0.1, value = 0.6)),
 							column(width=6, numericInput(ns("siglevel"), label= "sig.level:", value= 0.05, min=0, max = 1, step=0.01))
 						),
-						radioButtons(ns("method"), label="Visualization Method:", inline = TRUE, choices = c("circle" = "circle", "square" = "square", "ellipse" = "ellipse", "number" = "number", "shade" = "shade", "pie" = "pie"), selected = "circle"),
+						radioButtons(ns("method"), label="Visualization Method:", inline = TRUE, choices = c("circle" = "circle", "square" = "square", "ellipse" = "ellipse", "number" = "number", "shade" = "shade", "pie" = "pie"), selected = "ellipse"),
 						radioButtons(ns("corrcol"), label="Color:", inline = TRUE, choices = c("RdBu" = "RdBu", "BrBG" = "BrBG", "PiYG" = "PiYG", "PRGn" = "PRGn", "PuOr" = "PuOr", "RdYlBu" = "RdYlBu"), selected = "RdBu"),
 						radioButtons(ns("type"),  label="Plot Type", inline = TRUE, choices = c("full"="full", "lower"="lower", "upper"="upper"), selected = "upper"),
 						radioButtons(ns("order"),  label="Order by", inline = TRUE, choices = c("original"="original", "Angular order of eigenvectors" = "AOE", "First principal component"="FPC", "Hierarchical clustering"="hclust", "alphabet"="alphabet"),selected = "AOE"),
 						radioButtons(ns("hclustmethod"), label="Cluster Method", inline = TRUE, choices = c("complete"="complete", "ward"="ward", "ward.D"="ward.D", "ward.D2"="ward.D2", "single"="single", "average"="average","mcquitty"="mcquitty", "median"="median", "centroid"="centroid"),selected = "complete"),
-						radioButtons(ns("diag"), label="Show Principal Diagonal", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES")
+						radioButtons(ns("diag"), label="Show Principal Diagonal", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO")
 					)
 				),
 				conditionalPanel(ns = ns, "input.tabset=='Laser Capture Microdissection'",
@@ -266,9 +266,6 @@ expression_server <- function(id) {
 				updateTextInput(session, "Xlab", value="group")
 			})
 
-			toListen <- reactive({
-				list(input$subset,input$sel_geneset)
-			})
 
 			observe({
 				req(length(working_project()) > 0)
@@ -276,6 +273,8 @@ expression_server <- function(id) {
 				results_long = DataInSets[[working_project()]]$results_long
 				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
 				req(input$subset)
+			
+				msg_filter <- msg_filter1 <- "Please input at least 1 matched gene."
 				if (input$subset == "Select") {
 					req(input$sel_gene)
 					sel_gene = input$sel_gene
@@ -312,22 +311,27 @@ expression_server <- function(id) {
 					tmpids <- tmpdat %>% as.data.frame() %>% dplyr::pull(UniqueID)
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
 				}
+				
+				if (nrow(ProteinGeneName_sel) == 0) {
+				  msg_filter1 <- "Please input at least 1 matched gene."
+				  msg_filter <- ""
+				} else {
+				  tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+				  msg_filter1 <- paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")
+				  if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique())  > 100)
+				    msg_filter1 <- paste(msg_filter1, " Too many genes, try < 100 genes", sep="")
 
-				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
-				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+				  msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
+				  if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique()) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()))
+				    msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
 
-				msg_filter1 <- paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")
-				if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique())  > 100)
-				msg_filter1 <- paste(msg_filter1, " Too many genes, try < 100 genes", sep="")
+				  numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
+				  updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+				}
 				output$filteredgene <- renderText({msg_filter1})
-
-				msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
-				if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique()) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()))
-				msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
 				output$filteredUniqueID <- renderText({msg_filter})
 
-				numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
-				updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
 			})
 
 			###############
@@ -556,6 +560,7 @@ expression_server <- function(id) {
 						as.data.frame()
 
 						if (nrow(annotation_df) > 0)  {
+						  print(annotation_df)
 							annotation_df <- annotation_df %>%
 							tidyr::separate(test, c('start', 'end'),  sep = "vs") %>%
 							dplyr::mutate_at(c("start","end"), trimws, which = "both") %>%
@@ -975,22 +980,27 @@ expression_server <- function(id) {
 				dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
 				tmpids <- DataExpReactive()$tmpid
 				validate(need(length(tmpids) >= 2,"select > 2 Ids"))
-
-				library(corrplot)
+				
+				if(!require(corrplot)){
+				  install.packages("corrplot")
+				  library(corrplot)
+				}
 
 				if (length(tmpids) > 2) {
 					cor_matrix <-  data_long_tmp  %>% as.data.frame() %>%
 					dplyr::select(-c(group)) %>%
-					pivot_wider(names_from = labelgeneid, values_from = expr) %>%
+					pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = ~ mean(.x, na.rm = TRUE)) %>%
 					dplyr::select(-c(sampleid)) %>% as.matrix() %>%
 					cor(.,use = "p")
+					
 					testRes = cor.mtest(cor_matrix, conf.level = 0.95)
-
+	
 					if(input$diag=="YES")
 					diag = TRUE
 					else
 					diag = FALSE
 					
+					cor_matrix[is.na(cor_matrix)] <- 0
 					p <- corrplot(cor_matrix,
 						method=input$method,
 						order=input$order,
@@ -1010,7 +1020,7 @@ expression_server <- function(id) {
 				}	else if (length(tmpids)  == 2){
 					wide_temp <-  data_long_tmp  %>% as.data.frame() %>%
 					dplyr::select(-c(group)) %>%
-					pivot_wider(names_from = labelgeneid, values_from = expr) %>%
+					tidyr::pivot_wider(names_from = labelgeneid, values_from = expr) %>%
 					dplyr::select(-c(sampleid)) #%>% as.matrix()
 
 					c.res <- cor(wide_temp[,1], wide_temp[,2], use = "complete.obs")
