@@ -989,7 +989,8 @@ expression_server <- function(id) {
 				if (length(tmpids) > 2) {
 					cor_matrix <-  data_long_tmp  %>% as.data.frame() %>%
 					dplyr::select(-c(group)) %>%
-					pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = ~ mean(.x, na.rm = TRUE)) %>%
+					#pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = ~ mean(.x, na.rm = TRUE)) %>%
+					tidyr::pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = function(x) mean(x, na.rm = TRUE)) %>%  
 					dplyr::select(-c(sampleid)) %>% as.matrix() %>%
 					cor(.,use = "p")
 					
