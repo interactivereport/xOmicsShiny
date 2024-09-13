@@ -59,7 +59,9 @@ monotonic_ui <- function(id) {
 						column(width=6,sliderInput(ns("labelfontsize"), "Label Font Size:", min = 10, max = 24, step = 2, value = 14)),
 						column(width=6,sliderInput(ns("basefontsize"), "Font Size:", min = 10, max = 24, step = 2, value = 14))
 					),
-					radioButtons(ns("dotline"), label="Regression or Connecting Dot", choices=c("Regression", "Connecting Dot"), inline = TRUE, selected="Regression")
+					radioButtons(ns("dotline"), label="Regression or Connecting Dot", choices=c("Regression", "Connecting Dot"), inline = TRUE, selected="Regression"),
+					radioButtons(ns("IndividualPoint"), label="Individual Point?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES"),
+					radioButtons(ns("ShowErrorBar"), label="Error Bar?", inline = TRUE, choices = c("SD" = "SD","SEM" = "SEM","NO" = "NO"), selected = "SD")
 				),
 				conditionalPanel(ns = ns,"input.upper_tabset=='Result Table (all)'",
 					radioButtons(ns("parallel"), label= "parallel processing?", choices= c("yes"="yes","no"="no"),inline = TRUE),
@@ -179,15 +181,24 @@ monotonic_server <- function(id) {
 						dfgene1 <- data_tmp %>% as.data.frame() %>% dplyr::filter(treatment == onetreatment)
 
 						df.summary <- dfgene1 %>%
-						group_by(conc, treatment) %>%
-						summarise(
-							sd = sd(expr),
-							expr = mean(expr),
-							.groups = "drop"
-						)
+						dplyr::group_by(conc, treatment) %>%
+						dplyr::summarise(sd = sd(expr),	expr = mean(expr), n = n(), se = sd / sqrt(n), .groups = "drop") %>%
+						dplyr::select(-n)
 
-						p <- ggplot(data = dfgene1, aes(x = conc, y = expr,  group = treatment)) +
-						geom_jitter(aes(color = treatment),position = position_jitter(0.2))
+						p <- ggplot(data = dfgene1, aes(x = conc, y = expr,  group = treatment))
+
+						if (input$ShowErrorBar == "SD") {
+							p <- p + geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2)
+						}
+
+						if (input$ShowErrorBar == "SEM") {
+							p <- p + geom_errorbar(aes(ymin = expr-se, ymax = expr+se, color = treatment), data = df.summary, width = 0.2)
+						}
+
+						if (input$IndividualPoint == "YES") {
+							p <- p + geom_jitter(aes(color = treatment), position = position_jitter(0.2))
+						}
+
 						if (input$dotline == "Connecting Dot") {
 							p <- p +
 							geom_line(aes(group = treatment, color = treatment), data = df.summary)
@@ -196,16 +207,16 @@ monotonic_server <- function(id) {
 							geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
 							stat_poly_eq(formula = Linearformula,   aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE)
 						}
+
 						p <- p +
-						geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 						ggtitle(onetreatment) +
 						theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
-										theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), 
-					axis.text.x = element_text(angle = 0),
-					legend.title = element_blank(), 
-					strip.text.x = element_text(size=input$labelfontsize),
-					legend.position="bottom")
-			
+						theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"),
+							axis.text.x = element_text(angle = 0),
+							legend.title = element_blank(),
+							strip.text.x = element_text(size=input$labelfontsize),
+						legend.position="bottom")
+
 						plist[[onetreatment]]  <- p
 					}
 
@@ -223,6 +234,7 @@ monotonic_server <- function(id) {
 					sel_treatment = intersect(sel_treatment, unique(data_tmp[['treatment']]))
 					dfgene1 <- data_tmp %>% as.data.frame() %>%
 					dplyr::filter(treatment %in% sel_treatment)
+
 					df.summary <- dfgene1 %>%
 					group_by(conc, treatment) %>%
 					summarise(
@@ -230,8 +242,20 @@ monotonic_server <- function(id) {
 						expr = mean(expr), .groups = "drop"
 					)
 
-					p <- ggplot(dfgene1, aes(x=conc, y=expr, color=treatment)) +
-					geom_jitter(aes(color = treatment),position = position_jitter(0.2))
+					p <- ggplot(dfgene1, aes(x=conc, y=expr, color=treatment))
+
+					if (input$ShowErrorBar == "SD") {
+						p <- p + geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2)
+					}
+
+					if (input$ShowErrorBar == "SEM") {
+						p <- p + geom_errorbar(aes(ymin = expr-se, ymax = expr+se, color = treatment), data = df.summary, width = 0.2)
+					}
+
+					if (input$IndividualPoint == "YES") {
+						p <- p + geom_jitter(aes(color = treatment), position = position_jitter(0.2))
+					}
+
 					if (input$dotline == "Connecting Dot") {
 						p <- p +
 						geom_line(aes(group = treatment, color = treatment), data = df.summary)
@@ -240,15 +264,15 @@ monotonic_server <- function(id) {
 						geom_smooth(method = "lm", se=FALSE, formula = Linearformula) +
 						stat_poly_eq(formula = Linearformula,   aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),  parse = TRUE)
 					}
+
 					p <- p +
-					geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 					theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
 					theme (plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm"), axis.text.x = element_text(angle = 0),legend.title = element_blank(), legend.position="bottom")
 
 					ml <- p
 				}
 
-				return(list(plot=ml, result = results))
+				return(list(plot=p, result = results))
 			})
 
 			output$FittingCurve <- renderPlot({
@@ -506,7 +530,7 @@ monotonic_server <- function(id) {
 
 				data_long_tmp  <- dplyr::filter(data_long, UniqueID %in% sel_gene) %>%
 				dplyr::filter(treatment %in% sel_treatment) %>% as.data.frame() %>%
-		    dplyr::arrange(Gene.Name)
+				dplyr::arrange(Gene.Name)
 				data_long_tmp$labelgeneid = data_long_tmp[,match(genelabel,colnames(data_long_tmp))]
 				data_long_tmp$treatment = factor(data_long_tmp$treatment, levels = sel_treatment)
 
@@ -525,8 +549,20 @@ monotonic_server <- function(id) {
 				colorpal <- UserColorPlalette(colpalette = "Dark2", items = unique(data_long_tmp$treatment))
 
 				p <- ggplot(data_long_tmp, aes(x=conc, y=expr, color=treatment)) +
-				facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol) +
-				geom_jitter(aes(color = treatment), position = position_jitter(0.2))
+				facet_wrap(~labelgeneid, scales = "free", nrow = nrow, ncol = ncol)
+
+				if (input$ShowErrorBar == "SD") {
+					p <- p + geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2)
+				}
+
+				if (input$ShowErrorBar == "SEM") {
+					p <- p + geom_errorbar(aes(ymin = expr-se, ymax = expr+se, color = treatment), data = df.summary, width = 0.2)
+				}
+
+				if (input$IndividualPoint == "YES") {
+					p <- p + geom_jitter(aes(color = treatment), position = position_jitter(0.2))
+				}
+
 				if (input$dotline == "Connecting Dot") {
 					p <- p +
 					geom_line(aes(group = treatment, color = treatment), data = df.summary)
@@ -537,7 +573,6 @@ monotonic_server <- function(id) {
 				}
 
 				p <- p +
-				geom_errorbar(aes(ymin = expr-sd, ymax = expr+sd, color = treatment), data = df.summary, width = 0.2) +
 				scale_fill_manual(values = colorpal) +
 				scale_colour_manual(values = colorpal) +
 				theme_bw(base_size = basefontsize) + xlab(xlabel) +  ylab(ylabel) +
