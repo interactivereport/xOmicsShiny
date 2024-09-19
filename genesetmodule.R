@@ -380,10 +380,14 @@ geneset_server <- function(id) {
                         observeEvent(working_project(),{
                           req(ProjectInfo)
                           if (!is.null(ProjectInfo$Species)) {
-                            if (ProjectInfo$Species %in% c("human","mouse", "rat") ) {
-                              updateRadioButtons(session, "MSigDB_species", selected = ProjectInfo$Species)
+                            prj_species=tolower(str_trim(ProjectInfo$Species))
+                            if (prj_species %in% c("human","mouse", "rat") ) {
+                              updateRadioButtons(session, "MSigDB_species", selected = prj_species)
                              # cat("Speceis choice updatef, species is", ProjectInfo$Species, "\n")
-                            }
+                            } else if (prj_species %in% c("cho","chinese hamster", "mus musculus") ) {
+                              updateRadioButtons(session, "MSigDB_species", selected = "mouse")
+                              # cat("Speceis choice updatef, species is", ProjectInfo$Species, "\n")
+                            } 
                           }
                         })
                         

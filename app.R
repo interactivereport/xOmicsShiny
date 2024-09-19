@@ -118,7 +118,7 @@ server <- function(input, output, session) {
 				tags$a(href="Proteomics_Demo.zip", "Download Proteomics example csv files (200 proteins from AD PD dataset)"),
 				tags$hr(),
 				textInput("F_project_name", label="Project Name", value=""),
-				radioButtons("Fspecies",label="Select Species", choices=c("human","mouse", "rat"), inline = T, selected="human"),
+				textInput("Fspecies",label="Enter Species (human, mouse, rat, etc.)", value="human"),
 				tags$hr(),
 				tags$p("Sample MetaData must have sampleid and group columns, with additional columns optional. The sample names in sampleid column must match the expression data file."),
 				fileInput("F_sample", "Sample MetaData File"),
