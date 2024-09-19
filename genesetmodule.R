@@ -487,7 +487,7 @@ geneset_server <- function(id) {
                           if (input$gene_rank_method=="logFC") {
                             rank_list <- GSEA.terminals.df$logFC
                           } else { #by -log(P-value)
-                            GSEA.terminals.df <-GSEA.terminals.df %>% mutate(minus_logPvalue=ifelse(logFC<0, log(P.Value), 0-log(P.Value)), minus_logPvalue=round(minus_logPvalue*100)/100 )%>%arrange(desc(minus_logPvalue))
+                            GSEA.terminals.df <-GSEA.terminals.df %>% mutate(minus_logPvalue=ifelse(logFC<0, log(P.Value), 0-log(P.Value)), minus_logPvalue=round(minus_logPvalue*100)/100 )%>%arrange( dplyr::desc(minus_logPvalue))
                             rank_list <- GSEA.terminals.df$minus_logPvalue
                           }
                           names(rank_list) <- GSEA.terminals.df$Gene.Name
