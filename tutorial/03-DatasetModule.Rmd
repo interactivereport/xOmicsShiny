@@ -14,13 +14,9 @@ We have pre-loaded 11 datasets from published studies that users can use for dem
 |------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|---|---|
 | Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data                                 | Mouse Microglia RNA                                                               | [Gyoneva et al., 2019](https://www.life-science-alliance.org/content/2/6/e201900453){target="_blank"}                         |   |   |
 | LRRK2 Human Neuron Transcriptome and Proteome Data                                 | LRRK2 Neuron RNA and Proteome                                                     | [Connor-Robson et al., 2019](https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub){target="_blank"} |   |   |
-| Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant,ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover |                                                                                                                               |   |   |
+| Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant,ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover | [Ping et al., 2018](https://www.nature.com/articles/sdata201836)                                                                                                                              |   |   |
 | Mouse AgingHFCD RNA, Proteomic and metabolomic Data                                | AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics                    | [Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"}                                          |   |   |
-| StrokeBrain_TimeCourse Data                                                        | StrokeBrain_TimeCourse                                                            |                                                                                                                               |   |   |
-
-<span style="font-size:2em; color:red"> *The table needs update to complete the reference information and proper layout* </span>
-
-
+| StrokeBrain_TimeCourse Data                                                        | StrokeBrain_TimeCourse                                                            | [Gu et al., 2021](https://pubs.acs.org/doi/10.1021/acs.jproteome.1c00259)                                                                                                                              |   |   |
 
 ### Upload Data Files (csv) and Upload RData File 
 
