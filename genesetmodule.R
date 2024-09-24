@@ -118,13 +118,14 @@ geneset_ui <- function(id) {
                               )),
              radioButtons(ns("MSigDB_species"), label= "Gene Set Species",choices=c("human","mouse", "rat"), inline = TRUE, selected = "human"),
              span(textOutput(ns("SpeciesGSEAInfo")), style = "color:red; font-size:13px; font-family:arial; font-style:italic"),
-             selectInput(ns("map_genes"), "Gene Symbol Mapping:", choices = c("Homologous Genes", "Change to UPPER case (human)", 
+             selectInput(ns("map_genes"), "Gene Symbol Mapping", choices = c("Homologous Genes", "Change to UPPER case (human)", 
                                                                               "Change to Title Case (mouse/rat)", "No Change (as it is)"), selected="Homologous Genes"),
              conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Enrichment Analysis (GSEA)' || input.geneset_tabset=='Over-Representation Analysis (ORA)' || input.geneset_tabset=='Gene Expression'",
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Gene Set Enrichment Analysis (GSEA)'",
+                                               radioButtons(ns("gene_rank_method"), label= "Rank Genes By",choices=c("logFC","-log(P-Value)"), inline = TRUE, selected = "logFC"),
                                                column(width=6,numericInput(ns("gsetMin"), label= "GeneSet Min Size",  value = 15, min=5, step=1)),
                                                column(width=6,numericInput(ns("gsetMax"), label= "GeneSet Max Size",  value = 1000, min=100, step=1)),
-                                               sliderInput(ns("gsea_FDR"), "GSEA Adjusted P-Value Cutoff:", min = 0, max = 1, step = 0.01, value = 0.25),
+                                               sliderInput(ns("gsea_FDR"), "GSEA Adjusted P-Value Cutoff", min = 0, max = 1, step = 0.01, value = 0.25),
                                                checkboxInput(ns("gsea_collapase"), "Collapse Gene Sets",  FALSE, width="90%"),
                                                ),
                               conditionalPanel(ns = ns, "input.geneset_tabset=='Over-Representation Analysis (ORA)'",
@@ -379,10 +380,14 @@ geneset_server <- function(id) {
                         observeEvent(working_project(),{
                           req(ProjectInfo)
                           if (!is.null(ProjectInfo$Species)) {
-                            if (ProjectInfo$Species %in% c("human","mouse", "rat") ) {
-                              updateRadioButtons(session, "MSigDB_species", selected = ProjectInfo$Species)
+                            prj_species=tolower(str_trim(ProjectInfo$Species))
+                            if (prj_species %in% c("human","mouse", "rat") ) {
+                              updateRadioButtons(session, "MSigDB_species", selected = prj_species)
                              # cat("Speceis choice updatef, species is", ProjectInfo$Species, "\n")
-                            }
+                            } else if (prj_species %in% c("cho","chinese hamster", "mus musculus") ) {
+                              updateRadioButtons(session, "MSigDB_species", selected = "mouse")
+                              # cat("Speceis choice updatef, species is", ProjectInfo$Species, "\n")
+                            } 
                           }
                         })
                         
@@ -479,9 +484,14 @@ geneset_server <- function(id) {
                               dplyr::distinct(., Gene.Name,.keep_all = TRUE)%>%dplyr::filter(!is.na(Gene.Name), Gene.Name!="") 
                           }
                           
-                          
-                          rank_list <- GSEA.terminals.df$logFC
+                          if (input$gene_rank_method=="logFC") {
+                            rank_list <- GSEA.terminals.df$logFC
+                          } else { #by -log(P-value)
+                            GSEA.terminals.df <-GSEA.terminals.df %>% mutate(minus_logPvalue=ifelse(logFC<0, log(P.Value), 0-log(P.Value)), minus_logPvalue=round(minus_logPvalue*100)/100 )%>%arrange( dplyr::desc(minus_logPvalue))
+                            rank_list <- GSEA.terminals.df$minus_logPvalue
+                          }
                           names(rank_list) <- GSEA.terminals.df$Gene.Name
+                          
                           #browser()#bebug
                           
                           return(list("gene_list" = rank_list, "GSEA.terminals.df" = GSEA.terminals.df ))
@@ -1195,10 +1205,15 @@ geneset_server <- function(id) {
                             terminals.df <- getresults$GSEA.terminals.df
                             genes=sel_GSEA_set()$genes
                             NES=sel_GSEA_set()$table$NES
-                            if (NES>0) {  #sort so leading edge genes are shown first
-                              terminals.df <-terminals.df %>%arrange(dplyr::desc(logFC))
-                            } else { terminals.df <-terminals.df %>%arrange(logFC)}
-                            
+                            if (input$gene_rank_method=="logFC") {
+                              if (NES>0) {  #sort so leading edge genes are shown first
+                                terminals.df <-terminals.df %>%arrange(dplyr::desc(logFC))
+                              } else { terminals.df <-terminals.df %>%arrange(logFC)}
+                            } else {
+                              if (NES>0) {  #sort so leading edge genes are shown first
+                                terminals.df <-terminals.df %>%arrange(dplyr::desc(minus_logPvalue))
+                              } else { terminals.df <-terminals.df %>%arrange(minus_logPvalue)}
+                            }
                           } else if (analysis_type == "ORA") {
                             getresults <- DataGenesetReactive_ORA()
                             terminals.df <- getresults$terminals.df
