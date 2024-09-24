@@ -40,7 +40,7 @@ observe({
 	}
 
 	if (input$select_dataset=='Saved Projects in CSV file') {
-		saved_projects = read.csv("data/saved_projectsNEW.csv")
+		saved_projects = read.csv("data/saved_projects.csv")
 		projects = saved_projects$ProjectID
 		updateSelectInput(session, "sel_project", choices=c("", projects), selected="")
 	}
@@ -79,7 +79,7 @@ SavedProjectReactive <- reactive({
 		poolReturn(con)
 		poolClose(pool)
 	} else if (input$select_dataset=='Saved Projects in CSV file') {
-		saved_projects = read.csv("data/saved_projectsNEW.csv")
+		saved_projects = read.csv("data/saved_projects.csv")
 	}
 
 	clientData <- session$clientData
