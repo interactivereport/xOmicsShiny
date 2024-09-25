@@ -820,7 +820,8 @@ expression_server <- function(id) {
 				dplyr::select(any_of(c("UniqueID","Gene.Name","Protein.ID","Intensity"))) %>%
 				dplyr::filter((!is.na(Intensity)) & Intensity > 0) %>%
 				dplyr::arrange(desc(Intensity)) %>%
-				dplyr::mutate(RANK = row_number())
+				dplyr::mutate(RANK = row_number()) %>%
+				as.data.frame()
 
 				genelabel=input$sel_geneid
 				scurve.data$labelgeneid = scurve.data[,match(genelabel,colnames(scurve.data))]
