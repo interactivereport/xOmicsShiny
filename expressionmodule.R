@@ -353,6 +353,8 @@ expression_server <- function(id) {
 
 			observe({
 				req(length(working_project()) > 0)
+			  req(DataInSets[[working_project()]]$MetaData)
+			  
 				MetaData = DataInSets[[working_project()]]$MetaData
 				req(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")))
 
