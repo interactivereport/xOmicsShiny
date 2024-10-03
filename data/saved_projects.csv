@@ -1,15 +1,14 @@
-Names,ShortNames,ProjectID,Species
-Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data,Mouse Microglia RNA,Mouse_microglia_RNA-Seq,mouse
-LRRK2 Neuron Transcriptome,LRRK2 Neuron RNA,LRRK2_Neuron_RNA,human
-LRRK2 Neuron Proteome,LRRK2 Neuron Proteome,LRRK2_Neuron_Protein,human
-RNASeqtest2,RNASeqtest2,RNASeqtest2,rat
-Human Brain (Cortex) Proteome in AD and PD by Maxquant,ADPD_cortex_Maxquant,ADPD_cortex_Maxquant,human
-Human Brain (ACG) Proteome in AD and PD by Maxquant,ADPD_ACG_Maxquant,ADPD_ACG_Maxquant,human
-Human Brain (Cortex) Proteome in AD and PD by proteome discoverer,ADPD_cortex_Pdiscover,ADPD_cortex_Pdiscover,human
-Human Brain (Cortex) Proteome in AD and PD by  proteome discoverer,ADPD_ACG_Pdiscover,ADPD_ACG_Pdiscover,human
-AgingHFCD_Metabolomics,AgingHFCD_Metabolomics,AgingHFCD_Metabolomics,mouse
-AgingHFCD_Proteomics,AgingHFCD_Proteomics,AgingHFCD_Proteomics,mouse
-AgingHFCD_RNAseq,AgingHFCD_RNAseq,AgingHFCD_RNAseq,mouse
-StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,rat
-StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,rat
-Laser capture microdissection (LCM) proteomics,LCM_96Grid_Simulated,LCM_96Grid_Simulated,human
+ProjectID,ShortNames,Names,Species
+Mouse_microglia_RNA-Seq,Mouse Microglia RNA,Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data,mouse
+LRRK2_Neuron_RNA,LRRK2 Neuron RNA,LRRK2 Neuron Transcriptome,human
+LRRK2_Neuron_Protein,LRRK2 Neuron Proteome,LRRK2 Neuron Proteome,human
+RNASeqtest2,RNASeq test,RNASeqtest2,rat
+ADPD_cortex_Maxquant,ADPD cortex Searched by Maxquant,Human Brain (Cortex) Proteome in AD and PD by Maxquant,human
+ADPD_ACG_Maxquant,ADPD ACG Searched by Maxquant,Human Brain (ACG) Proteome in AD and PD by Maxquant,human
+ADPD_cortex_Pdiscover,ADPD cortex Searched by PD,Human Brain (Cortex) Proteome in AD and PD by proteome discoverer,human
+ADPD_ACG_Pdiscover,ADPD ACG Searched by PD,Human Brain (Cortex) Proteome in AD and PD by  proteome discoverer,human
+AgingHFCD_Metabolomics,Aging HFCD Metabolomics,AgingHFCD_Metabolomics,mouse
+AgingHFCD_Proteomics,Aging HFCD Proteomics,AgingHFCD_Proteomics,mouse
+AgingHFCD_RNAseq,Aging HFCD RNAseq,AgingHFCD_RNAseq,mouse
+StrokeBrain_TimeCourse,Stroke Brain Time Course,StrokeBrain_TimeCourse,rat
+LCM_96Grid_Simulated,LCM 96Grid Simulated,Laser capture microdissection (LCM) proteomics,human
