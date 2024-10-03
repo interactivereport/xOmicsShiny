@@ -10,7 +10,6 @@ Human Brain (Cortex) Proteome in AD and PD by  proteome discoverer,ADPD_ACG_Pdis
 AgingHFCD_Metabolomics,AgingHFCD_Metabolomics,AgingHFCD_Metabolomics,mouse
 AgingHFCD_Proteomics,AgingHFCD_Proteomics,AgingHFCD_Proteomics,mouse
 AgingHFCD_RNAseq,AgingHFCD_RNAseq,AgingHFCD_RNAseq,mouse
-OGAHumanAstrocyte_RNA,OGAHumanAstrocyte_RNA,OGAHumanAstrocyte_RNA,human
-OGAHumanAstrocyte_Proteomics,OGAHumanAstrocyte_Proteomics,OGAHumanAstrocyte_Proteomics,human
+StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,rat
 StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,StrokeBrain_TimeCourse,rat
 Laser capture microdissection (LCM) proteomics,LCM_96Grid_Simulated,LCM_96Grid_Simulated,human
