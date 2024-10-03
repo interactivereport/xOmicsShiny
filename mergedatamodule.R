@@ -59,7 +59,7 @@ mergedata_ui <- function(id) {
 					radioButtons(ns("merged_by"),label="Merged By", inline = TRUE, choices=""),
 					textInput(ns("merged_name"), "Merged Data Name", value = "MergedData"),
 					numericInput(ns("overlapnum"), label= "Overlapped Datasets", value=1, min=1, max = 2, step=1),
-					radioButtons(ns("intersect"), label= "Union, Overlap or Distinct?", choices= c("Union"="Union", "Overlap"="Overlap", "Distinct"="Distinct", "Append" = "Append"), inline = TRUE, selected = "Union"),
+					#radioButtons(ns("intersect"), label= "Union, Overlap or Distinct?", choices= c("Union"="Union", "Overlap"="Overlap", "Distinct"="Distinct", "Append" = "Append"), inline = TRUE, selected = "Union"),
 					radioButtons(ns("pmergemethod"), label= "For common IDs, select P value merged methods", choices= c("fisher"="fisher_Pvalue", "minP"="minP_pvalue", "simes"="simes_pvalue","stouffer"="stouffer_pvalue"), inline = TRUE, selected = "fisher_Pvalue"),
 					radioButtons(ns("fcmergemethod"), label= "For common IDs, select Fold Change merged methods", choices= c("Average"="Average", "Multiplication"="Multiplication", "Formula"="Formula"), inline = TRUE, selected = "Average"),
 					conditionalPanel(ns = ns, "input.fcmergemethod=='Multiplication'",
