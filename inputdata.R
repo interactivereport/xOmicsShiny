@@ -40,9 +40,10 @@ observe({
 	}
 
 	if (input$select_dataset=='Saved Projects in CSV file') {
-		saved_projects = read.csv("data/saved_projects.csv")
-		projects = saved_projects$ProjectID
-		updateSelectInput(session, "sel_project", choices=c("", projects), selected="")
+		saved_projects = read.csv("data/saved_projects.csv") %>% distinct()
+		projects <- saved_projects$ProjectID
+		names(projects) <- saved_projects$ShortNames
+		updateSelectInput(session, "sel_project", choices=projects, selected="")
 	}
 
 	if (input$select_dataset=='Public Data(DiseaseLand)') {
@@ -97,7 +98,7 @@ SavedProjectReactive <- reactive({
 		dplyr::rename(Names = Project.Description) %>%
 		dplyr::rename(ProjectID = Project.Title)
 
-		saved_projects_file = read.csv("data/saved_projectsNEW.csv") %>%
+		saved_projects_file = read.csv("data/saved_projects.csv") %>%
 		dplyr::select(ProjectID, Names, Species, ShortNames)
 
 		saved_projects <- dplyr::bind_rows(saved_projects_db, saved_projects_file) %>%
