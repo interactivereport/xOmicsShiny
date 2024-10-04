@@ -74,7 +74,7 @@ SavedProjectReactive <- reactive({
 		saved_projects <- saved_projects %>%
 		dplyr::select(Project.Title, Project.Description, Species) %>%
 		dplyr::mutate(ShortNames = Project.Title) %>%
-		dplyr::rename(names = Project.Description) %>%
+		dplyr::rename(Names = Project.Description) %>%
 		dplyr::rename(ProjectID = Project.Title)
 		con <- poolCheckout(pool)
 		poolReturn(con)
@@ -133,7 +133,7 @@ DataReactiveRData <- reactive({
 				saved_projects <- SavedProjectReactive()
 				ProjectID = query[['project']]
 				validate(need(ProjectID %in% saved_projects$ProjectID , message = "Please pass a valid ProjectID from URL."))
-				ProjectName=saved_projects$Name[saved_projects$ProjectID==ProjectID]
+				ProjectName=saved_projects$Names[saved_projects$ProjectID==ProjectID]
 				Species=saved_projects$Species[saved_projects$ProjectID==ProjectID]
 				ShortName=saved_projects$ShortNames[saved_projects$ProjectID==ProjectID]
 				file1= paste("data/",  ProjectID, ".RData", sep = "")  #data file
@@ -150,7 +150,7 @@ DataReactiveRData <- reactive({
 		if (input$select_dataset %in% c('Saved Projects in Database', 'Saved Projects in CSV file') & input$sel_project!="") {
 			saved_projects <- SavedProjectReactive()
 			ProjectID=input$sel_project
-			ProjectName=saved_projects$Name[saved_projects$ProjectID==ProjectID]
+			ProjectName=saved_projects$Names[saved_projects$ProjectID==ProjectID]
 			Species=saved_projects$Species[saved_projects$ProjectID==ProjectID]
 			ShortName=saved_projects$ShortNames[saved_projects$ProjectID==ProjectID]
 			file1= paste("data/",  ProjectID, ".RData", sep = "")  #data file
@@ -215,7 +215,7 @@ DataReactiveRData <- reactive({
 			Species = input$species
 			file1 = input$file1$datapath
 			file2 = input$file2$datapath
-			ProjectPath = NULL
+			ProjectPath = "temp/"
 			if (is.null(file1) || !file.exists(file1)){
 				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
 			}
@@ -525,7 +525,7 @@ DataReactiveDB <- reactive({
 			data_long <- dbGetQuery(pool, query)
 		}
 
-		print(format(object.size(data_long), unit = 'auto'))
+		#print(format(object.size(data_long), unit = 'auto'))
 
 		data_long <- data_long %>%
 		dplyr::mutate_if(is.numeric, round, 0) %>%
@@ -542,13 +542,13 @@ DataReactiveDB <- reactive({
 		#meanExpr <- with(data_long, ave(expr, UniqueID, FUN = mean))
 		#data_long <- data_long[meanExpr >= 1, ]
 
-		print(format(object.size(data_long), unit = 'auto'))
+		#print(format(object.size(data_long), unit = 'auto'))
 
 		data_wide <- data_long %>%
 		dplyr::select(one_of(c("UniqueID","sampleid","expr"))) %>%
 		spread(., sampleid, expr) %>%
 		tibble::column_to_rownames(.,"UniqueID")
-		print(format(object.size(data_wide), unit = 'auto'))
+		#print(format(object.size(data_wide), unit = 'auto'))
 
 		group_names <- MetaData %>%
 		dplyr::pull('group') %>% unique()
@@ -1128,7 +1128,6 @@ output$project <- renderText({
 
 output$summary <- renderText({
 	req(length(working_project()) > 0)
-
 	summary=stringr::str_c('<style type="text/css">
 		.disc {	list-style-type: disc;}
 		.square { list-style-type: square; margin-left: -2em;	font-size: small}
