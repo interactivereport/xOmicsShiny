@@ -220,7 +220,7 @@ pattern_server <- function(id) {
 						subdatlong$group = factor(subdatlong$group,levels = sel_group)
 
 						p <- ggplot(subdatlong, aes(x=group, y=mean)) +
-						facet_wrap(~ cluster,scales = "free", ncol = input$ncol) +
+						facet_wrap(~ cluster, scales = "free", ncol = input$ncol) +
 						geom_line(aes(group=UniqueID, color="UniqueID")) +
 						stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
 
@@ -241,7 +241,7 @@ pattern_server <- function(id) {
 						subdatlong$group = factor(subdatlong$group,levels = sel_group)
 
 						p <- ggplot(subdatlong, aes(x=group, y=mean)) +
-						facet_wrap(~ cluster,scales = "free", ncol = 3) +
+						facet_wrap(~ cluster,scales = "free", ncol = input$ncol) +
 						geom_line(aes(group=UniqueID, color="UniqueID")) +
 						stat_summary(aes(color="red", group=1), fun=mean, geom="line", size=1.2, group=1)
 						p <- p + theme_bw(base_size = 14) + ylab("expr") + xlab(" ") +
