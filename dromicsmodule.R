@@ -1244,11 +1244,30 @@ dromics_server <- function(id) {
 				)
 
 				results_omics <- DataInSets[[working_project()]]$results_omics
+				
+				if (input$subset == "Upload Genes") {
+				  req(input$uploadlist)
+				  gene_list <- input$uploadlist
+				  gene_list <- ProcessUploadGeneList(gene_list)
+				  validate(need(length(gene_list) > 0, message = "Please input at least 1 valid gene."))
+				  if (!is.null(DataInSets[[working_project()]]$ProteinGeneName)) {
+				    ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
+				    ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
+				    validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
+				    gene_list <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+				    
+				  }
+				  results_omics <- results_omics %>%
+				    dplyr::filter(UniqueID %in% gene_list)
+				}
+				
+				
 				data_long <- DataInSets[[working_project()]]$data_long
 				if (("group" %in% colnames(data_long)) && !("treatment" %in% colnames(data_long))) {
 					data_long <- data_long %>% dplyr::rename("treatment"="group") %>%
 					dplyr::rename("expr" = "response")
 				}
+				
 
 				sel_treatment <- input$sel_treatment2b
 				labelfontsize <- as.numeric(input$labelfontsize)
