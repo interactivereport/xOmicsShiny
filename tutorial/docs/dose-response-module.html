@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Chapter 15 Dose Response Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
   <meta name="description" content="Chapter 15 Dose Response Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
-  <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.36 and GitBook 2.6.7" />
 
   <meta property="og:title" content="Chapter 15 Dose Response Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
@@ -22,7 +22,7 @@
 
 
 
-<meta name="date" content="2024-09-23" />
+<meta name="date" content="2024-10-07" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -53,70 +53,6 @@
 <script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
 
 
-<style type="text/css">
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
-  }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { color: #008000; } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { color: #008000; font-weight: bold; } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-</style>
 
 <style type="text/css">
   
@@ -303,35 +239,35 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="dose-response-module" class="section level1 hasAnchor" number="15">
 <h1><span class="header-section-number">Chapter 15</span> Dose Response Module<a href="dose-response-module.html#dose-response-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This module, together with the following two modules: Time Course Module and Monotonic Trend Module, are designed to explore and visualize time-course dose response dataset. This module in xOmicsShiny helps users create dose response plots using drc R package. To demo this functionality, we use 2019_RG_StrokeBrain_TimeCourse dataset. In this dataset, UniqueID is the combination of the Gene.Name and Protein.ID. Other columns include treatment and dose response measurements.</p>
+<p>This module, along with the Time Course Module and Monotonic Trend Module, is designed to explore and visualize time-course dose-response datasets. In xOmicsShiny, this module helps users create dose-response plots using the drc R package. To demonstrate this functionality, we use the StrokeBrain_TimeCourse dataset. In this dataset, the UniqueID is a combination of Gene.Name and Protein.ID. Other columns include treatment and dose-response measurements.</p>
 <p><a href="Figures/f15-1.png"><img src="Figures/f15-1.png" /></a></p>
 <div id="fitting-curve" class="section level2 hasAnchor" number="15.1">
 <h2><span class="header-section-number">15.1</span> Fitting Curve<a href="dose-response-module.html#fitting-curve" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>This functionality allows user to make dose response plot for individual genes. It contains 4 sub-tabs.</p>
 <div id="fitting-curve-1" class="section level3 hasAnchor" number="15.1.1">
 <h3><span class="header-section-number">15.1.1</span> Fitting Curve<a href="dose-response-module.html#fitting-curve-1" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>The “Fitting Curve” tab shows the dose response plots.</p>
+<p>The “Fitting Curve” sub-tab displays the dose-response plots. To create these plots, users need to select a model type to fit the data. The final sub-tab, <strong>Model Selection</strong>, can help in choosing the best model. The default upper limit for all available model types is set to 1. If users wish to use a different value, they can adjust it using the <em>Upper</em> box.</p>
 <p><a href="Figures/f15-2.png"><img src="Figures/f15-2.png" /></a></p>
 </div>
 <div id="result-table-and-data-table" class="section level3 hasAnchor" number="15.1.2">
 <h3><span class="header-section-number">15.1.2</span> Result Table and Data Table<a href="dose-response-module.html#result-table-and-data-table" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>The “Result Table” shows the fitted results in a searchable table, which are shown as labels in the plots. And the “Data Table” shows the original data of the selected genes.</p>
+<p>The “Result Table” shows the fitted results in a searchable table, which are shown as labels in the plots. And the “Data Table” shows the original data of the selected gene.</p>
 <p><a href="Figures/f15-3.png"><img src="Figures/f15-3.png" /></a></p>
 </div>
 <div id="model-selection" class="section level3 hasAnchor" number="15.1.3">
 <h3><span class="header-section-number">15.1.3</span> Model Selection<a href="dose-response-module.html#model-selection" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>The “Model Selection” tab shows the best fitted model(s).</p>
+<p>The “Model Selection” tab shows the best fitted model(s) with the fitting plots and their test statistics.</p>
 <p><a href="Figures/f15-4.png"><img src="Figures/f15-4.png" /></a></p>
 </div>
 </div>
 <div id="result-table-all" class="section level2 hasAnchor" number="15.2">
 <h2><span class="header-section-number">15.2</span> Result Table (all)<a href="dose-response-module.html#result-table-all" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This tab shows the fitted results in a searchable table for all the genes. User can apply filter condition to view the results for the filtered genes only.</p>
+<p>This tab shows the fitted results in a searchable table for all the genes by default. User can apply filter condition to view the results for the filtered genes only.</p>
 <p><a href="Figures/f15-5.png"><img src="Figures/f15-5.png" /></a></p>
 </div>
 <div id="browsing" class="section level2 hasAnchor" number="15.3">
 <h2><span class="header-section-number">15.3</span> Browsing<a href="dose-response-module.html#browsing" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This tab allow user to view the fitting plots for multiple genes in a single page. By default the Plot tab shows the plot for the first 9 genes in alphabetical order. The Table tab shows the result data in the table format.</p>
+<p>This tab contains two sub-tabs, allowing users to view the fitting plots and data results of multiple genes on a single page for either filtered or uploaded genes. By default, the “Plot” tab displays the plots for the first 9 genes based on the user’s selected sorting method. The “Table” tab shows the dose-response model fitting results for the genes displayed in the plot tab. Below is an example showing the plots from the filtered results.</p>
 <p><a href="Figures/f15-6.png"><img src="Figures/f15-6.png" /></a></p>
 <p>Users can select their own gene list by using the “Upload Genes” option. Then the Plot tab will show the plots for the uploaded gene list and the Table tab will show corresponding results. The example below shows the plots of the 4 filtered genes in the previous session Result Table (all).</p>
 <p><a href="Figures/f15-7.png"><img src="Figures/f15-7.png" /></a></p>

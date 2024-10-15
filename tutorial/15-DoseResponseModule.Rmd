@@ -1,6 +1,6 @@
 # Dose Response Module
 
-This module, together with the following two modules: Time Course Module and Monotonic Trend Module, are designed to explore and visualize time-course dose response dataset. This module in xOmicsShiny helps users create dose response plots using drc R package. To demo this functionality, we use 2019_RG_StrokeBrain_TimeCourse dataset. In this dataset, UniqueID is the combination of the Gene.Name and Protein.ID. Other columns include treatment and dose response measurements.
+This module, along with the Time Course Module and Monotonic Trend Module, is designed to explore and visualize time-course dose-response datasets. In xOmicsShiny, this module helps users create dose-response plots using the drc R package. To demonstrate this functionality, we use the StrokeBrain_TimeCourse dataset. In this dataset, the UniqueID is a combination of Gene.Name and Protein.ID. Other columns include treatment and dose-response measurements.
 
 [![](`r pic_path`f15-1.png)](`r pic_path`f15-1.png)
 
@@ -10,31 +10,31 @@ This functionality allows user to make dose response plot for individual genes. 
 
 ### Fitting Curve
 
-The "Fitting Curve" tab shows the dose response plots.
+The "Fitting Curve" sub-tab displays the dose-response plots. To create these plots, users need to select a model type to fit the data. The final sub-tab, **Model Selection**, can help in choosing the best model. The default upper limit for all available model types is set to 1. If users wish to use a different value, they can adjust it using the *Upper* box.
 
 [![](`r pic_path`f15-2.png)](`r pic_path`f15-2.png)
 
 ### Result Table and Data Table
 
-The "Result Table" shows the fitted results in a searchable table, which are shown as labels in the plots. And the "Data Table" shows the original data of the selected genes.
+The "Result Table" shows the fitted results in a searchable table, which are shown as labels in the plots. And the "Data Table" shows the original data of the selected gene.
 
 [![](`r pic_path`f15-3.png)](`r pic_path`f15-3.png)
 
 ### Model Selection
 
-The "Model Selection" tab shows the best fitted model(s).
+The "Model Selection" tab shows the best fitted model(s) with the fitting plots and their test statistics.
 
 [![](`r pic_path`f15-4.png)](`r pic_path`f15-4.png)
 
 ## Result Table (all)
 
-This tab shows the fitted results in a searchable table for all the genes. User can apply filter condition to view the results for the filtered genes only.
+This tab shows the fitted results in a searchable table for all the genes by default. User can apply filter condition to view the results for the filtered genes only.
 
 [![](`r pic_path`f15-5.png)](`r pic_path`f15-5.png)
 
 ## Browsing
 
-This tab allow user to view the fitting plots for multiple genes in a single page. By default the Plot tab shows the plot for the first 9 genes in alphabetical order. The Table tab shows the result data in the table format. 
+This tab contains two sub-tabs, allowing users to view the fitting plots and data results of multiple genes on a single page for either filtered or uploaded genes. By default, the "Plot" tab displays the plots for the first 9 genes based on the user's selected sorting method. The "Table" tab shows the dose-response model fitting results for the genes displayed in the plot tab. Below is an example showing the plots from the filtered results.
 
 [![](`r pic_path`f15-6.png)](`r pic_path`f15-6.png)
 

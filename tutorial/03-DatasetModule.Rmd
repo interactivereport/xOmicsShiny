@@ -10,22 +10,21 @@ We have pre-loaded 11 datasets from published studies that users can use for dem
 
 [![](`r pic_path`f3-1.png)](`r pic_path`f3-1.png)
 
-| Study                                                                              | DataSets                                                                          | References                                                                                                                    |   |   |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|---|---|
-| Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data                                 | Mouse Microglia RNA                                                               | [Gyoneva et al., 2019](https://www.life-science-alliance.org/content/2/6/e201900453){target="_blank"}                         |   |   |
-| LRRK2 Human Neuron Transcriptome and Proteome Data                                 | LRRK2 Neuron RNA and Proteome                                                     | [Connor-Robson et al., 2019](https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub){target="_blank"} |   |   |
-| Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant,ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover | [Ping et al., 2018](https://www.nature.com/articles/sdata201836)                                                                                                                              |   |   |
-| Mouse AgingHFCD RNA, Proteomic and metabolomic Data                                | AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics                    | [Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"}                                          |   |   |
-| StrokeBrain_TimeCourse Data                                                        | StrokeBrain_TimeCourse                                                            | [Gu et al., 2021](https://pubs.acs.org/doi/10.1021/acs.jproteome.1c00259)                                                                                                                              |   |   |
+| Study  | DataSets  | References  |
+|--------------------------------------------------|--------------------------------------------------|--------------------------------------------------|
+| Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data | Mouse Microglia RNA | [Gyoneva et al., 2019](https://www.life-science-alliance.org/content/2/6/e201900453){target="_blank"} |
+| LRRK2 Human Neuron Transcriptome and Proteome Data | LRRK2 Neuron RNA and Proteome | [Connor-Robson et al., 2019](https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub){target="_blank"} |
+| Human Brain (Cortex/ACG) Proteome in AD and PD by Maxquant and proteome discoverer | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant, ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover | [Ping et al., 2018](https://www.nature.com/articles/sdata201836) |
+| Mouse AgingHFCD RNA, Proteomic and metabolomic Data | AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics | [Williams et al., 2022](https://doi.org/10.1016/j.cels.2021.09.005){target="_blank"} |
+| StrokeBrain_TimeCourse Data | StrokeBrain_TimeCourse | [Gu et al., 2021](https://pubs.acs.org/doi/10.1021/acs.jproteome.1c00259)  |
 
 ### Upload Data Files (csv) and Upload RData File 
 
 The xOmicsShiny tool accept two methods of data uploading, which is exactly the same requirement as uploading the data set to our previously developed tool QuickOmics. Please check the [section 2.1 and 2.2](https://interactivereport.github.io/Quickomics/tutorial/docs/dataset-module.html#upload-files) of the QuickOmics tutorial.
 
-<span style="font-size:2em; color:red"> *insert a successfully uploaded data set ScreenShot when update is completed* </span>
 [![](`r pic_path`f3-2.png)](`r pic_path`f3-2.png)
 
-When the dataset is uploaded successfully, an overview is shown of all samples in the project by providing a summary from the metadata. This includes information like which species was used, the different comparisons run and total number of samples in each group. It also helps identify how many groups were present in the dataset, like in this project there are 4 different groups that correspond to two age_groups in each of two treatment groups ( Young, Old; Control_diet, High_fat).
+When the dataset is uploaded successfully, the dataset name is shown in the left under the Change Working Dataset menu and an overview is shown in the right of all samples in the project by providing a summary from the metadata. This includes information like which species was used, the different comparisons run and total number of samples in each group. It also helps identify how many groups were present in the dataset, like in this project there are 9 different groups that correspond to three age_groups in each of three genotype groups.
 
 ### Load and Unload datasets
 
@@ -39,9 +38,7 @@ A sample table with metadata/details appears upon completion of dataset loading.
 
 The Sample Table contains detailed info of all study samples. A total of 291 samples that were sequenced in this project are listed in the table with attributes like sampleid, group, Age_Group and Treatment, shown in different columns.
 
-<span style="font-size:2em; color:red"> *insert a ScreenShot when update is completed* </span>
 [![](`r pic_path`f3-4.png)](`r pic_path`f3-4.png)
-
 
 ## Result Table
 

@@ -8,7 +8,7 @@ This functional module allows users to browse through a subset of genes/proteins
 
 The set up panel contains a few plotting options for data selection and visualization. It consists of dataset selection, data point selection, plot type, plot display parameters. 
 
-This tab lets the Users plot out the expression of the DEGs/DEPs identified in the different comparisons. In this example below, we demonstrate how to display a few top genes as Violin Plots.
+This tab lets the Users plot out the expression of the DEGs/DEPs identified in the different comparisons. In this example below, we demonstrate how to display a few top genes using different types of plots.
 
 [![](`r pic_path`f8-2.png)](`r pic_path`f8-2.png)
 
@@ -32,7 +32,6 @@ This functionality helps identify the relative abundance of a list of genes with
 
 ## Laser Capture Microdissection
 
-This functionality helps to overlap the gene expression level to the sliced spatial samples.
+This functionality helps to check the gene expression arranged in the order of the sliced spatial samples. With the reference of the spatial sample image, users can check the gene expression side-by-side or in an overlap manner. Here we show the tool with our simulated data set LCM_Simulated.
 
-<span style="font-size:2em; color:red"> *Need an example* </span>
-
+[![](`r pic_path`f8-6.png)](`r pic_path`f8-6.png)

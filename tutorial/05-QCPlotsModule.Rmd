@@ -15,7 +15,7 @@ To illustrate the strengths of customization, we changed a few display elements,
 
 These changes results in a PCA plot that showed that both **Age** and **Treatment** played some moderate effect that drives small separation among the groups although most of the samples are in a overlapped region. The Ellipsoid feature helps group samples by the color attribute, while the Marginal Rug feature helps understand the sample distribution along the axis.
 
-Furthermore, the plot can be saved in high resolution by clicking on "Save to Output”. Section <span style="font-size:2em; color:red"> *insert section number* </span> of this document describes the next steps of downloading and obtaining the saved plots.
+Furthermore, the plot can be saved in high resolution by clicking on "Save to Output”. Section 19 of this document describes the next steps of downloading and obtaining the saved plots.
 
 ### Eigenvalues
 

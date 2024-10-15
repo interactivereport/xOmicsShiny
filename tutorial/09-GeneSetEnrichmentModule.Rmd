@@ -4,19 +4,25 @@ This functionality is an extension to the differential gene identification. User
 
 ## Gene Set Enrichment Analysis (GSEA)
 
-This first tab lets the users pick a particular comparison, select a species pathway database, set analysis statistical cutoff criteria and select gene set database(s) from a list of different databases for gene set enrichment analysis(GSEA). 
+This first tab allows users to select a specific comparison, choose a species pathway database, set statistical cutoff criteria for the analysis, and select gene set databases from a list of different databases for gene set enrichment analysis (GSEA). The result table displays the ranked GSEA summary. The entries in the first column, *GeneSet*, are clickable. Clicking on a gene set name opens the third tab, **Gene Expression**, which shows detailed results for the selected gene set.
 
 [![](`r pic_path`f9-1.png)](`r pic_path`f9-1.png)
 
 ## Over-Representation Analysis (ORA)
 
-This tab lets the users to test a gene list by either picking a particular comparison with the comparison cutoffs set or providing a customized gene list. Then select a species pathway database, set analysis statistical cutoff criteria and select select gene set database(s) from a list of different databases for over-representation analysis(ORA). 
+This tab allows users to test a gene list by either selecting a specific comparison with predefined cutoffs or providing a customized gene list. Users can then choose a species pathway database, set statistical cutoff criteria for the analysis, and select gene set databases from a list of options for over-representation analysis (ORA).
+
+When using a gene list selected from a comparison with cutoffs, the result summary table reports the numbers of total DEGs, up-regulated DEGs, and down-regulated DEGs present in each gene set. The first column *GeneSet* entries in the table is clickable and links to the 3rd tab **Gene Expression** and show the detailed result of the selected gene set.
 
 [![](`r pic_path`f9-2.png)](`r pic_path`f9-2.png)
 
+When using a customized gene list, no comparison data is retrieved, so the result summary table reports only the number of total DEGs present in each gene set. 
+
+[![](`r pic_path`f9-2-1.png)](`r pic_path`f9-2-1.png)
+
 ## Gene Expression
 
-For the enriched terms identified in the previous tabs (GSEA and ORA), users have the ability to look at the differential values of the genes present in the set. Here we are probing the Phagosome gene set identified as the top 1 enriched gene set in the GSEA analysis.
+For the enriched gene sets identified in the previous tabs (GSEA and ORA), users have the ability to look at the differential values of the genes present in the set. Here we are probing the Naba matrisome associated gene set reported in the reference to show significant difference between the high-fiber and control-diet groups in aged group.
 
 [![](`r pic_path`f9-3.png)](`r pic_path`f9-3.png)
 
@@ -26,7 +32,7 @@ The page looks a bit different for the ORA analysis result. It does not have the
 
 ## Gene Set Heatmap
 
-Like the “Gene Expression” tab, users have the ability to plot expression of the genes in the pathway term selected as a heatmap. The plot can use all the genes in the gene set or just the leading/DE genes.This visualization shows that almost all the Phagosome genes are enriched in the same direction. 
+Like the **Gene Expression** tab, users have the ability to plot expression of the genes in the pathway term selected as a heatmap. The plot can use all the genes in the gene set or just the leading/DE genes.This visualization shows that almost all the Naba_matrisome-associated DE genes are highly expressed in Old_HF group. 
 
 [![](`r pic_path`f9-5.png)](`r pic_path`f9-5.png)
 
@@ -37,13 +43,13 @@ This functionality is available only to KEGG pathway terms. Users have the optio
 
 [![](`r pic_path`f9-6.png)](`r pic_path`f9-6.png)
 
-Or users can select 2 comparison from different data sources (RNAseq, proteomics or metabolomics data). In this example we demo the KEGG pathway “mmu05230 central carbon metabolism in cancer” as identified as top 1 gene set in the Metabolite_HFvsCD_Old comparison. 
+Or users can select a comparison from different data sources (RNAseq, proteomics or metabolomics data). In this example we demo the KEGG pathway “mmu05230 central carbon metabolism in cancer” as identified as top 1 gene set in the Metabolite_HFvsCD_Old comparison. 
 
 [![](`r pic_path`f9-7.png)](`r pic_path`f9-7.png)
 
 
 ## WikiPathway View
 
-This functionality is similar to the "KEGG Pathway View" but it is for the gene set visualization in the WikiPathways database. In this example we demo the Wiki pathway "electron transport chain WP395" as identified as top 1 gene set in the RNAseq_OldvsYoung_HF comparison. It clearly shows that almost all the genes in the gene set are down-regulated.
+This functionality is similar to the "KEGG Pathway View" but it is for the gene set visualization in the WikiPathways database. In this example we demo the Wiki pathway "Cholesterol biosynthesis WP103" as identified as top 2 gene set in the RNAseq_HFvsCD_Old comparison. It clearly shows that all the genes in the gene set are down-regulated in the high-fiber group.
 
 [![](`r pic_path`f9-8.png)](`r pic_path`f9-8.png)
