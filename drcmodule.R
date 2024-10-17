@@ -720,8 +720,10 @@ drc_server <- function(id) {
 					save(data_long, results, file=filename )
 				}
 
-				results <- results %>%  mutate_if(is.numeric, round, digits = 2)
-				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top')
+				#results <- results %>%  mutate_if(is.numeric, round, digits = 2)
+				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top') %>%
+				  DT::formatSignif(columns = c("Slope", "Lower.Limit", "Upper.Limit", "ED50", "r.squared"), digits = 3) %>%
+				  DT::formatSignif(columns = c("p_value", "padjust"), digits = 6)
 			})
 
 			###########################################################################################################
@@ -778,13 +780,24 @@ drc_server <- function(id) {
 				}
 
 				if (!is.null(results_drc)) {
-					sel_gene <- results_drc %>%
-					dplyr::group_by(UniqueID) %>%
-					dplyr::slice(which.min(!!as.symbol(field))) %>%
-					dplyr::ungroup() %>%
-					dplyr::arrange(!!as.symbol(field)) %>%
-					dplyr::slice(startslice:endslice) %>%
-					dplyr::pull(UniqueID)
+
+					 if (field == "r.squared") {
+					   sel_gene <- results_drc %>%
+					     dplyr::group_by(UniqueID) %>%
+					     dplyr::slice(which.max(!!as.symbol(field))) %>%
+					     dplyr::ungroup() %>%
+					     dplyr::arrange(desc(!!as.symbol(field))) %>%
+					     dplyr::slice(startslice:endslice) %>%
+					     dplyr::pull(UniqueID)
+					 } else {
+					   sel_gene <- results_drc %>%
+					     dplyr::group_by(UniqueID) %>%
+					     dplyr::slice(which.min(!!as.symbol(field))) %>%
+					     dplyr::ungroup() %>%
+					     dplyr::arrange(!!as.symbol(field)) %>%
+					     dplyr::slice(startslice:endslice) %>%
+					     dplyr::pull(UniqueID)
+					 }
 				} else {
 					sel_gene <- data_long %>%
 					dplyr::distinct(UniqueID) %>%
@@ -894,9 +907,11 @@ drc_server <- function(id) {
 
 			output$browsing_result  <- DT::renderDataTable({
 				fitresult <- browsing_out()[["result"]]
-				fitresult <- fitresult %>%
-				mutate_if(is.numeric, round, digits = 4)
-				DT::datatable(fitresult, options = list(pageLength = 10))
+				#fitresult <- fitresult %>%
+				#mutate_if(is.numeric, round, digits = 4)
+				DT::datatable(fitresult, options = list(pageLength = 10)) %>%
+				  DT::formatSignif(columns = c("Slope", "Lower Limit", "Upper Limit", "ED50", "r.squared"), digits = 3) %>%
+				  DT::formatSignif(columns = c("p_value"), digits = 6)
 			})
 
 			output$download_results_button <- shiny::downloadHandler(
