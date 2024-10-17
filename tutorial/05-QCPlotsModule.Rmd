@@ -71,11 +71,7 @@ There are two other tabs of Categorical Covariates and Numerical Covariates, whi
 
 ## AlignQC
 
-The AlignQC tab contains several sub-tabs to visualize the QC metrics of the alignment step. Here, we can check the 'Top Gene Ratio', 'Top Gene List', 'Mapped Read Allocation', or 'Plot Other Variables' across samples. More details can be adjusted on the left panel, such as the height, width, and font size of the plot. The 'Save to output' function can add the current plot in the output list.
-
-<span style="font-size:2em; color:red"> *The demo datasets does not contain the information for this plot* </span>
-
-
+The AlignQC tab contains several sub-tabs to visualize the QC metrics of the alignment step. Here, we can check the 'Top Gene Ratio', 'Top Gene List', 'Mapped Read Allocation', or 'Plot Other Variables' across samples if the selected dataset contains the information. More details can be adjusted on the left panel, such as the height, width, and font size of the plot. The 'Save to output' function can add the current plot in the output list.
 
 ## Sample-sample Distance
 

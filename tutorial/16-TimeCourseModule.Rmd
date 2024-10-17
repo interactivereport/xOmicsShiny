@@ -26,7 +26,7 @@ This tab shows the fitted results in a searchable table for all the genes. User 
 
 ## Browsing
 
-This tab allow user to view the fitting plots for multiple genes in a single page. By default the "Plot" tab shows the plot for the first 9 genes in alphabetical order if not filter applied to the data. The "Table" tab shows the result data in the table format for the genes shown in the Plot tab. 
+This tab allows users to view the fitting plots for multiple genes in a single page. By default the "Plot" tab shows the plot for the first 9 genes in alphabetical order if not filter applied to the data. The "Table" tab shows the result data in the table format for the genes shown in the Plot tab. 
 
 [![](`r pic_path`f16-4.png)](`r pic_path`f16-4.png)
 

@@ -14,3 +14,6 @@ This tab shows a merged table of merged data set and original data sets.
 
 [![](`r pic_path`f18-2.png)](`r pic_path`f18-2.png)
 
+The merged data set can be analyzed using other comparison visualization tool. The example below shows the GSEA analysis result tables for the merged data set.
+
+[![](`r pic_path`f18-3.png)](`r pic_path`f18-3.png)

@@ -8,7 +8,7 @@ This functional module allows users to browse through a subset of genes/proteins
 
 The set up panel contains a few plotting options for data selection and visualization. It consists of dataset selection, data point selection, plot type, plot display parameters. 
 
-This tab lets the Users plot out the expression of the DEGs/DEPs identified in the different comparisons. In this example below, we demonstrate how to display a few top genes using different types of plots.
+This tab lets the users plot out the expression of the DEGs/DEPs identified in the different comparisons. In this example below, we demonstrate how to display a few top genes using different types of plots.
 
 [![](`r pic_path`f8-2.png)](`r pic_path`f8-2.png)
 

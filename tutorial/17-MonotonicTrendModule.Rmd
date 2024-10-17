@@ -1,6 +1,6 @@
 # Monotonic Trend Module
 
-This module enable users to check if the dose-response/time-course effect is monotonic or not. 
+This module enables users to check if the dose-response/time-course effect is monotonic or not. 
 
 ## Fitting Curve
 
