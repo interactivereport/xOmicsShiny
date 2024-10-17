@@ -88,6 +88,8 @@ The application supports various omics types, including RNA-seq, Proteomics, Met
  - **Comparison Data File**: This file stores differential expression (DE) anlaysis results. It requires the following columns: `UniqueID` contains the gene/protein/metabolite names. This column allows duplicated names as the same gene may be involved in different comparisons. The `test` column indicates the DE comparison name. The `Adj.P.Value`, `P.Value`, and `logFC` columns store DE analysis results.
  - **Gene/Protein Name File (Optional)**: This optional file creates a match between gene names, such as from ENSEMBL ID to Gene Symbol. It requires six columns: `id`, `UniqueID`, `Gene.Name`, `Protein.ID`, and `GeneType`.
 
-After preparing the above files, users can open the Shiny server, choose **Dataset** -> **Select Dataset** -> **Upload Data Files (csv)**, upload the four files, then click **Submit Data**. It will take the server some time to process the data, and after that, users can explore the data with ease.
+After preparing the above files, users can open the [Shiny server](https://xomicsshiny.bxgenomics.com/), choose **Dataset** -> **Select Dataset** -> **Upload Data Files (csv)**, upload the four files, then click **Submit Data**. It will take the server some time to process the data, and after that, users can explore the data with ease.
 
 ## 4. Additional information
+
+The application is under MIT license.
