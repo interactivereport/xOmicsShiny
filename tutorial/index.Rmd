@@ -32,6 +32,21 @@ date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 ---
 
+```{r, echo = FALSE}
+colorize <- function(x, color) {
+  if (knitr::is_latex_output()) {
+    sprintf("\\textcolor{%s}{%s}", color, x)
+  } else if (knitr::is_html_output()) {
+    sprintf("<span style='color: %s;'>%s</span>", color,
+      x)
+  } else x
+}
+```
+
 # Preface {-}
 
 This is a *user manual* written using Bookdown, which provides a detailed guide for xOmicsShiny.
+
+[![](https://interactivereport.github.io/xOmicsShiny/images/Cover.png)](https://interactivereport.github.io/xOmicsShiny/images/Cover.png){target="_blank"}
+
+**Cover Image: Overview of the xOmicsShiny modules.** The Shiny application handles multi-omics data including transcriptomics, proteomics, metabolomics, and lipidomics data. The **`r colorize("Data Merging", "grey")`** (Grey) module integrates multi-omics data for downstream analysis. **`r colorize("Data exploration", "dodgerblue")`** modules (Blue) contain QC, DEGs, Heatmap, Expression, and Venn Diagram modules. **`r colorize("Geneset Enrichment", "darkseagreen")`** (Green) module performs GSEA and pathway analysis. **`r colorize("Network modules", "burlywood")`** (Bisque) include WGCNA, Correlation Network, and PCSF modules. **`r colorize("Pattern and trend analysis", "orchid")`** (Orchid) consists of Pattern, Dose Response, Time Course, and Monotonic Trend modules.
