@@ -5,7 +5,7 @@
 ##
 ##@file: drcmodule.R
 ##@Developer : Benbo Gao (benbo.gao@Biogen.com)
-##@Date : 04/23/2024
+##@Date : 10/24/2024
 ##@version 3.0
 ###########################################################################################################
 
@@ -264,6 +264,8 @@ drc_server <- function(id) {
 				"upperlimit" = upperlimit))
 			})
 
+			lookupDRC <- c("Lower.Limit" = "Lower Limit", "Upper.Limit" = "Upper Limit")
+
 			DataExpReactive <- reactive({
 				req(length(working_project()) > 0)
 				data_long <- DataInSets[[working_project()]]$data_long
@@ -383,7 +385,6 @@ drc_server <- function(id) {
 					#geom_point() +
 					geom_jitter(aes(color = treatment),position = position_jitter(0.2)) +
 					ylim(0, max(fitDATdf['expr']))
-
 
 					p <- p +
 					geom_line(data = predicteddf, aes(x=x, y=predicted, color=treatment))
@@ -720,10 +721,12 @@ drc_server <- function(id) {
 					save(data_long, results, file=filename )
 				}
 
-				#results <- results %>%  mutate_if(is.numeric, round, digits = 2)
-				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top') %>%
-				  DT::formatSignif(columns = c("Slope", "Lower.Limit", "Upper.Limit", "ED50", "r.squared"), digits = 3) %>%
-				  DT::formatSignif(columns = c("p_value", "padjust"), digits = 6)
+				results <- results %>%
+				dplyr::rename(any_of(lookupDRC)) %>%
+				dplyr::mutate(across(c("Slope", "Lower.Limit", "Upper.Limit", "ED50", "r.squared"), round, 3)) #%>%
+				#dplyr::mutate(across(c("p_value", "padjust"), round, 6))
+
+				DT::datatable(results, options = list(pageLength = 15), rownames= FALSE, filter = 'top')
 			})
 
 			###########################################################################################################
@@ -781,23 +784,23 @@ drc_server <- function(id) {
 
 				if (!is.null(results_drc)) {
 
-					 if (field == "r.squared") {
-					   sel_gene <- results_drc %>%
-					     dplyr::group_by(UniqueID) %>%
-					     dplyr::slice(which.max(!!as.symbol(field))) %>%
-					     dplyr::ungroup() %>%
-					     dplyr::arrange(desc(!!as.symbol(field))) %>%
-					     dplyr::slice(startslice:endslice) %>%
-					     dplyr::pull(UniqueID)
-					 } else {
-					   sel_gene <- results_drc %>%
-					     dplyr::group_by(UniqueID) %>%
-					     dplyr::slice(which.min(!!as.symbol(field))) %>%
-					     dplyr::ungroup() %>%
-					     dplyr::arrange(!!as.symbol(field)) %>%
-					     dplyr::slice(startslice:endslice) %>%
-					     dplyr::pull(UniqueID)
-					 }
+					if (field == "r.squared") {
+						sel_gene <- results_drc %>%
+						dplyr::group_by(UniqueID) %>%
+						dplyr::slice(which.max(!!as.symbol(field))) %>%
+						dplyr::ungroup() %>%
+						dplyr::arrange(desc(!!as.symbol(field))) %>%
+						dplyr::slice(startslice:endslice) %>%
+						dplyr::pull(UniqueID)
+					} else {
+						sel_gene <- results_drc %>%
+						dplyr::group_by(UniqueID) %>%
+						dplyr::slice(which.min(!!as.symbol(field))) %>%
+						dplyr::ungroup() %>%
+						dplyr::arrange(!!as.symbol(field)) %>%
+						dplyr::slice(startslice:endslice) %>%
+						dplyr::pull(UniqueID)
+					}
 				} else {
 					sel_gene <- data_long %>%
 					dplyr::distinct(UniqueID) %>%
@@ -907,11 +910,11 @@ drc_server <- function(id) {
 
 			output$browsing_result  <- DT::renderDataTable({
 				fitresult <- browsing_out()[["result"]]
-				#fitresult <- fitresult %>%
-				#mutate_if(is.numeric, round, digits = 4)
-				DT::datatable(fitresult, options = list(pageLength = 10)) %>%
-				  DT::formatSignif(columns = c("Slope", "Lower Limit", "Upper Limit", "ED50", "r.squared"), digits = 3) %>%
-				  DT::formatSignif(columns = c("p_value"), digits = 6)
+				fitresult <- fitresult %>%
+				dplyr::rename(any_of(lookupDRC)) %>%
+				dplyr::mutate(across(c("Slope", "Lower.Limit", "Upper.Limit", "ED50", "r.squared"), round, 3)) #%>%
+				#dplyr::mutate(across(c("p_value"), round, 6))
+				DT::datatable(fitresult, options = list(pageLength = 10)) 
 			})
 
 			output$download_results_button <- shiny::downloadHandler(
