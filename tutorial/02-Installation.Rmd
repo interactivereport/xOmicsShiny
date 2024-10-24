@@ -52,9 +52,7 @@ We recommend downloading human and mouse gene sets from [MSigDB](https://www.gse
 
 We used gene symbols in the GMT files. Custom gene set files can be easily added as well. 
 
-The gmt_file_info parameter from the configure.csv points to a csv file (db/db_gmt_files.csv) that lists the gene set files to be loaded into the system. Please see the [example on GitHub](https://github.com/interactivereport/xOmicsShiny/blob/main/db/db_gmt_files.csv). You need to modify this file after you add any new GMT files in order for them to show up in the menu. The last column in this file "Show" controls whether a GMT file is used or not in the system. The short_name and label_name are displayed as the gene set name in the menu.    
-
-
+The gmt_file_info parameter from the configure.csv points to a csv file (db/db_gmt_files.csv) that lists the gene set files to be loaded into the system. Please see the [example on GitHub](https://github.com/interactivereport/xOmicsShiny/blob/main/db/db_gmt_files.csv). You need to modify this file after you add any new GMT files in order for them to show up in the menu. The last column in this file "Show" controls whether a GMT file is used or not in the system. The short_name and label_name are displayed as the gene set name in the menu.
 
 ## Metabase Users
 
@@ -71,5 +69,3 @@ maps <- load.ontology('maps', type='gene')
 mapsg <- lapply(maps, get.genesymbol) 
 metabaser:::export.gmt(mapsg, file = 'metabase_maps_genesymbols.gmt') 
 ```
-
-
