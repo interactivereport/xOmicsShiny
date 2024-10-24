@@ -77,7 +77,7 @@ expression_ui <- function(id) {
 				conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
 					radioButtons(ns("IndividualPoint"), label="Individual Point?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "YES"),
 					radioButtons(ns("ShowErrorBar"), label="Error Bar?(except box plot)", inline = TRUE, choices = c("SD" = "SD","SEM" = "SEM","NO" = "NO"), selected = "SD"),
-					radioButtons(ns("PvalueBar"), label="Show P-Values?", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
+					radioButtons(ns("PvalueBar"), label="Show P-Values?(* p <= 0.05; ** p <= 0.01; *** p <= 0.001)", inline = TRUE, choices = c("YES" = "YES","NO" = "NO"), selected = "NO"),
 					conditionalPanel(ns = ns, "input.PvalueBar=='YES'",
 						fluidRow(
 							column(width=6,radioButtons(inputId = ns("pval_sel"), label = "P-value or P.adj Value?",inline = TRUE, choices = c("Pval" = "P.Value", "Padj" = "Adj.P.Value"), selected = "P.Value")),
@@ -109,9 +109,6 @@ expression_ui <- function(id) {
 							column(width=6,numericInput(ns("plot_Ymin"), label= "Y Min",  value = 0, step=0.1)),
 							column(width=6,numericInput(ns("plot_Ymax"), label= "Y Max",  value=5, step=0.1))
 						)
-					),
-					conditionalPanel(ns = ns, "input.tabset=='Expression Plot'",
-						h5("After changing parameters, please click Plot/Refresh button in the plot panel to generate expression plot.")
 					)
 				),
 				conditionalPanel(ns = ns, "input.tabset=='Rank Abundance Curve'",
@@ -164,6 +161,13 @@ expression_ui <- function(id) {
 						column(width=6, textInput(ns("LCMYlab"), "Y label", value="Row", width = "100%")),
 						column(width=6, textInput(ns("LCMXlab"), "X label", value="Column", width = "100%"))
 					)
+				),
+				conditionalPanel(ns = ns, condition = '["Expression Plot","Laser Capture Microdissection","Rank Abundance Curve","Expression Correlation"].includes(input.tabset)',
+					fluidRow(
+						column(width=6, sliderInput(ns("plotwidth"), label="Plot Width (%)",   min = 50, max = 100, step = 10, value = 100)),
+						column(width=6,	sliderInput(ns("plotheight"), label="Plot Height (px)",  min = 600, max = 1800, step = 100, value = 800))
+					),
+					h5("After changing parameters, please click Plot/Refresh button in the plot panel to generate expression plot.")
 				)
 			)
 		),
@@ -177,17 +181,20 @@ expression_ui <- function(id) {
 				tabPanel(title="Rank Abundance Curve", value ="Rank Abundance Curve",
 					actionButton(ns("plot_SCurve"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
 					actionButton(ns("AbundanceCurve"), "Save to output"),
-					plotOutput(ns("SCurve"), height=800)
+					uiOutput(ns("plot.SCurve"))
+					#plotOutput(ns("SCurve"), height=800)
 				),
 				tabPanel(title="Expression Correlation", value ="Expression Correlation",
 					actionButton(ns("plot_ExprCorr"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
 					#actionButton(ns("ExprCorr"), "Save to output"),#to do
-					plotOutput(ns("ExprCorr"), height=800)
+					uiOutput(ns("plot.ExprCorr"))
+					#plotOutput(ns("ExprCorr"), height=800)
 				),
 				tabPanel(title="Laser Capture Microdissection", value ="Laser Capture Microdissection",
 					actionButton(ns("plot_LCM"), "Plot/Refresh", style="color: #0961E3; background-color: #F6E98C ; border-color: #2e6da4"),
 					#actionButton(ns("LCM"), "Save to output"), #to do
-					plotOutput(ns("LCM"), height=800)
+					uiOutput(ns("plot.LCM"))
+					#plotOutput(ns("LCM"), height=800)
 				),
 				tabPanel(title="Data Table", value ="Data Table",	DT::dataTableOutput(ns("dat_dotplot"))
 				),
@@ -266,74 +273,6 @@ expression_server <- function(id) {
 				updateTextInput(session, "Xlab", value="group")
 			})
 
-
-			observe({
-				req(length(working_project()) > 0)
-				req(DataInSets[[working_project()]]$results_long)
-				results_long = DataInSets[[working_project()]]$results_long
-				ProteinGeneName = DataInSets[[working_project()]]$ProteinGeneName
-				req(input$subset)
-			
-				msg_filter <- msg_filter1 <- "Please input at least 1 matched gene."
-				if (input$subset == "Select") {
-					req(input$sel_gene)
-					sel_gene = input$sel_gene
-					validate(need(length(input$sel_gene)>0,"Please select a gene."))
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
-				}
-
-				if (input$subset == "Upload Genes"){
-					req(input$uploadlist)
-					gene_list <- input$uploadlist
-					gene_list <- ProcessUploadGeneList(gene_list)
-					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
-				}
-
-				if (input$subset == "Geneset" ) {
-					req(input$sel_geneset!="")
-					sel_geneset <- input$sel_geneset
-					gene_list <- GetGenesFromGeneSet(sel_geneset)
-					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
-				}
-
-				if (input$subset == "Browsing") {
-					req(input$sel_test)
-					req(input$psel)
-					p_sel   <- input$psel
-					test_sel <- input$sel_test
-					FCcut <- log2(as.numeric(input$fccut))
-					pvalcut <- as.numeric(input$pvalcut)
-					sel_label <- "UniqueID"
-					direction <- "UpDown"
-					tmpdat <- GeneFilter(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label)
-					tmpids <- tmpdat %>% as.data.frame() %>% dplyr::pull(UniqueID)
-					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
-				}
-				
-				if (nrow(ProteinGeneName_sel) == 0) {
-				  msg_filter1 <- "Please input at least 1 matched gene."
-				  msg_filter <- ""
-				} else {
-				  tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
-				  msg_filter1 <- paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")
-				  if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique())  > 100)
-				    msg_filter1 <- paste(msg_filter1, " Too many genes, try < 100 genes", sep="")
-
-				  msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
-				  if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique()) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()))
-				    msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
-
-				  numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
-				  updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
-				}
-				output$filteredgene <- renderText({msg_filter1})
-				output$filteredUniqueID <- renderText({msg_filter})
-
-				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
-			})
-
 			###############
 			observeEvent(input$subset , {
 				req(length(working_project()) > 0)
@@ -353,8 +292,8 @@ expression_server <- function(id) {
 
 			observe({
 				req(length(working_project()) > 0)
-			  req(DataInSets[[working_project()]]$MetaData)
-			  
+				req(DataInSets[[working_project()]]$MetaData)
+
 				MetaData = DataInSets[[working_project()]]$MetaData
 				req(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")))
 
@@ -393,11 +332,11 @@ expression_server <- function(id) {
 				sel_samples = DataInSets[[working_project()]]$sample_order
 
 				genelabel=input$sel_geneid
+				ProteinGeneName_sel <- data.frame()
 
 				if (input$subset == "Select") {
 					req(input$sel_gene)
 					sel_gene = input$sel_gene
-					validate(need(length(input$sel_gene)>0,"Please select a gene."))
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% sel_gene) | (Protein.ID %in% sel_gene) | (toupper(Gene.Name) %in% toupper(sel_gene)))
 				}
 
@@ -405,7 +344,6 @@ expression_server <- function(id) {
 					req(input$uploadlist)
 					gene_list <- input$uploadlist
 					gene_list <- ProcessUploadGeneList(gene_list)
-					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
 				}
 
@@ -413,7 +351,6 @@ expression_server <- function(id) {
 					req(input$sel_geneset!="")
 					sel_geneset <- input$sel_geneset
 					gene_list <- GetGenesFromGeneSet(sel_geneset)
-					validate(need(length(gene_list)>0, message = "Please input at least 1 valid gene."))
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, (UniqueID %in% gene_list) | (Protein.ID %in% gene_list) | (toupper(Gene.Name) %in% toupper(gene_list)))
 				}
 
@@ -430,6 +367,25 @@ expression_server <- function(id) {
 					tmpids <- tmpdat %>% as.data.frame() %>% dplyr::pull(UniqueID)
 					ProteinGeneName_sel <- dplyr::filter(ProteinGeneName, UniqueID %in% tmpids)
 				}
+
+				if (nrow(ProteinGeneName_sel) == 0) {
+					msg_filter1 <- "Please input at least 1 matched gene."
+					msg_filter <- ""
+				} else {
+					tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
+					msg_filter1 <- paste("Selected Genes:",length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()),sep="")
+					if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique())  > 100)
+					msg_filter1 <- paste(msg_filter1, " Too many genes, try < 100 genes", sep="")
+
+					msg_filter <- paste("Selected IDs:", length(tmpids),sep="")
+					if (length(ProteinGeneName_sel %>% dplyr::pull(UniqueID) %>% unique()) > length(ProteinGeneName_sel %>% dplyr::pull(Gene.Name) %>% unique()))
+					msg_filter <- paste(msg_filter, " (Gene(s) match multiple IDs, use UniqueID for Gene Label)", sep="")
+
+					numberpage = as.numeric(input$plot_ncol) * as.numeric(input$plot_nrow)
+					updateSelectInput(session,'sel_page', choices= seq_len(ceiling(length(tmpids)/numberpage)))
+				}
+				output$filteredgene <- renderText({msg_filter1})
+				output$filteredUniqueID <- renderText({msg_filter})
 
 				validate(need(nrow(ProteinGeneName_sel) > 0, message = "Please input at least 1 matched gene."))
 				tmpids <- ProteinGeneName_sel %>% dplyr::pull(UniqueID)
@@ -562,7 +518,7 @@ expression_server <- function(id) {
 						as.data.frame()
 
 						if (nrow(annotation_df) > 0)  {
-						  print(annotation_df)
+							print(annotation_df)
 							annotation_df <- annotation_df %>%
 							tidyr::separate(test, c('start', 'end'),  sep = "vs") %>%
 							dplyr::mutate_at(c("start","end"), trimws, which = "both") %>%
@@ -722,7 +678,7 @@ expression_server <- function(id) {
 					ylab(input$Ylab) +
 					xlab(input$Xlab)
 
-					if (input$colpalette == "Single") {
+					if (input$colpalette == "Single" | input$SeparateOnePlot == "Separate") {
 						p <- p +  theme (legend.position="none")
 					}
 
@@ -747,21 +703,6 @@ expression_server <- function(id) {
 				})
 			})
 
-			output$plot.exp <- renderUI({
-				if (input$SeparateOnePlot == "Separate")  {
-					nrow = isolate(as.numeric(input$plot_nrow))
-					height = 300 * nrow
-				} else {
-					height=800
-				}
-
-				if (input$interactive == "static"){
-					plotOutput(ns("boxplot"), height = height)
-				}	else {
-					plotly::plotlyOutput(ns("boxplot_Interactive"),	height=height)
-				}
-			})
-
 			output$boxplot_Interactive <- renderPlotly({
 				p <- boxplot_out()
 				pl <- ggplotly(p) %>% layout(dragmode = "pan")
@@ -769,6 +710,19 @@ expression_server <- function(id) {
 
 			output$boxplot <- renderPlot({
 				boxplot_out() %>% print
+			})
+
+			output$plot.exp <- renderUI({
+				gene_list <- DataExpReactive()$tmpids
+				validate(need(length(gene_list)>0,"Please select a gene or input gene."))
+
+				height <- input$plotheight
+				width <- paste0(input$plotwidth,"%")
+				if (input$interactive == "static"){
+					plotOutput(ns("boxplot"), height = height, width = width)
+				}	else {
+					plotly::plotlyOutput(ns("boxplot_Interactive"),	height=height, width = width)
+				}
 			})
 
 			observeEvent(input$saveboxplot, {
@@ -815,8 +769,8 @@ expression_server <- function(id) {
 				req(length(working_project()) > 0)
 				data_results <- DataInSets[[working_project()]]$data_results
 				gene_list <- DataExpReactive()$tmpids
-				validate(need(length(gene_list)>0,"Please select a gene or input gene."))
 				validate(need(("Intensity" %in% colnames(data_results)),"Need Intensity in data_result table."))
+				validate(need(length(gene_list)>0,"Please select a gene or input gene."))
 
 				scurve.data <- data_results %>%
 				dplyr::select(any_of(c("UniqueID","Gene.Name","Protein.ID","Intensity"))) %>%
@@ -859,6 +813,14 @@ expression_server <- function(id) {
 
 			output$SCurve <- renderPlot({
 				Scurve_out()
+			})
+
+			output$plot.SCurve <- renderUI({
+				data_results <- DataInSets[[working_project()]]$data_results
+				validate(need(("Intensity" %in% colnames(data_results)),"Need Intensity in data_result table."))
+				height <- input$plotheight
+				width <- paste0(input$plotwidth,"%")
+				plotOutput(ns("SCurve"), height = height, width = width)
 			})
 
 			observeEvent(input$AbundanceCurve, {
@@ -968,6 +930,15 @@ expression_server <- function(id) {
 				LCM_out()
 			})
 
+			output$plot.LCM <- renderUI({
+				MetaData = DataInSets[[working_project()]]$MetaData
+				validate(need(all(sapply(MetaData %>% pull('sampleid'), grepl, pattern = "^.+(_)[A-Za-z]+[0-9]+$")),"Only work for LCM format"))
+
+				height <- input$plotheight
+				width <- paste0(input$plotwidth,"%")
+				plotOutput(ns("LCM"), height = height, width = width)
+			})
+
 			observeEvent(input$LCM, {
 				saved_plots$LCM <- LCM_out()
 			})
@@ -983,28 +954,28 @@ expression_server <- function(id) {
 				dplyr::select(-any_of(c("id","UniqueID", "Gene.Name", "Protein.ID")))
 				tmpids <- DataExpReactive()$tmpid
 				validate(need(length(tmpids) >= 2,"select > 2 Ids"))
-				
+
 				if(!require(corrplot)){
-				  install.packages("corrplot")
-				  library(corrplot)
+					install.packages("corrplot")
+					library(corrplot)
 				}
 
 				if (length(tmpids) > 2) {
 					cor_matrix <-  data_long_tmp  %>% as.data.frame() %>%
 					dplyr::select(c(labelgeneid,sampleid,expr)) %>%
 					#pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = ~ mean(.x, na.rm = TRUE)) %>%
-					tidyr::pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = function(x) mean(x, na.rm = TRUE)) %>%  
+					tidyr::pivot_wider(names_from = labelgeneid, values_from = expr, values_fn = function(x) mean(x, na.rm = TRUE)) %>%
 					dplyr::select(-c(sampleid)) %>% as.matrix() %>%
 					cor(.,use = "p")
-					
-					
+
+
 					testRes = cor.mtest(cor_matrix, conf.level = 0.95)
-	
+
 					if(input$diag=="YES")
 					diag = TRUE
 					else
 					diag = FALSE
-					
+
 					cor_matrix[is.na(cor_matrix)] <- 0
 					p <- corrplot(cor_matrix,
 						method=input$method,
@@ -1013,7 +984,7 @@ expression_server <- function(id) {
 						type=input$type ,
 						tl.col="black",
 						tl.cex=input$tlcex,
-						tl.srt=45, addCoef.col="black", 
+						tl.srt=45, addCoef.col="black",
 						addCoefasPercent = FALSE,
 						hclust.method=input$hclustmethod,
 						plotCI="n",
@@ -1041,6 +1012,12 @@ expression_server <- function(id) {
 
 			output$ExprCorr<- renderPlot({
 				ExprCorr_out()
+			})
+
+			output$plot.ExprCorr <- renderUI({
+				height <- input$plotheight
+				width <- paste0(input$plotwidth,"%")
+				plotOutput(ns("ExprCorr"), height = height, width = width)
 			})
 
 			observeEvent(input$ExprCorr, {
