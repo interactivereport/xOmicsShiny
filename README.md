@@ -14,7 +14,7 @@ Users can readily explore xOmicsShiny using our public server (https://xomicsshi
 
 | Study | Datasets | References |
 | --- | --- | --- |
-| Aging Mice with High fat (HF) and Control Diet (CD), Multi-omics |	AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics | [Williams et al., 2022](https://www.sciencedirect.com/science/article/pii/S0969996119300968) |
+| Aging Mice with High fat (HF) and Control Diet (CD), Multi-omics |	AgingHFCD_RNAseq, AgingHFCD_Proteomics, AgingHFCD_Metabolomics | [Williams et al., 2022](https://pubmed.ncbi.nlm.nih.gov/34666007/) |
 | Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data | Mouse Microglia RNA | [Gyoneva et al., 2019](https://www.life-science-alliance.org/content/2/6/e201900453) |
 | LRRK2 Human Neuron Transcriptome and Proteome Data | LRRK2 Neuron RNA and Proteome | [Connor-Robson et al., 2019](https://www.sciencedirect.com/science/article/pii/S0969996119300968?via%3Dihub) |
 | Human Brain (Cortex/ACG) Proteome in AD and PD | ADPD_cortex_Maxquant, ADPD_ACG_Maxquant, ADPD_cortex_Pdiscover, ADPD_ACG_Pdiscover	| [Ping et al., 2018](https://www.nature.com/articles/sdata201836) |
