@@ -1,0 +1,26 @@
+# Introduction to Multiple Testing Adjustment in Genomic Data Analysis
+
+Genomic data analysis often involves testing thousands to millions of hypotheses simultaneously, such as identifying differentially expressed genes (DEGs), exploring enriched biological pathways, or constructing gene co-expression networks. Without proper statistical correction, this massive scale of testing leads to a high probability of false-positive results. Multiple testing adjustment methods are therefore essential to control error rates and ensure biological validity. Below, we discuss their applications in three key areas of genomic research: DEG analysis, pathway enrichment analysis, and correlation network analysis.
+
+## Differentially Expressed Gene (DEG) Analysis
+In DEG analysis, researchers compare gene expression levels across conditions (e.g., disease vs. healthy) to identify genes with significant expression changes. High-throughput technologies like RNA sequencing (RNA-seq) measure expression for tens of thousands of genes, leading to a massive multiple testing burden. For example, at a nominal p-value threshold of 0.05, analyzing 20,000 genes would yield ~1,000 false positives by chance alone.
+
+**Common approaches include:**
+
+* Family-Wise Error Rate (FWER) control (e.g., Bonferroni correction), which minimizes the probability of any false positives but is overly conservative for genomic data.
+* False Discovery Rate (FDR) control (e.g., Benjamini-Hochberg procedure), which limits the proportion of false positives among significant results. FDR-adjusted p-values (q-values) are widely adopted in DEG analysis.
+
+Tools like DESeq2, edgeR, and limma-voom incorporate these adjustments to prioritize biologically meaningful DEGs while reducing false discoveries.
+
+## Over Representation Analysis (ORA)
+After identifying DEGs, pathway enrichment analysis evaluates whether specific biological pathways (e.g., metabolic or signaling pathways) are over represented among the DEGs. This involves testing hundreds of pathways from databases like GO, KEGG, or Reactome, again introducing multiplicity. Non-adjusted results often highlight generic or overly broad pathways, while adjusted results emphasize robust, context-specific biological mechanisms.
+
+ORA analysis uses statistical tests (e.g., hypergeometric test, Fisher’s exact test) to generate p-values for each pathway and it applies FDR correction (e.g., Benjamini-Yekutieli method) to account for dependencies between pathways.
+
+## Gene Set Enrichment Analysis (GSEA)
+
+Gene Set Enrichment Analysis (GSEA) is a widely used method to identify coordinated changes in predefined gene sets (e.g., pathways, functional categories) across experimental conditions. Unlike traditional over representation analysis, GSEA evaluates whether genes in a set are enriched at the extremes of a ranked list of genes (e.g., ranked by differential expression). GSEA employs a two-step approach to address multiplicity: permutation-Based significance computed by a nominal p-value and gene set-level False Discovery Rate (FDR) control.   
+
+
+## Correlation Network Analysis
+Gene co-expression or protein-protein interaction networks are constructed by computing pairwise correlations (e.g., Pearson, Spearman) across genes. The visNetowrk and netowrkD3 visulization tools in the correlation network module display the pairwise correlation result direction without any multiple testing adjustment.

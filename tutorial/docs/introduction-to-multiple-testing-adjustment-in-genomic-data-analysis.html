@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Page not found | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
-  <meta name="description" content="Page not found | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <title>Chapter 20 Introduction to Multiple Testing Adjustment in Genomic Data Analysis | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="Chapter 20 Introduction to Multiple Testing Adjustment in Genomic Data Analysis | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta name="generator" content="bookdown 0.36 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Page not found | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta property="og:title" content="Chapter 20 Introduction to Multiple Testing Adjustment in Genomic Data Analysis | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Page not found | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta name="twitter:title" content="Chapter 20 Introduction to Multiple Testing Adjustment in Genomic Data Analysis | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   
   
   
@@ -29,8 +29,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-
-
+<link rel="prev" href="output-module.html"/>
+<link rel="next" href="references.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -244,19 +244,41 @@
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="page-not-found" class="section level1">
-<h1>Page not found</h1>
-<p>The page you requested cannot be found (perhaps it was moved or renamed).</p>
-<p>You may want to try searching to find the page's new location, or use
-the table of contents to find the page you are looking for.</p>
+<div id="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis" class="section level1 hasAnchor" number="20">
+<h1><span class="header-section-number">Chapter 20</span> Introduction to Multiple Testing Adjustment in Genomic Data Analysis<a href="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis.html#introduction-to-multiple-testing-adjustment-in-genomic-data-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>Genomic data analysis often involves testing thousands to millions of hypotheses simultaneously, such as identifying differentially expressed genes (DEGs), exploring enriched biological pathways, or constructing gene co-expression networks. Without proper statistical correction, this massive scale of testing leads to a high probability of false-positive results. Multiple testing adjustment methods are therefore essential to control error rates and ensure biological validity. Below, we discuss their applications in three key areas of genomic research: DEG analysis, pathway enrichment analysis, and correlation network analysis.</p>
+<div id="differentially-expressed-gene-deg-analysis" class="section level2 hasAnchor" number="20.1">
+<h2><span class="header-section-number">20.1</span> Differentially Expressed Gene (DEG) Analysis<a href="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis.html#differentially-expressed-gene-deg-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>In DEG analysis, researchers compare gene expression levels across conditions (e.g., disease vs. healthy) to identify genes with significant expression changes. High-throughput technologies like RNA sequencing (RNA-seq) measure expression for tens of thousands of genes, leading to a massive multiple testing burden. For example, at a nominal p-value threshold of 0.05, analyzing 20,000 genes would yield ~1,000 false positives by chance alone.</p>
+<p><strong>Common approaches include:</strong></p>
+<ul>
+<li>Family-Wise Error Rate (FWER) control (e.g., Bonferroni correction), which minimizes the probability of any false positives but is overly conservative for genomic data.</li>
+<li>False Discovery Rate (FDR) control (e.g., Benjamini-Hochberg procedure), which limits the proportion of false positives among significant results. FDR-adjusted p-values (q-values) are widely adopted in DEG analysis.</li>
+</ul>
+<p>Tools like DESeq2, edgeR, and limma-voom incorporate these adjustments to prioritize biologically meaningful DEGs while reducing false discoveries.</p>
+</div>
+<div id="over-representation-analysis-ora-1" class="section level2 hasAnchor" number="20.2">
+<h2><span class="header-section-number">20.2</span> Over Representation Analysis (ORA)<a href="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis.html#over-representation-analysis-ora-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>After identifying DEGs, pathway enrichment analysis evaluates whether specific biological pathways (e.g., metabolic or signaling pathways) are over represented among the DEGs. This involves testing hundreds of pathways from databases like GO, KEGG, or Reactome, again introducing multiplicity. Non-adjusted results often highlight generic or overly broad pathways, while adjusted results emphasize robust, context-specific biological mechanisms.</p>
+<p>ORA analysis uses statistical tests (e.g., hypergeometric test, Fisher’s exact test) to generate p-values for each pathway and it applies FDR correction (e.g., Benjamini-Yekutieli method) to account for dependencies between pathways.</p>
+</div>
+<div id="gene-set-enrichment-analysis-gsea-1" class="section level2 hasAnchor" number="20.3">
+<h2><span class="header-section-number">20.3</span> Gene Set Enrichment Analysis (GSEA)<a href="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis.html#gene-set-enrichment-analysis-gsea-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Gene Set Enrichment Analysis (GSEA) is a widely used method to identify coordinated changes in predefined gene sets (e.g., pathways, functional categories) across experimental conditions. Unlike traditional over representation analysis, GSEA evaluates whether genes in a set are enriched at the extremes of a ranked list of genes (e.g., ranked by differential expression). GSEA employs a two-step approach to address multiplicity: permutation-Based significance computed by a nominal p-value and gene set-level False Discovery Rate (FDR) control.</p>
+</div>
+<div id="correlation-network-analysis" class="section level2 hasAnchor" number="20.4">
+<h2><span class="header-section-number">20.4</span> Correlation Network Analysis<a href="introduction-to-multiple-testing-adjustment-in-genomic-data-analysis.html#correlation-network-analysis" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Gene co-expression or protein-protein interaction networks are constructed by computing pairwise correlations (e.g., Pearson, Spearman) across genes. The visNetowrk and netowrkD3 visulization tools in the correlation network module display the pairwise correlation result direction without any multiple testing adjustment.</p>
+
+</div>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-
-
+<a href="output-module.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="references.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -287,7 +309,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/%s",
+"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/20-MultipleTestingAdjustment.Rmd",
 "text": "Edit"
 },
 "history": {
@@ -295,7 +317,7 @@ gitbook.start({
 "text": null
 },
 "view": {
-"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/%s",
+"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/20-MultipleTestingAdjustment.Rmd",
 "text": null
 },
 "download": null,
