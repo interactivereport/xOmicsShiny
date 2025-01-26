@@ -95,9 +95,9 @@ merge-data-module
 merge-data
 data-source
 output-module
-references
 introduction-to-multiple-testing-adjustment-in-genomic-data-analysis
 differentially-expressed-gene-deg-analysis
 over-representation-analysis-ora-1
 gene-set-enrichment-analysis-gsea-1
 correlation-network-analysis
+references
