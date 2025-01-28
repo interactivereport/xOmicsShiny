@@ -63,7 +63,8 @@ gene-clusters
 correlation-network-module
 visnetwork
 networkd3
-data-table-3
+selected-ids-data-table
+correlation-summary
 venn-diagram-module
 venn-diagram
 intersection-output

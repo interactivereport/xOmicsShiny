@@ -22,7 +22,7 @@
 
 
 
-<meta name="date" content="2025-01-26" />
+<meta name="date" content="2025-01-28" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -230,7 +230,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <ul>
 <li class="chapter" data-level="12.1" data-path="correlation-network-module.html"><a href="correlation-network-module.html#visnetwork"><i class="fa fa-check"></i><b>12.1</b> visNetwork</a></li>
 <li class="chapter" data-level="12.2" data-path="correlation-network-module.html"><a href="correlation-network-module.html#networkd3"><i class="fa fa-check"></i><b>12.2</b> networkD3</a></li>
-<li class="chapter" data-level="12.3" data-path="correlation-network-module.html"><a href="correlation-network-module.html#data-table-3"><i class="fa fa-check"></i><b>12.3</b> Data Table</a></li>
+<li class="chapter" data-level="12.3" data-path="correlation-network-module.html"><a href="correlation-network-module.html#selected-ids-data-table"><i class="fa fa-check"></i><b>12.3</b> Selected Ids Data Table</a></li>
+<li class="chapter" data-level="12.4" data-path="correlation-network-module.html"><a href="correlation-network-module.html#correlation-summary"><i class="fa fa-check"></i><b>12.4</b> Correlation Summary</a></li>
 </ul></li>
 <li class="chapter" data-level="13" data-path="venn-diagram-module.html"><a href="venn-diagram-module.html"><i class="fa fa-check"></i><b>13</b> Venn Diagram Module</a>
 <ul>
@@ -310,10 +311,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
             <section class="normal" id="section-">
 <div id="correlation-network-module" class="section level1 hasAnchor" number="12">
 <h1><span class="header-section-number">Chapter 12</span> Correlation Network Module<a href="correlation-network-module.html#correlation-network-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This module helps build co-expression networks based on gene-gene, protein-protein or metabolite-metablote correlations. This is especially useful during co-immunoprecipitation or pulldown proteomics experiments to identify protein partners. Users have the ability to enter 1 or more genes/proteins to identify if their expression is correlated.</p>
+<p>This module helps build co-expression networks based on gene-gene, protein-protein or metabolite-metablote correlations. This is especially useful during co-immunoprecipitation or pulldown proteomics experiments to identify protein partners. Users have the ability to enter 1 or more genes/proteins to identify if their expression is correlated. If users has the interested candidates to check, please check the cisNetwork or networkD3 result directly. If users need the tool to provide the correlation network information, please check the Correlation Summary tab, which providing the whole list of genes/proteins/metablites that has correlated genes/proteins/metablites.</p>
 <div id="visnetwork" class="section level2 hasAnchor" number="12.1">
 <h2><span class="header-section-number">12.1</span> visNetwork<a href="correlation-network-module.html#visnetwork" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This functionality uses the R package visNetwork to visualize the expression of correlated genes/proteins/metablites. Users have the ability to choose the R and P value cutoff for selecting the correlated genes/proteins. In this example below, we probe 3 genes and identify the expression of other genes that are correlated with them. The following network plot was produced. Mup15 is part of a large network with multiple genes correlated with it. On the other hand, A1bg was correlated with 2 other genes, while Gpc1 was not correlated with any genes. Larger nodes (genes/proteins/metablites) indicate higher importance within the network. Thicker edges (lines connect the nodes) represent stronger connections between nodes.</p>
+<p>This functionality uses the R package visNetwork to visualize the expression of correlated genes/proteins/metablites. Users have the ability to choose the R and P value cutoff for selecting the correlated genes/proteins. P.Value is the Pearson’s correlation test p-value for each pair of the genes/proteins/metablites. Adj.P.Value is the adjusted p-value obtained using Benjamini-Hochberg method. In this example below, we probe 3 genes and identify the expression of other genes that are correlated with them. The following network plot was produced. Mup15 is part of a large network with multiple genes correlated with it. On the other hand, A1bg was correlated with 2 other genes, while Gpc1 was not correlated with any genes. Larger nodes (genes/proteins/metablites) indicate higher importance within the network. Thicker edges (lines connect the nodes) represent stronger connections between nodes.</p>
 <p><a href="Figures/f12-1.png"><img src="Figures/f12-1.png" /></a></p>
 </div>
 <div id="networkd3" class="section level2 hasAnchor" number="12.2">
@@ -321,10 +322,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>This functionality uses the R package d3Network for creating D3 network graphs. Use the same setup, networkD3 show the following results.</p>
 <p><a href="Figures/f12-2.png"><img src="Figures/f12-2.png" /></a></p>
 </div>
-<div id="data-table-3" class="section level2 hasAnchor" number="12.3">
-<h2><span class="header-section-number">12.3</span> Data Table<a href="correlation-network-module.html#data-table-3" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>The genes identified in the previous tab as part of the network plot are available as a table in this tab. Users can perform searches and sort based on correlation statistics.</p>
+<div id="selected-ids-data-table" class="section level2 hasAnchor" number="12.3">
+<h2><span class="header-section-number">12.3</span> Selected Ids Data Table<a href="correlation-network-module.html#selected-ids-data-table" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Here is a table here showing the correlation results of the genes/proteins/metablites selected in the previous tabs. Correlation coefficient, p-value, adjusted p-value and correlation direction are reported for each pair of genes/proteins/metablites. Users can perform searches and sort based on correlation statistics.</p>
 <p><a href="Figures/f12-3.png"><img src="Figures/f12-3.png" /></a></p>
+</div>
+<div id="correlation-summary" class="section level2 hasAnchor" number="12.4">
+<h2><span class="header-section-number">12.4</span> Correlation Summary<a href="correlation-network-module.html#correlation-summary" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The correlation test results for all genes/proteins/metabolites with a correlation coefficient greater than 0.7 are listed in this table. The number of correlated genes/proteins/metabolites is reported both before and after multiple testing adjustments.</p>
+<p><a href="Figures/f12-4.png"><img src="Figures/f12-4.png" /></a></p>
 
 </div>
 </div>

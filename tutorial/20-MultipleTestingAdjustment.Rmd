@@ -19,8 +19,7 @@ ORA analysis uses statistical tests (e.g., hypergeometric test, Fisher’s exact
 
 ## Gene Set Enrichment Analysis (GSEA)
 
-Gene Set Enrichment Analysis (GSEA) is a widely used method to identify coordinated changes in predefined gene sets (e.g., pathways, functional categories) across experimental conditions. Unlike traditional over representation analysis, GSEA evaluates whether genes in a set are enriched at the extremes of a ranked list of genes (e.g., ranked by differential expression). GSEA employs a two-step approach to address multiplicity: permutation-Based significance computed by a nominal p-value and gene set-level False Discovery Rate (FDR) control.   
-
+Gene Set Enrichment Analysis (GSEA) is a widely used method to identify coordinated changes in predefined gene sets (e.g., pathways, functional categories) across experimental conditions. Unlike traditional over representation analysis, GSEA evaluates whether genes in a set are enriched at the extremes of a ranked list of genes (e.g., ranked by differential expression). GSEA employs a two-step approach to address multiplicity: permutation-Based significance computed by a nominal p-value and gene set-level False Discovery Rate (FDR) control.
 
 ## Correlation Network Analysis
-Gene co-expression or protein-protein interaction networks are constructed by computing pairwise correlations (e.g., Pearson, Spearman) across genes. The visNetowrk and netowrkD3 visulization tools in the correlation network module display the pairwise correlation result direction without any multiple testing adjustment.
+Gene co-expression or protein-protein interaction networks are constructed by computing Pearson pairwise correlations across genes or proteins. Raw correlation p-values are adjusted using the Benjamini-Hochberg method for False Discovery Rate (FDR) to retain only statistically significant edges. The visNetwork and networkD3 visualization tools in the correlation network module can display the correlation results before or after multiple testing adjustments, based on the user’s selection.
