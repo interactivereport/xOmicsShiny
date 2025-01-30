@@ -101,4 +101,7 @@ differentially-expressed-gene-deg-analysis
 over-representation-analysis-ora-1
 gene-set-enrichment-analysis-gsea-1
 correlation-network-analysis
+appendix
+scalability-testing
+feature-comparison
 references

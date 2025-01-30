@@ -1,0 +1,26 @@
+# Appendix
+
+## Scalability testing
+We tested the scalability of xOmicsShiny using the following example data below.
+
+[![](https://interactivereport.github.io/xOmicsShiny/images/Loading_speed_test.png)](https://interactivereport.github.io/xOmicsShiny/images/Loading_speed_test.png){target="_blank"}
+
+**Appendix Table 1**: Loading speed test of example datasets. This table shows the number of samples, comparisons, and measurements (genes/proteins/metabolites) in each dataset. The additional columns record the loading speed (in seconds) of the data, time to calculate GSEA (Gene set enrichment analysis) and ORA (Over-representation analysis) results using the KEGG or gene ontology (GO) databases (BP: biological process, CC: cellular component, and MF: molecular function).
+
+## Feature comparison
+
+[![](https://interactivereport.github.io/xOmicsShiny/images/Feature_comparison.png)](https://interactivereport.github.io/xOmicsShiny/images/Feature_comparison.png){target="_blank"}
+
+**Appendix Table 2**: Feature comparison with existing R Shiny applications.
+
+Links to the papers involved in the comparison:
+
+1, Gao et al., [Quickomics: exploring omics data in an intuitive, interactive and informative manner](https://academic.oup.com/bioinformatics/article/37/20/3670/6254183){target="_blank"}, *Bioinformatics*, 2021
+
+2, Munk et al., [Holomics-a user-friendly R shiny application for multi-omics data integration and analysis](https://link.springer.com/article/10.1186/s12859-024-05719-4){target="_blank"}, *BMC bioinformatics*, 2024
+
+3, Zhao and Wang., [GraphBio: A shiny web app to easily perform popular visualization analysis for omics data](https://www.frontiersin.org/journals/genetics/articles/10.3389/fgene.2022.957317/full){target="_blank"}, *Frontiers in Genetics*, 2022
+
+4, Zoppi et al., [MiBiOmics: an interactive web application for multi-omics data exploration and integration](https://link.springer.com/article/10.1186/s12859-020-03921-8){target="_blank"}, *BMC Bioinformatics *, 2021
+
+5, Tien et al., [EasyPubPlot: a shiny web application for rapid omics data exploration and visualization](https://www.biorxiv.org/content/10.1101/2024.11.26.625339v1.abstract){target="_blank"}, *bioRxiv*, 2024
