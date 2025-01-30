@@ -317,16 +317,16 @@ network_server <- function(id) {
 					dplyr::select(from) %>%
 					dplyr::group_by(from) %>%
 					count() %>%
-					dplyr::rename(id = from)
+					dplyr::rename(UniqueID = from)
 					
 					to_count <- network %>%
 					dplyr::select(to) %>%
 					dplyr::group_by(to) %>%
 					count() %>%
-					dplyr::rename(id = to)
+					dplyr::rename(UniqueID = to)
 					
 					correlation_count <- bind_rows(from_count, to_count) %>%
-					dplyr::group_by(id) %>%
+					dplyr::group_by(UniqueID) %>%
 					dplyr::summarise(count=sum(n), .groups = 'drop') %>%
 					dplyr::rename(Before_Filter = count)
 					rm(from_count, to_count)
@@ -342,24 +342,27 @@ network_server <- function(id) {
 					dplyr::select(from) %>%
 					dplyr::group_by(from) %>%
 					count() %>%
-					dplyr::rename(id = from)
+					dplyr::rename(UniqueID = from)
 					
 					to_count_filtered <- network_filtered %>%
 					dplyr::select(to) %>%
 					dplyr::group_by(to) %>%
 					count() %>%
-					dplyr::rename(id = to)
+					dplyr::rename(UniqueID = to)
 					
 					correlation_count_filtered <- bind_rows(from_count_filtered, to_count_filtered) %>%
-					dplyr::group_by(id) %>%
+					dplyr::group_by(UniqueID) %>%
 					dplyr::summarise(count=sum(n), .groups = 'drop') %>%
 					dplyr::rename(After_Filter = count)
 					rm(network_filtered, from_count_filtered, to_count_filtered)
 					
 					correlation_count <- correlation_count %>%
-					dplyr::left_join(.,correlation_count_filtered, by="id") %>%
+					dplyr::left_join(.,correlation_count_filtered, by="UniqueID") %>%
 					dplyr::arrange(desc(After_Filter))
 					rm(correlation_count_filtered)
+					
+					correlation_count <- dplyr::inner_join(ProteinGeneName,correlation_count, by = "UniqueID") %>%
+					  dplyr::select(-any_of(c('id')))
 
 					DT::datatable(correlation_count, extensions = 'Buttons', options = list(dom = 'lBfrtip', pageLength = 15,
 							buttons = list(
