@@ -1,6 +1,6 @@
 # Gene Set Enrichment Module
 
-This functionality is an extension to the differential gene identification. Users are able to use different cutoffs to filter out DEGs/DEPs/DEMs in different comparisons and probe enriched pathways. This is a useful way to make biological sense of the data. Two types of the enrichment analysis are available: gene set enrichment analysis and over-representation analysis. 
+This functionality is an extension to the differential gene identification. Users are able to use different cutoffs to filter out DEGs/DEPs/DEMs in different comparisons and probe enriched pathways. This is a useful way to make biological sense of the data. Two types of the enrichment analysis are available: gene set enrichment analysis and over-representation analysis. Beyond the standard Gene Set Enrichment Analysis, users can upload RNA, protein or metabolic data alone, or together with each other, and our system can perform combined multiomics molecular set enrichment analysis, and highlight the data on KEGG pathways showing all changed genes/proteins and metabolites. Pathway heatmap is also available to visualize enriched pathways across experiments.
 
 ## Gene Set Enrichment Analysis (GSEA)
 
