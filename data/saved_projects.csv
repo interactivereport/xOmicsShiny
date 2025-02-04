@@ -2,7 +2,6 @@ ProjectID,ShortNames,Names,Species
 Mouse_microglia_RNA-Seq,Mouse Microglia RNA,Cx3cr1-Deficient Mouse Microglia RNA-Seq Demo Data,mouse
 LRRK2_Neuron_RNA,LRRK2 Neuron RNA,LRRK2 Neuron Transcriptome,human
 LRRK2_Neuron_Protein,LRRK2 Neuron Proteome,LRRK2 Neuron Proteome,human
-RNASeqtest2,RNASeq test,RNASeqtest2,rat
 ADPD_cortex_Maxquant,ADPD cortex Searched by Maxquant,Human Brain (Cortex) Proteome in AD and PD by Maxquant,human
 ADPD_ACG_Maxquant,ADPD ACG Searched by Maxquant,Human Brain (ACG) Proteome in AD and PD by Maxquant,human
 ADPD_cortex_Pdiscover,ADPD cortex Searched by PD,Human Brain (Cortex) Proteome in AD and PD by proteome discoverer,human
