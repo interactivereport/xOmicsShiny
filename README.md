@@ -4,6 +4,8 @@ Server site: https://xomicsshiny.bxgenomics.com/
 
 Tutorial: https://interactivereport.github.io/xOmicsShiny/tutorial/docs/index.html
 
+Preprint: https://www.biorxiv.org/content/10.1101/2025.01.30.635740v2
+
 ![xOmicsShiny](https://interactivereport.github.io/xOmicsShiny/images/Cover.png)
 
 **Cover Image: Overview of the xOmicsShiny modules.** The Shiny application handles multi-omics data including transcriptomics, proteomics, metabolomics, and lipidomics data. The **Data Merging** (Grey) module integrates multi-omics data for downstream analysis. **Data exploration** modules (Blue) contain QC, DEGs, Heatmap, Expression, and Venn Diagram modules. **Geneset Enrichment** (Green) module performs GSEA and pathway analysis. **Network modules** (Bisque) include WGCNA, Correlation Network, and PCSF modules. **Pattern and trend analysis** (Orchid) consists of Pattern, Dose Response, Time Course, and Monotonic Trend modules.
