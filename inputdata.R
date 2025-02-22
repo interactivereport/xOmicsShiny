@@ -489,7 +489,7 @@ DataReactiveDB <- reactive({
 		}
 
 		### meta data to long form
-		MetaData_long <- MetaData %>%
+		MetaData_long <- MetaData %>%dplyr::mutate_all(as.character) %>%
 		tidyr::pivot_longer(cols = -sampleid,  names_to = "type",values_to = "group")
 
 		#results_long
@@ -676,7 +676,7 @@ observeEvent(input$uploadData, {
 
 			### meta data to long form
 			MetaData_long <- MetaData %>%
-			dplyr::select(-any_of(c("Order", "ComparePairs"))) %>%
+			dplyr::select(-any_of(c("Order", "ComparePairs"))) %>%dplyr::mutate_all(as.character) %>%
 			tidyr::pivot_longer(cols = -sampleid,  names_to = "type",values_to = "group")
 		}
 
