@@ -1,5 +1,5 @@
 ---
-title: "xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" 
+title: "xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping" 
 author:
   - name: Benbo Gao
     email: benbo.gao@biogen.com

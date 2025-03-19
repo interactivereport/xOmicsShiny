@@ -1,4 +1,6 @@
 introduction
+key-features
+main-interface
 installation
 set-up-r-environment
 set-up-configure-files

@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
-  <meta name="description" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <title>Chapter 1 Introduction | xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="Chapter 1 Introduction | xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping" />
   <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta property="og:title" content="Chapter 1 Introduction | xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Chapter 1 Introduction | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta name="twitter:title" content="Chapter 1 Introduction | xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping" />
   
   
   
@@ -140,7 +140,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <li class="divider"></li>
 <li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Preface</a></li>
-<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="1" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>1</b> Introduction</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="introduction.html"><a href="introduction.html#key-features"><i class="fa fa-check"></i><b>1.1</b> Key features</a></li>
+<li class="chapter" data-level="1.2" data-path="introduction.html"><a href="introduction.html#main-interface"><i class="fa fa-check"></i><b>1.2</b> Main interface</a></li>
+</ul></li>
 <li class="chapter" data-level="2" data-path="installation.html"><a href="installation.html"><i class="fa fa-check"></i><b>2</b> Installation</a>
 <ul>
 <li class="chapter" data-level="2.1" data-path="installation.html"><a href="installation.html#set-up-r-environment"><i class="fa fa-check"></i><b>2.1</b> Set up R environment</a></li>
@@ -306,7 +310,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
       <div class="body-inner">
         <div class="book-header" role="navigation">
           <h1>
-            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</a>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">xOmicsShiny: an R Shiny application for cross-omics data analysis and pathway mapping</a>
           </h1>
         </div>
 
@@ -317,13 +321,35 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="introduction" class="section level1 hasAnchor" number="1">
 <h1><span class="header-section-number">Chapter 1</span> Introduction<a href="introduction.html#introduction" class="anchor-section" aria-label="Anchor link to header"></a></h1>
 <p>xOmicsShiny demo version can be accessed via the link <a href="https://xomicsshiny.bxgenomics.com/" target="_blank">https://xomicsshiny.bxgenomics.com/</a>.</p>
-<p>XOmicsShiny is an R shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. In order to support metabolomic data, we have built a metabolite database by combining multiple databases and building look-up tables across various ID formats. There are over 263K unique metabolites extracted from databases Pubchem, KEGG, HMDB, SMPDB, Metabolomic Refmet. etc. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples (<a href="https://doi.org/10.1016/j.cels.2021.09.005" target="_blank">Williams et al., 2022</a>).</p>
+<p>XOmicsShiny is an R Shiny application for cross-omics data analysis and pathway mapping. RNAseq, Proteomics and Metabolomics data are supported in both individual and integrated way to visualize statistical analysis results. In order to support metabolomic data, we have built a metabolite database by combining multiple databases and building look-up tables across various ID formats. There are over 263K unique metabolites extracted from databases Pubchem, KEGG, HMDB, SMPDB, Metabolomic Refmet. etc. This tutorial provides a detailed guide on using the different functionalities and customizing the tools to best fit data analysis and plotting needs, using published multiomic dataset as examples (<a href="https://doi.org/10.1016/j.cels.2021.09.005" target="_blank">Williams et al., 2022</a>).</p>
 <p><a href="Figures/f1-1.png"><img src="Figures/f1-1.png" /></a></p>
+<div id="key-features" class="section level2 hasAnchor" number="1.1">
+<h2><span class="header-section-number">1.1</span> Key features<a href="introduction.html#key-features" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>As an introduction, we summarized the key features of xOmicsShiny, in order to give you a brief overview of this application.</p>
+<ul>
+<li><p><strong>Multi-omics dataset hosting</strong></p>
+<p>xOmicsShiny provides a centralized place to host multi-omics data as well as analysis results. Data types such as RNAseq, Proteomics and Metabolomics need to be processed into expression values and differential expression analysis results (i.e., comparison results) before being imported into xOmicsShiny. Users can upload the expression values of genes or compounds, metadata information associated with the study, and the comparison results including fold change (FC) and p-values (or adjusted p-values). More details can be found in Chapter <a href="dataset-module.html#dataset-module">3</a>.</p></li>
+<li><p><strong>Flexible data navigation</strong></p>
+<p>xOmicsShiny offers plenty of data navigation and visualization tools for you to understand the QC, differential expressed genes/proteins/compounds, and pathway enrichment results. Users can easily use the on-the-fly plot generation functions in the application, with more details provided in Chapter <a href="qc-plots-module.html#qc-plots-module">5</a>, <a href="deg-module.html#deg-module">6</a>, <a href="heatmap-module.html#heatmap-module">7</a>, <a href="expression-plot-module.html#expression-plot-module">8</a>, <a href="gene-set-enrichment-module.html#gene-set-enrichment-module">9</a>, etc.</p></li>
+<li><p><strong>Easy comparison of DE results</strong></p>
+<p>xOmicsShiny has several ways to examine the differential expression (DE) results and compare them directly. For example, as described in Chapter <a href="deg-module.html#degs-and-deps-in-two-comparisons">6.4</a>, scatter plots and side-by-side volcano plots are frequently used.</p></li>
+<li><p><strong>Comparison result merging</strong></p>
+<p>Instead of merging the original data, xOmicsShiny features multi-omics data integration at the comparison level, as illustrated in Chapter <a href="comparison-result-merging-module.html#comparison-result-merging-module">18</a>. The merged result will be treated as a new dataset for visualization. moreover, the merged data can be used to examine the consistent changes, usually across different conditions of the same omics type, or for pathway enrichment analysis (for example, with KEGG database) using genes and compounds together, for different omics types.</p></li>
+<li><p><strong>Pathway mapping</strong></p>
+<p>Multi-omics data can be visualized seamlessly using several pathway databases on xOmicsShiny, with more details illustrated in Chapter <a href="gene-set-enrichment-module.html#gene-set-enrichment-module">9</a>.</p></li>
+<li><p><strong>Analyses critical to drug development</strong></p>
+<p>xOmicsShiny also includes several modules that provide analysis related to drug development, as described in Chapter <a href="dose-response-module.html#dose-response-module">15</a>, <a href="time-course-module.html#time-course-module">16</a>, <a href="monotonic-trend-module.html#monotonic-trend-module">17</a>.</p></li>
+</ul>
+<p>Overall, xOmicsShiny provides tremendous flexibility to handle multi-omics data. We suggest users keep the key features mentioned above in mind, and gradually follow this full tutorial to understand these functions step by step.</p>
+</div>
+<div id="main-interface" class="section level2 hasAnchor" number="1.2">
+<h2><span class="header-section-number">1.2</span> Main interface<a href="introduction.html#main-interface" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>The main interface consists of two tabs: <strong>Dataset</strong> and <strong>Setting</strong>. The <strong>Dataset</strong> page features a multi-tab menu for various functionality modules. Before loading a dataset, the default tabs include Select Dataset, four tabs displaying dataset information, and a Help tab explaining the sub-tab functions.</p>
 <p><a href="Figures/f1-2.png"><img src="Figures/f1-2.png" /></a></p>
 <p>The <strong>Setting</strong> page lists all available functional modules. Users can select or deselect individual modules by clicking on the module icon, which displays a text prompt on hover. Selected module names will be added as tabs in the multi-tab menu on the <strong>Dataset</strong> page.</p>
 <p><a href="Figures/f1-3.png"><img src="Figures/f1-3.png" /></a></p>
 
+</div>
 </div>
             </section>
 
