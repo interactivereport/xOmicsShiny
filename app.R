@@ -472,14 +472,14 @@ tags$br(),
 								if (!(modulelist[14] %in% saved_setting$value)) {
 									tags$a('id'="add14", 'class'="btn btn-secondary action-button",
 										tags$div('class'="hexcover",
-											tags$h3("Add Merge Data", tags$br(), "Module"),
+											tags$h3("Add Comparison", tags$br(), "Result Merging", tags$br(), "Module"),
 											tags$div('class'="plus")
 										)
 									)
 								} else {
 									tags$a('id'="remove14", 'class'="btn btn-secondary action-button",
 										tags$div('class'="hexcover",
-											tags$h3("Remove Merge Data", tags$br(), "Module"),
+											tags$h3("Remove Comparison", tags$br(), "Result Merging", tags$br(), "Module"),
 											tags$div('class'="minus")
 										)
 									)
