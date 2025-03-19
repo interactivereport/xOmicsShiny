@@ -92,8 +92,8 @@ fitting-curve-5
 result-table-and-data-table-2
 result-table-all-2
 browsing-2
-merge-data-module
-merge-data
+comparison-result-merging-module
+merge-comparisons
 data-source
 output-module
 introduction-to-multiple-testing-adjustment-in-genomic-data-analysis

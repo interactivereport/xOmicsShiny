@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Chapter 8 Expression Plot Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
-  <meta name="description" content="Chapter 8 Expression Plot Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <title>Chapter 18 Comparison Result Merging Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping</title>
+  <meta name="description" content="Chapter 18 Comparison Result Merging Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta name="generator" content="bookdown 0.34 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="Chapter 8 Expression Plot Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta property="og:title" content="Chapter 18 Comparison Result Merging Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Chapter 8 Expression Plot Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
+  <meta name="twitter:title" content="Chapter 18 Comparison Result Merging Module | xOmicsShiny: an R shiny application for cross-omics data analysis and pathway mapping" />
   
   
   
@@ -29,8 +29,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="heatmap-module.html"/>
-<link rel="next" href="gene-set-enrichment-module.html"/>
+<link rel="prev" href="monotonic-trend-module.html"/>
+<link rel="next" href="output-module.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -314,35 +314,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="expression-plot-module" class="section level1 hasAnchor" number="8">
-<h1><span class="header-section-number">Chapter 8</span> Expression Plot Module<a href="expression-plot-module.html#expression-plot-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<p>This functional module allows users to browse through a subset of genes/proteins/metabolites. It also offers an option to plot expression of individually selected genes/proteins/metabolites. Four different displays: Box Plot, Bar Plot, Violin Plot and Line Plot are made available to fit the users’ preference. Genes/proteins/metabolites can be ranked by p-value or logFC, and the number of columns in the graph can be changed.</p>
-<p><a href="Figures/f8-1.png"><img src="Figures/f8-1.png" /></a></p>
-<div id="set-up-options" class="section level2 hasAnchor" number="8.1">
-<h2><span class="header-section-number">8.1</span> Set up options<a href="expression-plot-module.html#set-up-options" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>The set up panel contains a few plotting options for data selection and visualization. It consists of dataset selection, data point selection, plot type, plot display parameters.</p>
-<p>This tab lets the users plot out the expression of the DEGs/DEPs identified in the different comparisons. In this example below, we demonstrate how to display a few top genes using different types of plots.</p>
-<p><a href="Figures/f8-2.png"><img src="Figures/f8-2.png" /></a></p>
+<div id="comparison-result-merging-module" class="section level1 hasAnchor" number="18">
+<h1><span class="header-section-number">Chapter 18</span> Comparison Result Merging Module<a href="comparison-result-merging-module.html#comparison-result-merging-module" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>This module enable users to combine different datasets together if they have multiple datasets of the same or similar study and want to check them together. The functions that support a single dataset can be used by the merged data.</p>
+<div id="merge-comparisons" class="section level2 hasAnchor" number="18.1">
+<h2><span class="header-section-number">18.1</span> Merge Comparisons<a href="comparison-result-merging-module.html#merge-comparisons" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>The comparisons in the pre-loaded data sets can be merged using one of four methods: union, overlap (intersect), distinct, and simple append. Depending on the chosen method, users need to set the <strong>Overlapped Datasets</strong> cutoff to retain only the genes that appear in a number of comparisons equal or greater than the cutoff. If the merging process involves the same gene from different comparisons, we offer four methods for merging p-values: Fisher (χ²-based method), minP (minimum p-value), Simes (uses ordered p-values to determine significance), and Stouffer (applies the inverse standard normal cumulative distribution function to p-values). Additionally, there are three methods for merging fold change values: average, multiplication, and formula (a linear combination of the fold changes).</p>
+<p><a href="Figures/f18-1.png"><img src="Figures/f18-1.png" /></a></p>
 </div>
-<div id="data-table-1" class="section level2 hasAnchor" number="8.2">
-<h2><span class="header-section-number">8.2</span> Data Table<a href="expression-plot-module.html#data-table-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This sub-tab lists the normalized expression data of the genes/proteins/metabolites selected from the left menu as a searchable table.</p>
-<p><a href="Figures/f8-3.png"><img src="Figures/f8-3.png" /></a></p>
-</div>
-<div id="result-table-1" class="section level2 hasAnchor" number="8.3">
-<h2><span class="header-section-number">8.3</span> Result Table<a href="expression-plot-module.html#result-table-1" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This tab lists the statistics results of the genes/proteins/metabolites selected selected from the left menu as a searchable table. Each comparison defined is probed for the genes/proteins/metabolites in the list and the P value and Fold changes are listed</p>
-<p><a href="Figures/f8-4.png"><img src="Figures/f8-4.png" /></a></p>
-</div>
-<div id="rank-abundance-curve" class="section level2 hasAnchor" number="8.4">
-<h2><span class="header-section-number">8.4</span> Rank Abundance Curve<a href="expression-plot-module.html#rank-abundance-curve" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This functionality helps identify the relative abundance of a list of genes within a dataset. This plot helps interpret the distribution of abundance and expression levels of a set of genes. A steep gradient indicates the genes are very different in their expression levels as the high-ranking species have much higher abundances than the low-ranking species. A shallow gradient indicates that the genes have very similar expression levels as the abundances of different species are similar.</p>
-<p><a href="Figures/f8-5.png"><img src="Figures/f8-5.png" /></a></p>
-</div>
-<div id="laser-capture-microdissection" class="section level2 hasAnchor" number="8.5">
-<h2><span class="header-section-number">8.5</span> Laser Capture Microdissection<a href="expression-plot-module.html#laser-capture-microdissection" class="anchor-section" aria-label="Anchor link to header"></a></h2>
-<p>This functionality helps to check the gene expression arranged in the order of the sliced spatial samples. With the reference of the spatial sample image, users can check the gene expression side-by-side or in an overlap manner. Here we show the tool with our simulated data set LCM_Simulated.</p>
-<p><a href="Figures/f8-6.png"><img src="Figures/f8-6.png" /></a></p>
+<div id="data-source" class="section level2 hasAnchor" number="18.2">
+<h2><span class="header-section-number">18.2</span> Data Source<a href="comparison-result-merging-module.html#data-source" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This tab shows a merged table of merged data set and original data sets.</p>
+<p><a href="Figures/f18-2.png"><img src="Figures/f18-2.png" /></a></p>
+<p>The merged data set can be analyzed using other comparison visualization tool. The example below shows the GSEA analysis result tables for the merged data set.</p>
+<p><a href="Figures/f18-3.png"><img src="Figures/f18-3.png" /></a></p>
 
 </div>
 </div>
@@ -351,8 +336,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           </div>
         </div>
       </div>
-<a href="heatmap-module.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="gene-set-enrichment-module.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="monotonic-trend-module.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="output-module.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -383,7 +368,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/08-ExpressionModule.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/edit/gh-pages/18-MergeDataModule.Rmd",
 "text": "Edit"
 },
 "history": {
@@ -391,7 +376,7 @@ gitbook.start({
 "text": null
 },
 "view": {
-"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/08-ExpressionModule.Rmd",
+"link": "https://github.com/interactivereport/xOmicsShiny/blob/gh-pages/18-MergeDataModule.Rmd",
 "text": null
 },
 "download": null,

@@ -1,8 +1,8 @@
-# Merge Data Module
+# Comparison Result Merging Module
 
-This module enable users to combine different datasets together if they have multiple datasets of the same or similar study and want to check them together. And then the functions that only support single dataset can be used by the merged data. 
+This module enable users to combine different datasets together if they have multiple datasets of the same or similar study and want to check them together. The functions that support a single dataset can be used by the merged data. 
 
-## Merge Data
+## Merge Comparisons
 
 The comparisons in the pre-loaded data sets can be merged using one of four methods: union, overlap (intersect), distinct, and simple append. Depending on the chosen method, users need to set the **Overlapped Datasets** cutoff to retain only the genes that appear in a number of comparisons equal or greater than the cutoff. If the merging process involves the same gene from different comparisons, we offer four methods for merging p-values: Fisher (χ²-based method), minP (minimum p-value), Simes (uses ordered p-values to determine significance), and Stouffer (applies the inverse standard normal cumulative distribution function to p-values). Additionally, there are three methods for merging fold change values: average, multiplication, and formula (a linear combination of the fold changes).
 
