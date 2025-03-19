@@ -24,7 +24,7 @@ As an introduction, we summarized the key features of xOmicsShiny, in order to g
   
 - **Comparison result merging**
 
-  Instead of merging the original data, xOmicsShiny features multi-omics data integration at the comparison level, as illustrated in Chapter \@ref(comparison-result-merging-module). The merged result will be treated as a new dataset for visualization. moreover, the merged data can be used to examine the consistent changes, usually across different conditions of the same omics type, or for pathway enrichment analysis (for example, with KEGG database) using genes and compounds together, for different omics types.
+  Instead of merging the original data, xOmicsShiny features multi-omics data integration at the comparison level, as illustrated in Chapter \@ref(comparison-result-merging-module). The merged result will be treated as a new dataset for visualization.
   
 - **Pathway mapping**
 
