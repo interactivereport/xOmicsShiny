@@ -20,7 +20,7 @@ As an introduction, we summarized the key features of xOmicsShiny, in order to g
   
 - **Easy comparison of DE results**
 
-  xOmicsShiny has several ways to examine the differential expression (DE) results and compare them directly. For example, as described in Chapter \@ref(degs-and-deps-in-two-comparisons), scatter plots and side-by-side volcano plots are frequently used.
+  xOmicsShiny has several ways to examine the differential expression (DE) results and compare them directly. For example, as described in Chapter \@ref(degs-and-deps-in-two-comparisons) and \@ref(mulitple-volcano-plots), scatter plots and side-by-side volcano plots are frequently used.
   
 - **Comparison result merging**
 
