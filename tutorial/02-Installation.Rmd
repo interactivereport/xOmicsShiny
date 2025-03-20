@@ -15,7 +15,6 @@ options(renv.config.install.transactional = FALSE)
 renv::restore()
 ```
 
-
 If there are packages that failed to install, most likely certain programs are missing on your system, please read the error message and try to install the programs, then come back to R to install the packages. 
 
 (Not recommended), alternatively, you can try to install all the packages manually from R command line in your system. 

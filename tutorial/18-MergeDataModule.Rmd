@@ -12,7 +12,7 @@ The comparisons in the pre-loaded datasets can be merged using one of four metho
 
 ## Data Source
 
-This tab shows a merged table of merged data set and original data sets.
+This tab shows a merged table of merged data set and original datasets.
 
 [![](`r pic_path`f18-2.png)](`r pic_path`f18-2.png)
 
