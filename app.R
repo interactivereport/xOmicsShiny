@@ -101,7 +101,7 @@ server <- function(input, output, session) {
 	source("inputdata.R",local = TRUE)
 	source("help.R",local = TRUE)
 
-	modulelist <- c("QC Plots", "DEGs", "Heatmap", "Expression Plot", "Geneset Enrichment", "Pattern", 	"Correlation Network", "Venn diagram", "PCSF", "WGCNA", "Dose Response", "Dromics", "Monotonic Trend", "Merge Data", "Groups and Samples")
+	modulelist <- c("QC Plots", "DEGs", "Heatmap", "Expression Plot", "Geneset Enrichment", "Pattern", 	"Correlation Network", "Venn diagram", "PCSF", "WGCNA", "Dose Response", "Dromics", "Monotonic Trend", "Comparison Result Merging", "Groups and Samples")
 	moduleFilelist <- c("qcplotmodule.R", "degmodule.R", "heatmapmodule.R", "expressionmodule.R", "genesetmodule.R", "patternmodule.R", "networkmodule.R", "vennmodule.R", "pcsfmodule.R", "wgcnamodule.R", "drcmodule.R", 	"dromicsmodule.R", "monotonicmodule.R", "mergedatamodule.R","groupsamplemodule.R")
 
 	observe({
