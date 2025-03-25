@@ -2,7 +2,7 @@
 
 This module enable users to combine multi-omics data analysis results at the comparison level (i.e., the differential expression analysis result). This function is designed for the users when they have different datasets from the same or similar study and would like to navigate them together. However, unlike other tools such as [MOFA](https://www.embopress.org/doi/full/10.15252/msb.20178124){target="_blank"}, our tool does not integrate the datasets at the raw data level. Users need to process the data and acquire differential expression comparison results before using xOmicsShiny.
 
-After merging the comparison results, users can visualize the data using many functions that described previously in the tutorial, such as the aforementioned DEG visualization in **Chapter \@ref(deg-module)**, and pathway enrichment analysis in **Chapter \@ref(gene-set-enrichment-module)**, etc.
+The merged output can be considered as a new comparison, and it does not have raw data values. Thus, after merging the comparison results, users can apply the modules that don't require raw data to this merged result. For example, users can visualize the merged output using many functions that described previously in the tutorial, such as the aforementioned DEG visualization in **Chapter \@ref(deg-module)**, Venn diagram in **Chapter \@ref(venn-diagram-module)**, and pathway enrichment analysis in **Chapter \@ref(gene-set-enrichment-module)**, etc.
 
 ## Merge Comparisons
 
