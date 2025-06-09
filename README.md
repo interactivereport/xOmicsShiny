@@ -4,7 +4,7 @@ Server site: https://xomicsshiny.bxgenomics.com/
 
 Tutorial: https://interactivereport.github.io/xOmicsShiny/tutorial/docs/index.html
 
-Preprint: https://www.biorxiv.org/content/10.1101/2025.01.30.635740v2
+Paper: https://academic.oup.com/bioinformaticsadvances/article/5/1/vbaf097/8145566
 
 ![xOmicsShiny](https://interactivereport.github.io/xOmicsShiny/images/Cover.png)
 
