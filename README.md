@@ -51,17 +51,19 @@ If there are packages that failed to install, most likely certain programs are m
 cran_packages=c("shiny", "shinythemes", "shinyalert", "shinyjqui", "shinyjs", "coop", "cluster", "devtools",
 "plotly", "reshape2", "tidyverse", "gplots", "ggpubr", "svgPanZoom", "WGCNA","drc", "heatmaply","dendextend",
 "gridExtra", "ggrepel", "RColorBrewer", "pheatmap", "rgl", "car", "colourpicker", "VennDiagram", "factoextra",
-"openxlsx", "visNetwork", "cowplot", "circlize", "svglite", "Hmisc", "ggrastr", "ggpmisc","ggprism","parallel",
+"openxlsx", "visNetwork", "cowplot", "circlize", "svglite", "Hmisc", "ggrastr", "ggpmisc","ggprism",
 "ggExtra", "networkD3", "vctrs", "ragg", "textshaping", "stringi", "plyr", "png", "psych", "broom", "rclipboard")
 
 #Note: Hmisc is not required to run the Shiny app but is needed to prepare network data from expression matrix.
 install.packages(cran_packages, repos="http://cran.r-project.org/")  #choose repos based on your location if needed
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(c("Mfuzz", "biomaRt", "ComplexHeatmap", "pathview", "fgesa", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db"))
+BiocManager::install(c("Mfuzz", "biomaRt", "ComplexHeatmap", "pathview", "fgsea", "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db"))
 
 #Install PCSF
-devtools::install_github("IOR-Bioinformatics/PCSF", repos=BiocInstaller::biocinstallRepos(),
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+devtools::install_github("IOR-Bioinformatics/PCSF", repos=BiocManager::repositories(),
                          dependencies=TRUE, type="source", force=TRUE)
 ```
 
