@@ -1128,11 +1128,18 @@ output$project <- renderText({
 
 output$summary <- renderText({
 	req(length(working_project()) > 0)
+  restricted_msg <- if (!public_dataset) {
+    "<h4>This project is loaded in restricted mode. Individual sample data have been masked for privacy.</h4><br>"
+  } else {
+    ""
+  }
+  
 	summary=stringr::str_c('<style type="text/css">
 		.disc {	list-style-type: disc;}
 		.square { list-style-type: square; margin-left: -2em;	font-size: small}
 		</style>',
 		"<h2>Project ID: ", DataInSets[[working_project()]]$ProjectID, "</h2><br>",
+		restricted_msg,
 		"<ul class='disc'>",
 		"<li>Project Short Name: ", DataInSets[[working_project()]]$ShortName, "</li>",
 		"<li>Description: ", DataInSets[[working_project()]]$Name, "</li>",
@@ -1155,6 +1162,7 @@ group_info <- reactive({
 })
 output$group_table <- renderTable(group_info(), colnames=F)
 
+
 output$results <- DT::renderDataTable(server=TRUE,{
 	req(length(working_project()) > 0)
 	req(DataInSets[[working_project()]]$data_results)
@@ -1175,7 +1183,8 @@ output$results <- DT::renderDataTable(server=TRUE,{
 })
 
 output$sample <-  DT::renderDT(server=FALSE, {
-	req(length(working_project()) > 0)
+  req(public_dataset)
+  req(length(working_project()) > 0)
 	req(DataInSets[[working_project()]]$MetaData)
 
 	meta <- DataInSets[[working_project()]]$MetaData %>% 
@@ -1191,6 +1200,15 @@ output$sample <-  DT::renderDT(server=FALSE, {
 	),
 rownames= F)
 })
+
+observe({
+  if (public_dataset) {
+    showTab(inputId = "Tables", target = "Sample Table")
+  } else {
+    hideTab(inputId = "Tables", target = "Sample Table")
+  }
+})
+
 
 output$comp_info <- renderUI ({
 	req(length(working_project()) > 0)
@@ -1213,7 +1231,8 @@ tagList(
 })
 
 output$data_wide <- DT::renderDataTable(server=TRUE, {
-	req(length(working_project()) > 0)
+  req(public_dataset)
+  req(length(working_project()) > 0)
 	req(DataInSets[[working_project()]]$data_wide)
 	data_w <- DataInSets[[working_project()]]$data_wide
 	data_w[,sapply(data_w,is.numeric)] <- signif(data_w[,sapply(data_w,is.numeric)],3)
@@ -1227,6 +1246,15 @@ output$data_wide <- DT::renderDataTable(server=TRUE, {
 		)
 	)
 })
+
+observe({
+  if (public_dataset) {
+    showTab(inputId = "Tables", target = "Data Table")
+  } else {
+    hideTab(inputId = "Tables", target = "Data Table")
+  }
+})
+
 
 output$ProteinGeneName <- DT::renderDataTable(server=TRUE, {
 	req(length(working_project()) > 0)

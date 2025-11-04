@@ -253,6 +253,7 @@ config=NULL
 server_dir=NULL
 test_dir=NULL
 gmt_file_info=NULL
+public_dataset=TRUE
 if (file.exists("config.csv")) { #load optional configuration file
 	#config=read_csv("config.csv")
 	config=read.csv("config.csv") # change to utils from readr  
@@ -262,6 +263,8 @@ if (file.exists("config.csv")) { #load optional configuration file
 	if (!is.na(N)) {test_dir=config$value[N]}
 	N=match("gmt_file_info", config$category)
 	if (!is.na(N)) {gmt_file_info=config$value[N]}
+	N=match("restricted_dataset", config$category)
+	if (!is.na(N)) {public_dataset=ifelse(config$value[N] == "yes", FALSE, TRUE)}
 	#browser() #debug
 }
 
