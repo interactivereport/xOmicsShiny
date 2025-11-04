@@ -292,7 +292,13 @@ monotonic_server <- function(id) {
 				mutate_if(is.numeric, round, digits = 2)
 				DT::datatable(data_tmp, options = list(pageLength = 15))
 			})
-
+			
+			session$onFlushed(function() {
+			  if (!public_dataset) {
+			    hideTab(inputId = ns("FittingCurve_tabset"), target = "Data Table")
+			  }
+			}, once = TRUE)
+			
 			###########################################################################################################
 			#monotonic fit all data
 			observe({

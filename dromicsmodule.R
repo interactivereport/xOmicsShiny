@@ -80,7 +80,7 @@ dromics_ui <- function(id) {
 						),
 						tabPanel(title="Result Table", value="Result Table", DT::dataTableOutput(ns("fitresult"))
 						),
-						tabPanel(title="Data Table",	DT::dataTableOutput(ns("fitdata")))
+						tabPanel(title="Data Table",	value="Data Table", DT::dataTableOutput(ns("fitdata")))
 					)
 				),
 				tabPanel(title="Result Table (all)", value="Result Table (all)",
@@ -647,7 +647,13 @@ dromics_server <- function(id) {
 				mutate_if(is.numeric, round, digits = 2)
 				DT::datatable(data_tmp, options = list(pageLength = 15))
 			})
-
+			
+			session$onFlushed(function() {
+			  if (!public_dataset) {
+			    hideTab(inputId = ns("FittingCurve_tabset"), target = "Data Table")
+			  }
+			}, once = TRUE)
+			
 			output$fitresult <- DT::renderDataTable({
 				fitresult <- 	ModelSelection_out2()[["result"]]
 				fitresult <- fitresult %>%

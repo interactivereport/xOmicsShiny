@@ -747,6 +747,12 @@ expression_server <- function(id) {
 				}
 			)
 
+			session$onFlushed(function() {
+			  if (!public_dataset) {
+			    hideTab(inputId = ns("tabset"), target = "Data Table")
+			  }
+			}, once = TRUE)
+		
 			output$res_dotplot <- DT::renderDT(server=FALSE,{
 				req(length(working_project()) > 0)
 				result_long_tmp <- DataExpReactive()$result_long_tmp
