@@ -34,6 +34,8 @@ suppressPackageStartupMessages({
 	library(ggrastr)
 	library(ggpmisc)
   library(rclipboard)
+  library(ComplexHeatmap)
+  library(circlize)
 })
 
 resultfilter <- function(results_long, test_sel, p_sel, direction, pvalcut, FCcut, sel_label) {
