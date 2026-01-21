@@ -17,6 +17,8 @@ saved_plots <- reactiveValues()
 saved_table <- reactiveValues()
 upload_message <- reactiveVal()
 DataReactiveTxt<-reactiveVal()
+getFromURL<-reactiveVal(FALSE)
+getFromURL2<-reactiveVal(FALSE)
 ##################
 
 observe({
@@ -119,10 +121,32 @@ names(returnlist) <- c("ProjectID", "Name", "Species", "ShortName", "Path", "fil
 
 #####
 
+#Use getFromURL() to decide if load files from URL directly 
+observe({
+    query <- parseQueryString(isolate(session$clientData$url_search))
+  	req(!is.null(query[['serverfile']]) )
+    ProjectID = query[['serverfile']]
+    if (!(ProjectID %in% DS_names())) {
+      cat("Detected server file from URL: ", ProjectID, "\n")
+      getFromURL(TRUE)
+    } else {getFromURL(FALSE); cat("URL off\n")}
+})
+
+observe({
+    query <- parseQueryString(isolate(session$clientData$url_search))
+  	req(!is.null(query[['testfile']]) )
+    ProjectID = query[['testfile']]
+    if (!(ProjectID %in% DS_names())) {
+      cat("Detected test file from URL2: ", ProjectID, "\n")
+      getFromURL2(TRUE)
+    } else {getFromURL2(FALSE); cat("URL2 off\n")}
+})
+
 DataReactiveRData <- reactive({
 	withProgress(message = 'Fetching data.',  detail = 'This may take a while...', value = 0, {
 		query <- parseQueryString(isolate(session$clientData$url_search))
-		req((!is.null(query[['project']]) & !(query[["project"]] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1))) #by bgao 0212204
+		req((!is.null(query[['project']]) & !(query[["project"]] %in% names(DataInSets)))|| input$sel_project!="" || (input$select_dataset=='Upload RData File' & !is.null(input$file1)) || !is.null(query[['serverfile']]) || !is.null(query[['testfile']]) ) #by bgao 0212204
+		cat("try to load data\n")
 
 		ProjectID=NULL; ProjectName=NULL;  ShortName=NULL; file1=NULL; file2=NULL; ProjectPath=NULL
 		Species = "human"
@@ -164,29 +188,55 @@ DataReactiveRData <- reactive({
 		}
 
 		if (!is.null(query[['serverfile']])) {
-			ProjectID = query[['serverfile']]
-			if (!is.null(server_dir)) {
-				validate(need(file.exists(stringr::str_c(server_dir, "/",  ProjectID, ".csv")),
-				message = "Please pass a valid ProjectID from URL. Files must be located in server file folder" ))
-				unlisted_project=read.csv(stringr::str_c(server_dir, "/",  ProjectID, ".csv"))
-				ProjectName=unlisted_project$Name
-				Species=unlisted_project$Species
-				ShortName=unlisted_project$ShortName
-				file1= paste(server_dir, "/",   ProjectID, ".RData", sep = "")  #data file
-				file2= paste(server_dir, "/",  ProjectID, "_network.RData", sep = "") #Correlation results
-				ProjectPath=server_dir
-				if ("ExpressionUnit" %in% names(unlisted_project)) {
-					exp_unit= unlisted_project$ExpressionUnit[1]
-				}
-			}
-			if (is.null(file1) || !file.exists(file1)){
-				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
-			}
-			validate(need(file.exists(file1), message = "File does NOT exist."))
-			load(file1)
-
+		  if (getFromURL()) {
+  		  ProjectID = query[['serverfile']]
+  			cat("Try to load server file ", ProjectID, "\n")
+  			if (!is.null(server_dir)) {
+  				validate(need(file.exists(stringr::str_c(server_dir, "/",  ProjectID, ".csv")),
+  				message = "Please pass a valid ProjectID from URL. Files must be located in server file folder" ))
+  				unlisted_project=read.csv(stringr::str_c(server_dir, "/",  ProjectID, ".csv"))
+  				ProjectName=unlisted_project$Name
+  				Species=unlisted_project$Species
+  				ShortName=unlisted_project$ShortName
+  				file1= paste(server_dir, "/",   ProjectID, ".RData", sep = "")  #data file
+  				file2= paste(server_dir, "/",  ProjectID, "_network.RData", sep = "") #Correlation results
+  				ProjectPath=server_dir
+  				if ("ExpressionUnit" %in% names(unlisted_project)) {
+  					exp_unit= unlisted_project$ExpressionUnit[1]
+  				}
+  			}
+  			if (is.null(file1) || !file.exists(file1)){
+  				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+  			}
+  			validate(need(file.exists(file1), message = "File does NOT exist."))
+  			load(file1)
+  		  }
 		}
-
+		if (!is.null(query[['testfile']])) {
+		  if (getFromURL2()) {
+  		  ProjectID = query[['testfile']]
+  			cat("Try to load test file ", ProjectID, "\n")
+  			if (!is.null(test_dir)) {
+  				validate(need(file.exists(stringr::str_c(test_dir, "/",  ProjectID, ".csv")),
+  				message = "Please pass a valid ProjectID from URL. Files must be located in test file folder" ))
+  				unlisted_project=read.csv(stringr::str_c(test_dir, "/",  ProjectID, ".csv"))
+  				ProjectName=unlisted_project$Name
+  				Species=unlisted_project$Species
+  				ShortName=unlisted_project$ShortName
+  				file1= paste(test_dir, "/",   ProjectID, ".RData", sep = "")  #data file
+  				file2= paste(test_dir, "/",  ProjectID, "_network.RData", sep = "") #Correlation results
+  				ProjectPath=test_dir
+  				if ("ExpressionUnit" %in% names(unlisted_project)) {
+  					exp_unit= unlisted_project$ExpressionUnit[1]
+  				}
+  			}
+  			if (is.null(file1) || !file.exists(file1)){
+  				shinyalert("Oops!", "File does NOT exist.", showConfirmButton = FALSE, showCancelButton = TRUE, type = "error")
+  			}
+  			validate(need(file.exists(file1), message = "File does NOT exist."))
+  			load(file1)
+  		  }
+		}
 		if (!is.null(query[['unlisted']])) {
 			ProjectID = query[['unlisted']]
 			validate(need(file.exists(str_c("unlisted/",  ProjectID, ".csv")),
@@ -934,19 +984,19 @@ observe({
 })
 
 #load project in csv or database
-observeEvent(input$load | input$adddata | input$uploadData | input$customData, {
+observeEvent(input$load | input$adddata | input$uploadData | input$customData | getFromURL() | getFromURL2(), {
 	query <- parseQueryString(isolate(session$clientData$url_search))
 	
 	req((!is.null(query[['project']]) & !(query[['project']] %in% names(DataInSets)))|| input$sel_project!="" || 
 	      (input$select_dataset=='Upload RData File' & !is.null(input$file1)) ||
-	      input$select_dataset == 'Upload Data Files (csv)' & !is.null(DataReactiveTxt()))
+	      input$select_dataset == 'Upload Data Files (csv)' & !is.null(DataReactiveTxt()) || getFromURL() || getFromURL2())
 	if (input$select_dataset == 'Public Data(DiseaseLand)') {
 		DataIn <- DataReactiveDB()
 	}  else
 	if (input$select_dataset == 'Upload Data Files (csv)') {
 		DataIn <- DataReactiveTxt()
 	}else
-	if (!is.null(input$load)) {
+	if (!is.null(input$load) || getFromURL() || getFromURL2() ) {
 		DataIn <- DataReactiveRData()
 	}else
 	if (!is.null(input$adddata)) {
