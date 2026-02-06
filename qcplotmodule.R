@@ -578,7 +578,8 @@ qcplot_server <- function(id) {
 				DataQC <-  DataQCReactive()
 				tmp_sampleid <- DataQC$tmp_sampleid
 				set.seed(123)
-				tmp_data_long <- DataQC$tmp_data_long %>% dplyr::filter(expr !=0) %>% dplyr::sample_n(1000)
+				#tmp_data_long <- DataQC$tmp_data_long %>% dplyr::filter(expr !=0) %>% dplyr::sample_n(1000) #too few data points, especially with many samples.
+				tmp_data_long<-DataQC$tmp_data_long%>% group_by(sampleid) %>% dplyr::slice_sample(n=2000) %>% ungroup #max 2K genes/proteins per sample
 				tmp_data_long$sampleid <- factor(tmp_data_long$sampleid, levels=DataInSets[[working_project()]]$sample_order)
 
 				tmp_group = DataQC$tmp_group
